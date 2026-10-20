@@ -82,11 +82,60 @@ jobs:
             $archive.Dispose()
           }
 
+      - name: Publish Windows package contents
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "${{ github.ref_name }}"
+          if ($tag -notmatch '^v\d+\.\d+\.\d+') {
+            throw "Tag '$tag' is not a version like v1.1.0"
+          }
+          $version = $tag.Substring(1)
+          dotnet publish SuperDev.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=false `
+            -p:Version=$version `
+            -o "publish/win-x64-msix"
+
+      - name: Create MSIX
+        shell: pwsh
+        env:
+          WINDOWS_PFX_BASE64: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          WINDOWS_PFX_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.Substring(1)
+          $pfx = $null
+          $pfxArgs = @()
+          if (-not [string]::IsNullOrWhiteSpace($env:WINDOWS_PFX_BASE64)) {
+            $pfx = Join-Path (Get-Location) "windows-signing.pfx"
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_PFX_BASE64))
+            $pfxArgs = @("-Pfx", $pfx, "-Password", $env:WINDOWS_PFX_PASSWORD)
+          }
+          & ./scripts/package-windows-msix.ps1 `
+            -PublishDir "publish/win-x64-msix" `
+            -Version $version `
+            -Output "Super Dev-$tag-win-x64.msix" `
+            @pfxArgs
+          if ($pfx) {
+            Remove-Item -LiteralPath $pfx -Force
+          }
+          $msix = Join-Path (Get-Location) "Super Dev-$tag-win-x64.msix"
+          if ((Get-Item -LiteralPath $msix).Length -le 0) {
+            throw "MSIX is empty"
+          }
+
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
           name: Super Dev-${{ github.ref_name }}-win-x64
-          path: Super Dev-${{ github.ref_name }}-win-x64.zip
+          path: |
+            Super Dev-${{ github.ref_name }}-win-x64.zip
+            Super Dev-${{ github.ref_name }}-win-x64.msix
+            Super Dev-${{ github.ref_name }}-win-x64.cer
           if-no-files-found: error
 
   build-macos:
@@ -178,6 +227,8 @@ jobs:
           cd release-assets
           assets=(
             "Super Dev-${tag}-win-x64.zip"
+            "Super Dev-${tag}-win-x64.msix"
+            "Super Dev-${tag}-win-x64.cer"
             "Super Dev-${tag}-osx-arm64.dmg"
             "Super Dev-${tag}-osx-x64.dmg"
           )
@@ -199,6 +250,8 @@ jobs:
           cd release-assets
           assets=(
             "Super Dev-${tag}-win-x64.zip"
+            "Super Dev-${tag}-win-x64.msix"
+            "Super Dev-${tag}-win-x64.cer"
             "Super Dev-${tag}-osx-arm64.dmg"
             "Super Dev-${tag}-osx-x64.dmg"
           )
@@ -222,6 +275,8 @@ jobs:
           tag="${{ github.ref_name }}"
           expected=(
             "Super Dev-${tag}-win-x64.zip"
+            "Super Dev-${tag}-win-x64.msix"
+            "Super Dev-${tag}-win-x64.cer"
             "Super Dev-${tag}-osx-arm64.dmg"
             "Super Dev-${tag}-osx-x64.dmg"
           )

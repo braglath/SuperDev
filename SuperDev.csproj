@@ -9,6 +9,7 @@
     <AssemblyName>Super Dev</AssemblyName>
     <Product>Super Dev</Product>
     <AssemblyTitle>Super Dev</AssemblyTitle>
+    <GenerateAppInstallerFile>true</GenerateAppInstallerFile>
   </PropertyGroup>
 
   <ItemGroup>

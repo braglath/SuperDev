@@ -23,3 +23,7 @@ publish/
 
 # Logs
 *.log
+
+# Windows signing key. The public .cer may be published; the .pfx must not.
+.certs/
+*.pfx
