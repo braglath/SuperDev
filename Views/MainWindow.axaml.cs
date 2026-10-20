@@ -40,6 +40,8 @@ public partial class MainWindow : Window
     private readonly Queue<string> _pendingFileOpens = new();
     private bool _settingsOpen;
     private bool _settingsOverChecklist;
+    private bool _settingsOverReminders;
+    private bool _remindersOpen;
     private readonly HashSet<Key> _keysDown = new();
     private string? _lastShortcutId;
     private long _lastShortcutAt;
@@ -71,6 +73,8 @@ public partial class MainWindow : Window
         UpdateManualSaveVisibility();
         RefreshRecentList();
         BuildTemplateCards(null);
+        ToolTip.SetTip(NewTabButton, AppShortcuts.WithShortcut(AppShortcuts.NewChecklist));
+        ToolTip.SetTip(OpenChecklistButton, AppShortcuts.WithShortcut(AppShortcuts.OpenChecklist));
         StartReminderTimer();
         if (Program.OwnsActivationServer)
         {
@@ -630,7 +634,7 @@ public partial class MainWindow : Window
         };
 
         closeButton.Classes.Add("tab-close");
-        ToolTip.SetTip(closeButton, "Close tab");
+        ToolTip.SetTip(closeButton, AppShortcuts.WithShortcut(AppShortcuts.CloseTab));
 
         var headerGrid = new Grid
         {
@@ -666,6 +670,7 @@ public partial class MainWindow : Window
         view.SetDocumentCompleted(document.IsCompleted);
         view.DocumentEdited += (_, _) => OnDocumentEdited(tab);
         view.DocumentCompleted += (_, _) => OnDocumentCompleted(tab);
+        view.DocumentReopened += (_, _) => OnDocumentReopened(tab);
         view.SaveRequested += (_, _) => _ = RunFileOperation(() => SaveAsync(tab));
         view.SaveAsRequested += (_, _) => _ = RunFileOperation(() => SaveAsAsync(tab));
         view.SaveAsTemplateRequested += (_, _) => _ = SaveTabAsTemplateAsync(tab);
@@ -1177,6 +1182,10 @@ public partial class MainWindow : Window
 
         _settingsOpen = false;
         _settingsOverChecklist = false;
+        _settingsOverReminders = false;
+        _remindersOpen = false;
+        RemindersButton.Classes.Remove("selected");
+        RemindersPanel.IsVisible = false;
         SettingsPanel.IsVisible = false;
         WorkspaceContent.Content = tab.View;
         WorkspaceContent.IsVisible = true;
@@ -1197,7 +1206,11 @@ public partial class MainWindow : Window
     {
         _settingsOpen = false;
         _settingsOverChecklist = false;
+        _settingsOverReminders = false;
+        _remindersOpen = false;
+        RemindersButton.Classes.Remove("selected");
         SettingsPanel.IsVisible = false;
+        RemindersPanel.IsVisible = false;
         WorkspaceContent.IsVisible = false;
         WorkspaceContent.Content = null;
 
@@ -1210,23 +1223,24 @@ public partial class MainWindow : Window
 
     private void SetChecklistActionsEnabled(bool enabled)
     {
+        var editable = enabled && ActiveTab()?.Document.IsCompleted != true;
         if (_addCheckMenuItem is not null)
-            _addCheckMenuItem.IsEnabled = enabled;
+            _addCheckMenuItem.IsEnabled = editable;
 
-        WindowAddCheckMenuItem.IsEnabled = enabled;
+        WindowAddCheckMenuItem.IsEnabled = editable;
 
         var hasItems = enabled && ActiveTab()?.View.Items.Count > 0;
-        var canRearrange = enabled && ActiveTab()?.View.Items.Count > 1;
-        SetItemActionVisible(_copyToMenuItem, WindowCopyMenuItem, hasItems);
-        SetItemActionVisible(_deleteChecksMenuItem, WindowDeleteMenuItem, hasItems);
-        SetItemActionVisible(_saveTemplateMenuItem, WindowSaveTemplateMenuItem, enabled);
+        var canRearrange = editable && ActiveTab()?.View.Items.Count > 1;
+        SetItemActionVisible(_copyToMenuItem, WindowCopyMenuItem, editable && hasItems);
+        SetItemActionVisible(_deleteChecksMenuItem, WindowDeleteMenuItem, editable && hasItems);
+        SetItemActionVisible(_saveTemplateMenuItem, WindowSaveTemplateMenuItem, editable);
         SetItemActionVisible(_rearrangeMenuItem, WindowRearrangeMenuItem, canRearrange);
         UpdatePinMenuItem();
     }
 
     private void UpdatePinMenuItem()
     {
-        var checklistOpen = !HomePanel.IsVisible && !SettingsPanel.IsVisible && ActiveTab() is not null;
+        var checklistOpen = !HomePanel.IsVisible && !SettingsPanel.IsVisible && !RemindersPanel.IsVisible && ActiveTab() is not null;
         var pinLabel = ActiveTab()?.IsPinned == true ? "Unpin Tab" : "Pin Tab";
         if (_pinTabMenuItem is not null)
             _pinTabMenuItem.Header = pinLabel;
@@ -1251,12 +1265,14 @@ public partial class MainWindow : Window
         if (!OperatingSystem.IsWindows())
             return;
 
+        AppNameText.IsVisible = false;
         ExtendClientAreaToDecorationsHint = true;
         ExtendClientAreaTitleBarHeightHint = TitleChrome.Height;
         WindowMenu.IsVisible = true;
         NativeMenu.SetMenu(this, null);
         WindowDecorationProperties.SetElementRole(TitleChrome, WindowDecorationsElementRole.TitleBar);
         WindowDecorationProperties.SetElementRole(WindowMenu, WindowDecorationsElementRole.User);
+        WindowDecorationProperties.SetElementRole(RemindersButton, WindowDecorationsElementRole.User);
         WindowDecorationProperties.SetElementRole(ReminderBell, WindowDecorationsElementRole.User);
         ApplyWindowMenuGestures();
         FitWindowsTitlePadding();
@@ -1317,6 +1333,9 @@ public partial class MainWindow : Window
             case "Save As…":
                 InvokeShortcut(AppShortcuts.SaveAs);
                 break;
+            case "Reminders":
+                ShowReminders();
+                break;
             case "Add Check":
                 InvokeShortcut(AppShortcuts.AddItem);
                 break;
@@ -1345,11 +1364,17 @@ public partial class MainWindow : Window
     private void ShowSettings()
     {
         if (!_settingsOpen)
-            _settingsOverChecklist = ActiveTab() is not null;
+        {
+            _settingsOverReminders = _remindersOpen;
+            _settingsOverChecklist = !_remindersOpen && ActiveTab() is not null;
+        }
 
         _settingsOpen = true;
+        _remindersOpen = false;
+        RemindersButton.Classes.Remove("selected");
         HomePanel.IsVisible = false;
         WorkspaceContent.IsVisible = false;
+        RemindersPanel.IsVisible = false;
         SettingsPanel.IsVisible = true;
         TabBar.IsVisible = _tabs.Count > 0;
         UpdateManualSaveVisibility();
@@ -1357,11 +1382,320 @@ public partial class MainWindow : Window
 
     private void CloseSettings_Click(object? sender, RoutedEventArgs e)
     {
-        if (_settingsOverChecklist && _activeTab is not null && _tabs.Contains(_activeTab))
+        if (_settingsOverReminders)
+            ShowReminders();
+        else if (_settingsOverChecklist && _activeTab is not null && _tabs.Contains(_activeTab))
             ActivateTab(_activeTab);
         else
             ShowHomeScreen();
     }
+
+    private void RemindersMenu_Click(object? sender, EventArgs e) =>
+        ShowReminders();
+
+    private void RemindersButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_remindersOpen)
+            CloseReminders();
+        else
+            ShowReminders();
+    }
+
+    private void CloseReminders_Click(object? sender, RoutedEventArgs e) =>
+        CloseReminders();
+
+    private void CloseReminders()
+    {
+        if (_activeTab is not null && _tabs.Contains(_activeTab))
+            ActivateTab(_activeTab);
+        else
+            ShowHomeScreen();
+    }
+
+    private void ShowReminders()
+    {
+        _settingsOpen = false;
+        _settingsOverChecklist = false;
+        _settingsOverReminders = false;
+        _remindersOpen = true;
+        foreach (var openTab in _tabs)
+            openTab.HeaderContainer.Classes.Remove("selected");
+        RemindersButton.Classes.Add("selected");
+        HomePanel.IsVisible = false;
+        SettingsPanel.IsVisible = false;
+        WorkspaceContent.IsVisible = false;
+        WorkspaceContent.Content = null;
+        RemindersPanel.IsVisible = true;
+        TabBar.IsVisible = _tabs.Count > 0;
+        SetChecklistActionsEnabled(false);
+        UpdateManualSaveVisibility();
+        RefreshReminderRows();
+    }
+
+    private void RefreshReminderRows()
+    {
+        ReminderRows.Children.Clear();
+        var reminders = ReminderSchedule.All();
+        RemindersEmpty.IsVisible = reminders.Count == 0;
+        foreach (var reminder in reminders)
+            ReminderRows.Children.Add(ReminderRow(reminder));
+    }
+
+    private Control ReminderRow(ScheduledReminder reminder)
+    {
+        var when = ReminderText.Clock(reminder.NextOn);
+        var repeat = reminder.EveryMinutes > 0 ? $" · {ReminderText.Interval(reminder.EveryMinutes)}" : string.Empty;
+        var silent = reminder.Silent ? " · Silent" : string.Empty;
+        var text = new StackPanel
+        {
+            Spacing = 4,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = string.IsNullOrWhiteSpace(reminder.Title) ? "Checklist" : reminder.Title,
+                    FontSize = 15,
+                    FontWeight = FontWeight.SemiBold,
+                    Foreground = new SolidColorBrush(Color.Parse("#F8FAFC")),
+                    TextWrapping = TextWrapping.Wrap
+                },
+                new TextBlock
+                {
+                    Text = $"{ReminderKind(reminder)} · {when}{repeat}{silent}",
+                    FontSize = 12,
+                    Foreground = new SolidColorBrush(Color.Parse("#94A3B8")),
+                    TextWrapping = TextWrapping.Wrap
+                }
+            }
+        };
+
+        var open = ReminderAction("Open");
+        open.Click += (_, _) => OpenFromNotification(reminder.DocumentId, reminder.FilePath);
+        var edit = ReminderAction("Edit");
+        edit.Click += (_, _) => _ = EditReminderAsync(reminder);
+
+        var row = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"),
+            ColumnSpacing = 8
+        };
+        Grid.SetColumn(open, 1);
+        Grid.SetColumn(edit, 2);
+        row.Children.Add(text);
+        row.Children.Add(open);
+        row.Children.Add(edit);
+
+        return new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#0F172A")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#1E293B")),
+            BorderThickness = new Avalonia.Thickness(1),
+            CornerRadius = new Avalonia.CornerRadius(10),
+            Padding = new Avalonia.Thickness(12),
+            Child = row
+        };
+    }
+
+    private async Task EditReminderAsync(ScheduledReminder reminder)
+    {
+        var current = ReminderSchedule.Find(reminder.DocumentId, reminder.Slot) ?? reminder;
+        var dialog = new EditReminderWindow(current, string.IsNullOrEmpty(current.Slot));
+        var edit = await dialog.ShowDialog<ReminderEditResult?>(this);
+        if (edit is null)
+            return;
+
+        var tab = _tabs.FirstOrDefault(item => item.Document.Id == current.DocumentId);
+        if (tab is not null)
+        {
+            ApplyReminderEdit(tab, current, edit);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(current.FilePath))
+        {
+            ShowToast("Open that checklist to change this reminder.");
+            return;
+        }
+
+        await RunFileOperation(() => SaveClosedReminderAsync(current, edit));
+    }
+
+    private static void ApplyReminderEdit(ChecklistTab tab, ScheduledReminder reminder, ReminderEditResult edit)
+    {
+        if (string.IsNullOrEmpty(reminder.Slot))
+        {
+            tab.View.SetReminder(edit.Removed ? null : edit.NextUtc, edit.Removed ? 0 : edit.EveryMinutes, edit.Silent);
+            return;
+        }
+
+        if (reminder.Slot == ScheduledReminder.DeadlineSlot)
+        {
+            tab.View.SetDeadlineNotify(edit.Removed ? null : tab.View.NotifyBeforeMinutes, edit.Silent);
+            return;
+        }
+
+        if (!ScheduledReminder.TryItemId(reminder.Slot, out var itemId))
+            return;
+
+        var item = tab.View.Items.FirstOrDefault(entry => entry.Id == itemId);
+        tab.View.SetItemDeadlineNotify(itemId, edit.Removed ? null : item?.NotifyBeforeMinutes, edit.Silent);
+    }
+
+    private async Task SaveClosedReminderAsync(ScheduledReminder reminder, ReminderEditResult edit)
+    {
+        var path = reminder.FilePath;
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        ChecklistDocument document;
+        try
+        {
+            document = await _fileService.LoadAsync(path);
+        }
+        catch (ChecklistFileException ex)
+        {
+            await ShowMessage(ex.Message);
+            return;
+        }
+
+        if (document.Id != reminder.DocumentId)
+        {
+            await ShowMessage("That checklist file has changed.");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(reminder.Slot))
+        {
+            document.ReminderOn = edit.Removed ? null : edit.NextUtc;
+            document.ReminderEveryMinutes = edit.Removed ? 0 : edit.EveryMinutes;
+            document.ReminderSilent = !edit.Removed && edit.Silent;
+        }
+        else if (reminder.Slot == ScheduledReminder.DeadlineSlot)
+        {
+            if (edit.Removed)
+                document.NotifyBeforeMinutes = null;
+            document.DeadlineSilent = !edit.Removed && edit.Silent && document.NotifyBeforeMinutes is not null;
+        }
+        else if (ScheduledReminder.TryItemId(reminder.Slot, out var itemId))
+        {
+            var item = document.Items.FirstOrDefault(entry => entry.Id == itemId);
+            if (item is null)
+            {
+                await ShowMessage("That check is no longer in the checklist.");
+                return;
+            }
+
+            if (edit.Removed)
+                item.NotifyBeforeMinutes = null;
+            item.DeadlineSilent = !edit.Removed && edit.Silent && item.NotifyBeforeMinutes is not null;
+        }
+
+        document.UpdatedOn = DateTime.UtcNow;
+        await _fileService.SaveAsync(path, document, false);
+        WriteClosedReminder(document, path, reminder.Slot);
+        RefreshReminderRows();
+    }
+
+    private static void WriteClosedReminder(ChecklistDocument document, string path, string slot)
+    {
+        if (document.IsCompleted)
+        {
+            ReminderSchedule.Remove(document.Id);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(slot))
+        {
+            if (document.ReminderOn is not { } next)
+            {
+                ReminderSchedule.RemoveSlot(document.Id, string.Empty);
+                return;
+            }
+
+            ReminderSchedule.Upsert(new ScheduledReminder
+            {
+                DocumentId = document.Id,
+                Title = string.IsNullOrWhiteSpace(document.Title) ? "Checklist" : document.Title.Trim(),
+                FilePath = path,
+                NextOn = next,
+                EveryMinutes = document.ReminderEveryMinutes,
+                Silent = document.ReminderSilent
+            });
+            return;
+        }
+
+        if (slot == ScheduledReminder.DeadlineSlot)
+        {
+            WriteDeadlineSlot(document, path, slot, document.Deadline, document.DeadlineMinute, document.NotifyBeforeMinutes, document.DeadlineSilent, document.Title);
+            return;
+        }
+
+        if (!ScheduledReminder.TryItemId(slot, out var itemId))
+            return;
+
+        var item = document.Items.FirstOrDefault(entry => entry.Id == itemId);
+        if (item is null)
+        {
+            ReminderSchedule.RemoveSlot(document.Id, slot);
+            return;
+        }
+
+        WriteDeadlineSlot(document, path, slot, item.Deadline, item.DeadlineMinute, item.NotifyBeforeMinutes, item.DeadlineSilent, item.Title);
+    }
+
+    private static void WriteDeadlineSlot(
+        ChecklistDocument document,
+        string path,
+        string slot,
+        DateOnly? deadline,
+        int? minuteOfDay,
+        int? minutesBefore,
+        bool silent,
+        string? title)
+    {
+        if (deadline is not { } date || minutesBefore is not int lead)
+        {
+            ReminderSchedule.RemoveSlot(document.Id, slot);
+            return;
+        }
+
+        var when = DeadlineValue.Instant(date, minuteOfDay).AddMinutes(-Math.Max(0, lead));
+        ReminderSchedule.Upsert(new ScheduledReminder
+        {
+            DocumentId = document.Id,
+            Slot = slot,
+            Title = string.IsNullOrWhiteSpace(title) ? "Checklist" : title.Trim(),
+            Detail = DeadlineValue.NotifyText(lead),
+            FilePath = path,
+            NextOn = when,
+            EveryMinutes = 0,
+            Silent = silent
+        });
+    }
+
+    private static string ReminderKind(ScheduledReminder reminder)
+    {
+        if (string.IsNullOrEmpty(reminder.Slot))
+            return "Reminder";
+        if (reminder.Slot == ScheduledReminder.DeadlineSlot)
+            return "Deadline";
+        return "Check";
+    }
+
+    private static Button ReminderAction(string content) => new()
+    {
+        Content = content,
+        Height = 34,
+        Padding = new Avalonia.Thickness(12, 0),
+        Background = new SolidColorBrush(Color.Parse("#172033")),
+        Foreground = new SolidColorBrush(Color.Parse("#E2E8F0")),
+        BorderBrush = new SolidColorBrush(Color.Parse("#334155")),
+        BorderThickness = new Avalonia.Thickness(1),
+        CornerRadius = new Avalonia.CornerRadius(8),
+        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+        HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+        VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center
+    };
 
     private void BuildShortcutSettings()
     {
@@ -1566,15 +1900,15 @@ public partial class MainWindow : Window
             case AppShortcuts.Search:
                 if (ActiveTab() is { } searching)
                 {
-                    if (_settingsOpen)
+                    if (_settingsOpen || _remindersOpen)
                         ActivateTab(searching);
                     searching.View.FocusSearch();
                 }
                 break;
             case AppShortcuts.AddItem:
-                if (ActiveTab() is { } adding)
+                if (ActiveTab() is { } adding && !adding.Document.IsCompleted)
                 {
-                    if (_settingsOpen)
+                    if (_settingsOpen || _remindersOpen)
                         ActivateTab(adding);
                     adding.View.AddCheck();
                 }
@@ -2259,6 +2593,25 @@ public partial class MainWindow : Window
         PublishLinkedCompletion(tab);
         ScheduleAutoSave(tab);
         SyncReminders();
+        if (ActiveTab() == tab)
+            SetChecklistActionsEnabled(true);
+    }
+
+    private void OnDocumentReopened(ChecklistTab tab)
+    {
+        if (!tab.Document.IsCompleted)
+            return;
+
+        tab.EditVersion++;
+        tab.Document.IsCompleted = false;
+        tab.IsDirty = true;
+        tab.View.SetDocumentCompleted(false);
+        UpdateTabChrome(tab);
+        PublishLinkedCompletion(tab);
+        ScheduleAutoSave(tab);
+        SyncReminders();
+        if (ActiveTab() == tab)
+            SetChecklistActionsEnabled(true);
     }
 
     private void SyncLinkedChecklists(ChecklistTab source)
@@ -2656,6 +3009,8 @@ public partial class MainWindow : Window
         ReminderSchedule.DeliverDue();
         PullDeliveredReminders();
         RefreshNotificationBell();
+        if (RemindersPanel.IsVisible)
+            RefreshReminderRows();
         foreach (var tab in _tabs)
             tab.View.RefreshDeadlineAppearance();
     }

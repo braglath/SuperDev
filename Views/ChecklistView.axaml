@@ -37,6 +37,16 @@
             <Setter Property="BorderBrush" Value="#3B82F6"/>
         </Style>
 
+        <Style Selector="TextBox.page-title:disabled">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
+        <Style Selector="TextBox.page-title:disabled:pointerover, TextBox.page-title.locked:pointerover, TextBox.page-title.locked:focus">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
         <Style Selector="TextBlock.page-subtitle">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Foreground" Value="#94A3B8"/>
@@ -222,6 +232,11 @@
             <Setter Property="Foreground" Value="#F8FAFC"/>
         </Style>
 
+        <Style Selector="ItemsControl.locked Button.icon">
+            <Setter Property="IsEnabled" Value="False"/>
+            <Setter Property="Opacity" Value="0.35"/>
+        </Style>
+
         <Style Selector="Button.icon.selected">
             <Setter Property="Background" Value="#172F55"/>
             <Setter Property="Foreground" Value="#60A5FA"/>
@@ -231,6 +246,10 @@
             <Setter Property="Width" Value="22"/>
             <Setter Property="Height" Value="22"/>
             <Setter Property="CornerRadius" Value="5"/>
+        </Style>
+
+        <Style Selector="Button.action:disabled">
+            <Setter Property="Opacity" Value="0.4"/>
         </Style>
 
         <Style Selector="StackPanel.page-header.compact TextBox.page-title">
@@ -662,24 +681,6 @@
 
                 </StackPanel>
 
-                <Button x:Name="HeaderToggleButton"
-                        Classes="icon density selected"
-                        VerticalAlignment="Center"
-                        ToolTip.Tip="Hide details"
-                        Click="HeaderToggle_Click">
-                    <Grid Width="14" Height="14">
-                        <Path x:Name="HeaderToggleIcon"
-                              Stretch="None"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"
-                              Stroke="{Binding $parent[Button].Foreground}"
-                              StrokeThickness="1.6"
-                              StrokeLineCap="Round"
-                              StrokeJoin="Round"
-                              Data="M1,10 L7,4 L13,10"/>
-                    </Grid>
-                </Button>
-
                 </StackPanel>
 
             </Grid>
@@ -1026,20 +1027,23 @@
     <StackPanel Orientation="Horizontal"
                 Spacing="10"
                 VerticalAlignment="Center">
-        <Button Content="+  Add Check"
+        <Button x:Name="AddCheckButton"
+                Content="+  Add Check"
                 Classes="action secondary"
                 Click="AddCheck_Click"/>
 
         <Button x:Name="SaveButton"
                 Content="Save"
-                Classes="action secondary"
+                Classes="action secondary keep-alive"
                 Click="Save_Click"/>
 
-        <Button Content="Save As"
-                Classes="action secondary"
+        <Button x:Name="SaveAsButton"
+                Content="Save As"
+                Classes="action secondary keep-alive"
                 Click="SaveAs_Click"/>
 
-        <Button Content="Save as template"
+        <Button x:Name="SaveAsTemplateButton"
+                Content="Save as template"
                 Classes="action secondary"
                 ToolTip.Tip="Save this checklist as a home template"
                 Click="SaveAsTemplate_Click"/>
@@ -1071,7 +1075,7 @@
     <Button x:Name="CompleteButton"
             Grid.Column="1"
             Content="✓  Complete"
-            Classes="action primary"
+            Classes="action primary complete-toggle"
             Click="Complete_Click"/>
 
 </Grid>
@@ -1186,7 +1190,8 @@
                                               IsChecked="{Binding IsCompleted}"
                                               Click="CheckBox_Click"
                                               VerticalAlignment="Top"
-                                              Margin="0,2,0,0"/>
+                                              Margin="0,2,0,0"
+                                              ToolTip.Tip="Toggle completion (Space)"/>
 
 
                                     <!-- Title + Priority -->
@@ -1293,7 +1298,7 @@
                                     <Button Grid.Column="3"
                                             Classes="icon"
                                             VerticalAlignment="Top"
-                                            ToolTip.Tip="Edit"
+                                            ToolTip.Tip="Edit (F2)"
                                             Tag="{Binding}"
                                             Click="EditCheck_Click">
                                         <Viewbox Width="15"

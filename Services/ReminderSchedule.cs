@@ -188,6 +188,13 @@ public static class ReminderSchedule
         });
     }
 
+    public static IReadOnlyList<ScheduledReminder> All()
+    {
+        List<ScheduledReminder> items = [];
+        WithGate(() => items = ReadSchedule().Select(Copy).ToList());
+        return items.OrderBy(item => item.NextOn).ToList();
+    }
+
     public static ScheduledReminder? Find(Guid documentId, string slot = "")
     {
         ScheduledReminder? found = null;

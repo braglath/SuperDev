@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Input;
 
 namespace SuperDev.Services;
@@ -68,6 +69,13 @@ public static class AppShortcuts
         return null;
     }
 
+    public static string WithShortcut(string id, string? action = null)
+    {
+        var shortcut = All.First(item => item.Id == id);
+        var name = string.IsNullOrWhiteSpace(action) ? shortcut.Action : action;
+        return $"{name} ({shortcut.CurrentDisplay})";
+    }
+
     public static string GroupTitle(ShortcutGroup group) =>
         group switch
         {
@@ -126,6 +134,9 @@ public sealed class AppShortcut(
     public KeyModifiers MacModifiers { get; } = macModifiers;
     public string WindowsDisplay { get; } = windowsDisplay;
     public string MacDisplay { get; } = macDisplay;
+
+    public string CurrentDisplay =>
+        OperatingSystem.IsMacOS() ? MacDisplay : WindowsDisplay;
 
     public KeyModifiers CurrentModifiers =>
         OperatingSystem.IsMacOS() ? MacModifiers : WindowsModifiers;

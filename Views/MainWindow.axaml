@@ -26,6 +26,8 @@
             </NativeMenuItem>
             <NativeMenuItem Header="Options">
                 <NativeMenu>
+                    <NativeMenuItem Header="Reminders"
+                                    Click="RemindersMenu_Click"/>
                     <NativeMenuItem Header="Add Check"
                                     IsEnabled="False"
                                     Click="AddCheckMenu_Click"/>
@@ -504,6 +506,14 @@
             <Setter Property="Stroke" Value="#94A3B8"/>
         </Style>
 
+        <Style Selector="Button.bell.selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#172F55"/>
+        </Style>
+
+        <Style Selector="Button.bell.selected Path">
+            <Setter Property="Stroke" Value="#60A5FA"/>
+        </Style>
+
         <Style Selector="Button.bell:pointerover Path">
             <Setter Property="Stroke" Value="#F8FAFC"/>
         </Style>
@@ -622,17 +632,41 @@
                 <Image Width="18"
                        Height="18"
                        Source="avares://Super Dev/Assets/app.ico"/>
-                <TextBlock Text="Super Dev"
+                <TextBlock x:Name="AppNameText"
+                           Text="Super Dev"
                            FontSize="14"
                            FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
             </StackPanel>
-            <Button x:Name="ReminderBell"
-                    Grid.Column="2"
+            <StackPanel Grid.Column="2"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Spacing="2"
+                        Margin="0,0,4,0">
+            <Button x:Name="RemindersButton"
                     Classes="bell"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Margin="0,0,4,0"
+                    ToolTip.Tip="Reminders"
+                    Click="RemindersButton_Click">
+                <Panel Width="32" Height="32">
+                    <Viewbox Width="16"
+                             Height="16"
+                             Stretch="Uniform"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center">
+                        <Path Width="16"
+                              Height="16"
+                              Stretch="Uniform"
+                              StrokeThickness="1.6"
+                              StrokeLineCap="Round"
+                              StrokeJoin="Round"
+                              Fill="Transparent"
+                              Data="M8,1.5 A6.5,6.5 0 1 0 8,14.5 A6.5,6.5 0 1 0 8,1.5 M8,4.5 V8.2 L10.6,9.8"/>
+                    </Viewbox>
+                </Panel>
+            </Button>
+            <Button x:Name="ReminderBell"
+                    Classes="bell"
                     ToolTip.Tip="Notifications">
                 <Button.Flyout>
                     <Flyout Placement="BottomEdgeAlignedRight"
@@ -689,6 +723,7 @@
                              IsHitTestVisible="False"/>
                 </Panel>
             </Button>
+            </StackPanel>
             <Menu x:Name="WindowMenu"
                   Grid.Column="1"
                   Classes="title-menu"
@@ -704,6 +739,7 @@
                     <MenuItem Header="Save As…"/>
                 </MenuItem>
                 <MenuItem Header="Options">
+                    <MenuItem Header="Reminders"/>
                     <MenuItem x:Name="WindowAddCheckMenuItem"
                               Header="Add Check"
                               IsEnabled="False"/>
@@ -755,7 +791,8 @@
                         Spacing="8"/>
         </ScrollViewer>
 
-        <Button Grid.Column="1"
+        <Button x:Name="NewTabButton"
+                Grid.Column="1"
                 Classes="new-tab"
                 ToolTip.Tip="New checklist"
                 Click="NewTab_Click">
@@ -966,7 +1003,8 @@
                         HorizontalAlignment="Center"
                         Spacing="12">
 
-                <Button Classes="create open"
+                <Button x:Name="OpenChecklistButton"
+                        Classes="create open"
                         Content="Open Checklist"
                         Click="Open_Click"/>
 
@@ -980,6 +1018,56 @@
         </StackPanel>
 
     </Grid>
+    </ScrollViewer>
+
+    <ScrollViewer x:Name="RemindersPanel"
+                  Grid.Row="2"
+                  IsVisible="False"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="760"
+                    Margin="24,28,24,40"
+                    HorizontalAlignment="Stretch"
+                    Spacing="14">
+            <Grid ColumnDefinitions="*,Auto"
+                  ColumnSpacing="16">
+                <TextBlock Text="Reminders"
+                           FontSize="28"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1"
+                        Classes="bell"
+                        ToolTip.Tip="Close"
+                        VerticalAlignment="Center"
+                        Click="CloseReminders_Click">
+                    <Panel Width="32" Height="32">
+                        <Viewbox Width="14"
+                                 Height="14"
+                                 Stretch="Uniform"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center">
+                            <Path Width="14"
+                                  Height="14"
+                                  Stretch="Uniform"
+                                  StrokeThickness="1.8"
+                                  StrokeLineCap="Round"
+                                  Fill="Transparent"
+                                  Data="M2,2 L12,12 M12,2 L2,12"/>
+                        </Viewbox>
+                    </Panel>
+                </Button>
+            </Grid>
+            <TextBlock Text="Checklist reminders and deadline notifications. Edit one to change when it fires, or remove it."
+                       FontSize="13"
+                       Foreground="#94A3B8"
+                       TextWrapping="Wrap"/>
+            <TextBlock x:Name="RemindersEmpty"
+                       Text="No reminders yet."
+                       FontSize="14"
+                       Foreground="#64748B"
+                       IsVisible="False"/>
+            <StackPanel x:Name="ReminderRows" Spacing="8"/>
+        </StackPanel>
     </ScrollViewer>
 
     <ScrollViewer x:Name="SettingsPanel"

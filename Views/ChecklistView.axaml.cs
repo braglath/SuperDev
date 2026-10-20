@@ -51,7 +51,6 @@ public partial class ChecklistView : UserControl
    private bool _viewReady;
    private bool _detailsOpen;
    private bool _filtersVisible = true;
-   private bool _headerDetailsVisible = true;
    private bool _syncingCheck;
    private bool _editOpen;
    private bool _documentCompleted;
@@ -91,6 +90,8 @@ public partial class ChecklistView : UserControl
 
    public event EventHandler? DocumentCompleted;
 
+   public event EventHandler? DocumentReopened;
+
    public event EventHandler? SaveRequested;
 
    public event EventHandler? SaveAsRequested;
@@ -105,8 +106,54 @@ public partial class ChecklistView : UserControl
 
    public Func<Window, Task<ChecklistSubtask?>>? RequestLink { get; set; }
 
-   public void SetDocumentCompleted(bool completed) =>
-       _documentCompleted = completed;
+   public void SetDocumentCompleted(bool completed)
+   {
+      _documentCompleted = completed;
+      ApplyCompletedChrome();
+   }
+
+   public void SetReminder(DateTime? nextUtc, int everyMinutes, bool silent)
+   {
+      if (everyMinutes < 0)
+         everyMinutes = 0;
+
+      var nextSilent = nextUtc is not null && silent;
+      if (ReminderOn == nextUtc && ReminderEveryMinutes == everyMinutes && ReminderSilent == nextSilent)
+         return;
+
+      ReminderOn = nextUtc;
+      ReminderEveryMinutes = everyMinutes;
+      ReminderSilent = nextSilent;
+      ApplyReminderLink();
+      DocumentEdited?.Invoke(this, EventArgs.Empty);
+   }
+
+   public void SetDeadlineNotify(int? minutesBefore, bool silent)
+   {
+      if (Deadline is null)
+         return;
+
+      var nextSilent = minutesBefore is not null && silent;
+      if (NotifyBeforeMinutes == minutesBefore && DeadlineSilent == nextSilent)
+         return;
+
+      NotifyBeforeMinutes = minutesBefore;
+      DeadlineSilent = nextSilent;
+      UpdateDeadlinePresentation();
+      DocumentEdited?.Invoke(this, EventArgs.Empty);
+   }
+
+   public void SetItemDeadlineNotify(Guid itemId, int? minutesBefore, bool silent)
+   {
+      var item = _checklist.FirstOrDefault(entry => entry.Id == itemId);
+      if (item?.Deadline is null)
+         return;
+
+      item.NotifyBeforeMinutes = minutesBefore;
+      item.DeadlineSilent = minutesBefore is not null && silent;
+      RefreshDeadlineAppearance();
+      DocumentEdited?.Invoke(this, EventArgs.Empty);
+   }
 
    public bool HasIncompleteRequiredChecks() =>
        _checklist.Any(item =>
@@ -166,6 +213,7 @@ public partial class ChecklistView : UserControl
 
       ApplyView();
       UpdateProgress();
+      ApplyShortcutTips();
       AddHandler(KeyDownEvent, ItemShortcutKeyDown, RoutingStrategies.Tunnel);
       AddHandler(KeyUpEvent, ItemShortcutKeyUp, RoutingStrategies.Tunnel);
    }
@@ -913,7 +961,7 @@ public partial class ChecklistView : UserControl
 
    private bool CanRunItemShortcut(AppShortcut shortcut)
    {
-      if (!IsEffectivelyVisible || _editOpen)
+      if (_documentCompleted || !IsEffectivelyVisible || _editOpen)
          return false;
 
       if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is not Visual focused)
@@ -1047,6 +1095,9 @@ public partial class ChecklistView : UserControl
 
    public void SaveAsTemplate()
    {
+      if (_documentCompleted)
+         return;
+
       CommitDetails();
       SaveAsTemplateRequested?.Invoke(this, EventArgs.Empty);
    }
@@ -1054,8 +1105,13 @@ public partial class ChecklistView : UserControl
    private void SaveAsTemplate_Click(object? sender, RoutedEventArgs e) =>
        SaveAsTemplate();
 
-   private void Copy_Click(object? sender, RoutedEventArgs e) =>
-       CopyRequested?.Invoke(this, EventArgs.Empty);
+   private void Copy_Click(object? sender, RoutedEventArgs e)
+   {
+      if (_documentCompleted)
+         return;
+
+      CopyRequested?.Invoke(this, EventArgs.Empty);
+   }
 
    public int RemoveItems(IReadOnlyList<ChecklistItem> items)
    {
@@ -1452,35 +1508,6 @@ public partial class ChecklistView : UserControl
    /// Shows or hides the template line, repository, branch, and PR fields.
    /// The title and progress stay visible. A later interface-density setting can call this.
    /// </summary>
-   public void SetHeaderDetailsVisible(bool visible)
-   {
-      if (!visible)
-         CommitDetails();
-
-      _headerDetailsVisible = visible;
-      HeaderDetails.IsVisible = visible;
-
-      if (visible)
-      {
-         HeaderPanel.Classes.Remove("compact");
-         HeaderToggleButton.Classes.Add("selected");
-         ApplyDetailsVisibility();
-      }
-      else
-      {
-         HeaderPanel.Classes.Add("compact");
-         HeaderToggleButton.Classes.Remove("selected");
-      }
-
-      HeaderToggleIcon.Data = Geometry.Parse(visible
-          ? "M1,10 L7,4 L13,10"
-          : "M1,4 L7,10 L13,4");
-      ToolTip.SetTip(HeaderToggleButton, visible ? "Hide details" : "Show details");
-   }
-
-   private void HeaderToggle_Click(object? sender, RoutedEventArgs e) =>
-       SetHeaderDetailsVisible(!_headerDetailsVisible);
-
    /// <summary>
    /// Shows or hides search, status, priority, and sort.
    /// A later interface-density setting can call this.
@@ -1615,12 +1642,54 @@ public partial class ChecklistView : UserControl
       DeleteChecksButton.IsVisible = hasItems;
       RearrangeButton.IsVisible = _checklist.Count > 1;
       FilterToggleButton.IsVisible = hasItems;
-      CompleteButton.IsVisible = hasItems;
       FiltersPanel.IsVisible = hasItems && _filtersVisible;
       ChecklistBody.RowSpacing = FiltersPanel.IsVisible ? 14 : 0;
 
       if (!hasItems)
          CollapsedCountText.IsVisible = false;
+
+      ApplyCompletedChrome();
+   }
+
+   private void ApplyCompletedChrome()
+   {
+      var locked = _documentCompleted;
+      CompleteButton.Content = locked ? "Reopen" : "✓  Complete";
+      CompleteButton.IsVisible = _checklist.Count > 0 || locked;
+      AddCheckButton.IsEnabled = !locked;
+      SaveAsTemplateButton.IsEnabled = !locked;
+      CopyButton.IsEnabled = !locked && _checklist.Count > 0;
+      DeleteChecksButton.IsEnabled = !locked && _checklist.Count > 0;
+      RearrangeButton.IsEnabled = !locked && _checklist.Count > 1;
+      WorkflowTitleBox.IsReadOnly = locked;
+      WorkflowTitleBox.IsHitTestVisible = !locked;
+      if (locked)
+         WorkflowTitleBox.Classes.Add("locked");
+      else
+         WorkflowTitleBox.Classes.Remove("locked");
+      DeadlineButton.IsEnabled = !locked;
+      ClearDeadlineButton.IsEnabled = !locked;
+      ReminderButton.IsEnabled = !locked;
+      ClearReminderButton.IsEnabled = !locked;
+      AddDetailsButton.IsEnabled = !locked;
+      BranchNameBox.IsEnabled = !locked;
+      RepositoryBox.IsEnabled = !locked;
+      PullRequestBox.IsEnabled = !locked;
+      OpenRepositoryButton.IsEnabled = !locked && ExternalLink.CanOpen(RepositoryBox.Text);
+      OpenPullRequestButton.IsEnabled = !locked && ExternalLink.CanOpen(PullRequestBox.Text);
+      ChecklistItems.IsHitTestVisible = !locked;
+      if (locked)
+         ChecklistItems.Classes.Add("locked");
+      else
+         ChecklistItems.Classes.Remove("locked");
+   }
+
+   private void ApplyShortcutTips()
+   {
+      ToolTip.SetTip(AddCheckButton, AppShortcuts.WithShortcut(AppShortcuts.AddItem));
+      ToolTip.SetTip(SaveButton, AppShortcuts.WithShortcut(AppShortcuts.Save));
+      ToolTip.SetTip(SaveAsButton, AppShortcuts.WithShortcut(AppShortcuts.SaveAs));
+      ToolTip.SetTip(SearchTextBox, AppShortcuts.WithShortcut(AppShortcuts.Search));
    }
 
    private void KeepSelectionVisible()
@@ -1651,8 +1720,13 @@ public partial class ChecklistView : UserControl
        StatusFilterBox.SelectedIndex > 0 ||
        PriorityFilterBox.SelectedIndex > 0;
 
-   public void RearrangeChecks() =>
-       _ = RearrangeAsync();
+   public void RearrangeChecks()
+   {
+      if (_documentCompleted)
+         return;
+
+      _ = RearrangeAsync();
+   }
 
    private void Rearrange_Click(object? sender, RoutedEventArgs e) =>
        RearrangeChecks();
@@ -1746,6 +1820,8 @@ public partial class ChecklistView : UserControl
 
    public void AddCheck()
    {
+      if (_documentCompleted)
+         return;
       _ = AddCheckAsync();
    }
 
@@ -1863,7 +1939,7 @@ public partial class ChecklistView : UserControl
 
    public void DeleteChecks()
    {
-      if (_checklist.Count == 0)
+      if (_documentCompleted || _checklist.Count == 0)
          return;
 
       _ = DeleteChecksAsync();
@@ -1913,6 +1989,14 @@ public partial class ChecklistView : UserControl
 
    private async void Complete_Click(object? sender, RoutedEventArgs e)
    {
+      if (_documentCompleted)
+      {
+         _documentCompleted = false;
+         ApplyCompletedChrome();
+         DocumentReopened?.Invoke(this, EventArgs.Empty);
+         return;
+      }
+
       var owner = GetOwnerWindow();
       if (owner is null)
          return;

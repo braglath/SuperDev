@@ -21,6 +21,19 @@ public enum TemplateEditResult
 
 public partial class EditTemplateWindow : Window
 {
+    private static readonly string[] Categories =
+    [
+        "General",
+        "Understand",
+        "Development",
+        "Testing",
+        "Communication",
+        "PR",
+        "Merge",
+        "Deployment",
+        "Closure"
+    ];
+
     private static readonly string[] Icons =
     [
         "🐛", "✨", "💻", "🧪", "🔀", "📅", "🔧", "🚀", "📌", "✅",
@@ -107,13 +120,17 @@ public partial class EditTemplateWindow : Window
             Text = item.Title,
             PlaceholderText = "Check"
         };
-        var category = new TextBox
+        var category = new ComboBox
         {
-            Classes = { "check-field" },
-            Text = item.Category,
-            PlaceholderText = "Category",
+            Classes = { "field" },
             Width = 140
         };
+        foreach (var name in Categories)
+            category.Items.Add(name);
+        var currentCategory = string.IsNullOrWhiteSpace(item.Category) ? "General" : item.Category.Trim();
+        if (!Categories.Contains(currentCategory))
+            category.Items.Add(currentCategory);
+        category.SelectedItem = currentCategory;
         var priority = new ComboBox { Classes = { "field" }, Width = 130 };
         foreach (var value in Enum.GetValues<ChecklistPriority>())
             priority.Items.Add(value.ToString());
@@ -247,10 +264,10 @@ public partial class EditTemplateWindow : Window
     private sealed class CheckEditor
     {
         private readonly TextBox _title;
-        private readonly TextBox _category;
+        private readonly ComboBox _category;
         private readonly ComboBox _priority;
 
-        public CheckEditor(Grid row, TextBox title, TextBox category, ComboBox priority)
+        public CheckEditor(Grid row, TextBox title, ComboBox category, ComboBox priority)
         {
             Row = row;
             _title = title;
@@ -270,7 +287,7 @@ public partial class EditTemplateWindow : Window
             return new TemplateCheck
             {
                 Title = _title.Text?.Trim() ?? string.Empty,
-                Category = _category.Text?.Trim() ?? string.Empty,
+                Category = _category.SelectedItem as string ?? "General",
                 Priority = priority
             };
         }
