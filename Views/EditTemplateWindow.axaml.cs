@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Threading;
 using SuperDev.Models;
 using SuperDev.Services;
 
@@ -47,10 +48,18 @@ public partial class EditTemplateWindow : Window
     private readonly List<CheckEditor> _checks = [];
     private readonly bool _creating;
     private string _icon;
+    private Border? _dragRow;
+    private IPointer? _pointer;
+    private Avalonia.Point _dragStart;
+    private bool _dragging;
+    private int _pendingTarget = -1;
+    private bool _moveQueued;
 
     public EditTemplateWindow(ChecklistTemplate template, ChecklistTemplateService templates, bool creating = false)
     {
         InitializeComponent();
+        AddHandler(PointerMovedEvent, DragPointerMoved, RoutingStrategies.Tunnel, true);
+        AddHandler(PointerReleasedEvent, DragPointerReleased, RoutingStrategies.Tunnel, true);
         _creating = creating;
         _template = template.Copy();
         _templates = templates;
@@ -141,31 +150,228 @@ public partial class EditTemplateWindow : Window
             Classes = { "remove-check" },
             Content = "×"
         };
-
-        var row = new Grid
+        var grip = new Border
         {
-            ColumnDefinitions = ColumnDefinitions.Parse("*,140,130,32"),
-            ColumnSpacing = 8
+            Classes = { "check-grip" },
+            Child = new TextBlock
+            {
+                Text = "⋮⋮",
+                Classes = { "check-grip-mark" }
+            }
         };
-        Grid.SetColumn(category, 1);
-        Grid.SetColumn(priority, 2);
-        Grid.SetColumn(remove, 3);
-        row.Children.Add(title);
-        row.Children.Add(category);
-        row.Children.Add(priority);
-        row.Children.Add(remove);
+        ToolTip.SetTip(grip, "Drag to reorder");
+
+        var fields = new Grid
+        {
+            ColumnDefinitions = ColumnDefinitions.Parse("22,*,140,130,32"),
+            ColumnSpacing = 8,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(title, 1);
+        Grid.SetColumn(category, 2);
+        Grid.SetColumn(priority, 3);
+        Grid.SetColumn(remove, 4);
+        fields.Children.Add(grip);
+        fields.Children.Add(title);
+        fields.Children.Add(category);
+        fields.Children.Add(priority);
+        fields.Children.Add(remove);
+
+        var row = new Border
+        {
+            Classes = { "check-row" },
+            Child = fields
+        };
 
         var editor = new CheckEditor(row, title, category, priority);
-        remove.Click += (_, _) =>
-        {
-            _checks.Remove(editor);
-            ChecksList.Children.Remove(row);
-        };
+        remove.Click += (_, _) => RemoveCheck(editor);
+        grip.PointerPressed += (_, e) => StartDrag(row, e);
 
         _checks.Add(editor);
         ChecksList.Children.Add(row);
         if (focus)
             title.Focus();
+    }
+
+    private void RemoveCheck(CheckEditor editor)
+    {
+        if (ReferenceEquals(_dragRow, editor.Row))
+        {
+            var pointer = _pointer;
+            _pendingTarget = -1;
+            ClearDrag();
+            if (pointer?.Captured == this)
+                pointer.Capture(null);
+        }
+
+        _checks.Remove(editor);
+        ChecksList.Children.Remove(editor.Row);
+    }
+
+    private void StartDrag(Border row, PointerPressedEventArgs e)
+    {
+        if (_dragRow is not null)
+            return;
+
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            return;
+
+        // The row is removed from the list as it moves. Capturing it would end the gesture after one step.
+        _dragRow = row;
+        _pointer = e.Pointer;
+        _dragStart = e.GetPosition(ChecksList);
+        _dragging = false;
+        _pendingTarget = -1;
+        e.Pointer.Capture(this);
+        e.Handled = true;
+    }
+
+    private void DragPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_dragRow is not { } row || _pointer != e.Pointer)
+            return;
+
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            EndDrag(e);
+            return;
+        }
+
+        var position = e.GetPosition(ChecksList);
+        if (!_dragging)
+        {
+            var delta = position - _dragStart;
+            if (Math.Abs(delta.X) < 4 && Math.Abs(delta.Y) < 4)
+                return;
+
+            _dragging = true;
+            row.Classes.Add("dragging");
+            row.ZIndex = 2;
+        }
+
+        ScrollWhileDragging(e.GetPosition(ChecksScroll));
+        QueueMove(IndexAt(position.Y, row));
+        e.Handled = true;
+    }
+
+    private void DragPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (_dragRow is null || _pointer != e.Pointer)
+            return;
+
+        EndDrag(e);
+        e.Handled = true;
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        if (_dragRow is null)
+            return;
+
+        CommitPendingMove();
+        ClearDrag();
+    }
+
+    private void EndDrag(PointerEventArgs e)
+    {
+        CommitPendingMove();
+        ClearDrag();
+        if (e.Pointer.Captured == this)
+            e.Pointer.Capture(null);
+    }
+
+    private void ClearDrag()
+    {
+        if (_dragRow is { } row)
+        {
+            row.Classes.Remove("dragging");
+            row.ZIndex = 0;
+        }
+
+        _dragRow = null;
+        _pointer = null;
+        _dragging = false;
+        _pendingTarget = -1;
+    }
+
+    private void QueueMove(int target)
+    {
+        _pendingTarget = target;
+        if (_moveQueued)
+            return;
+
+        _moveQueued = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _moveQueued = false;
+            CommitPendingMove();
+        }, DispatcherPriority.Input);
+    }
+
+    private void CommitPendingMove()
+    {
+        if (_dragRow is not Border row)
+            return;
+
+        var target = _pendingTarget;
+        _pendingTarget = -1;
+        if (target >= 0)
+            MoveCheck(row, target);
+    }
+
+    private void ScrollWhileDragging(Avalonia.Point pointer)
+    {
+        var height = ChecksScroll.Bounds.Height;
+        if (height <= 0)
+            return;
+
+        var offset = ChecksScroll.Offset.Y;
+        if (pointer.Y < 28)
+            offset -= 16;
+        else if (pointer.Y > height - 28)
+            offset += 16;
+        else
+            return;
+
+        var max = ChecksScroll.Extent.Height - height;
+        if (max < 0)
+            max = 0;
+        if (offset < 0)
+            offset = 0;
+        if (offset > max)
+            offset = max;
+
+        ChecksScroll.Offset = new Avalonia.Vector(0, offset);
+    }
+
+    private int IndexAt(double y, Border dragging)
+    {
+        var index = 0;
+        foreach (var check in _checks)
+        {
+            if (ReferenceEquals(check.Row, dragging))
+                continue;
+
+            var bounds = check.Row.Bounds;
+            if (y > bounds.Y + bounds.Height / 2)
+                index++;
+        }
+
+        return index;
+    }
+
+    private void MoveCheck(Border row, int target)
+    {
+        var from = _checks.FindIndex(check => ReferenceEquals(check.Row, row));
+        if (from < 0 || target < 0 || target == from || target >= _checks.Count)
+            return;
+
+        var editor = _checks[from];
+        _checks.RemoveAt(from);
+        _checks.Insert(target, editor);
+        ChecksList.Children.RemoveAt(from);
+        ChecksList.Children.Insert(target, row);
     }
 
     private async void Save_Click(object? sender, RoutedEventArgs e)
@@ -267,7 +473,7 @@ public partial class EditTemplateWindow : Window
         private readonly ComboBox _category;
         private readonly ComboBox _priority;
 
-        public CheckEditor(Grid row, TextBox title, ComboBox category, ComboBox priority)
+        public CheckEditor(Border row, TextBox title, ComboBox category, ComboBox priority)
         {
             Row = row;
             _title = title;
@@ -275,7 +481,7 @@ public partial class EditTemplateWindow : Window
             _priority = priority;
         }
 
-        public Grid Row { get; }
+        public Border Row { get; }
 
         public TemplateCheck Read()
         {

@@ -176,6 +176,33 @@
             <Setter Property="Background" Value="#3F1D1D"/>
             <Setter Property="Foreground" Value="#F87171"/>
         </Style>
+
+        <Style Selector="Border.check-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="2"/>
+        </Style>
+
+        <Style Selector="Border.check-row.dragging">
+            <Setter Property="Background" Value="#172F55"/>
+            <Setter Property="BorderBrush" Value="#60A5FA"/>
+        </Style>
+
+        <Style Selector="Border.check-grip">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Cursor" Value="SizeAll"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style Selector="TextBlock.check-grip-mark">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#64748B"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
     </Window.Styles>
 
     <Grid Margin="24" RowDefinitions="Auto,Auto,Auto,*,Auto">
@@ -206,10 +233,18 @@
         </StackPanel>
 
         <Grid Grid.Row="2" Margin="0,18,0,8" ColumnDefinitions="*,Auto">
-            <TextBlock Text="Checks"
-                       FontSize="13"
-                       Foreground="#94A3B8"
-                       VerticalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10"
+                        VerticalAlignment="Center">
+                <TextBlock Text="Checks"
+                           FontSize="13"
+                           Foreground="#94A3B8"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="Drag to reorder"
+                           FontSize="12"
+                           Foreground="#64748B"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
             <Button Grid.Column="1"
                     Classes="add-check"
                     Content="Add check"
@@ -236,7 +271,8 @@
                 <SolidColorBrush x:Key="ComboBoxItemBackgroundSelectedPointerOver" Color="#1D4ED8"/>
                 <SolidColorBrush x:Key="ComboBoxItemForegroundSelectedPointerOver" Color="#FFFFFF"/>
             </Border.Resources>
-            <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+            <ScrollViewer x:Name="ChecksScroll"
+                          HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Auto">
                 <StackPanel x:Name="ChecksList" Spacing="8"/>
             </ScrollViewer>
