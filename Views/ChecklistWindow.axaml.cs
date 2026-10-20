@@ -98,7 +98,7 @@ public partial class ChecklistWindow : Window
        object? sender,
        RoutedEventArgs e)
    {
-      var dialog = new AddCheckWindow();
+      var dialog = new AddCheckWindow(_checklist.Select(item => item.Title));
 
       var result = await dialog.ShowDialog<ChecklistItem?>(this);
 
@@ -118,7 +118,9 @@ public partial class ChecklistWindow : Window
       if (button.Tag is not ChecklistItem item)
          return;
 
-      var dialog = new AddCheckWindow(item);
+      var dialog = new AddCheckWindow(
+          item,
+          _checklist.Where(other => !ReferenceEquals(other, item)).Select(other => other.Title));
 
       var result = await dialog.ShowDialog<ChecklistItem?>(this);
 

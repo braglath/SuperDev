@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
@@ -7,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using SuperDev.Models;
 
 namespace SuperDev.Views;
@@ -22,11 +24,13 @@ public partial class AddCheckWindow : Window
    private bool _deadlineSilent;
    private readonly ObservableCollection<ChecklistSubtask> _links = [];
    private readonly ObservableCollection<ChecklistSubtask> _subtasks = [];
+   private readonly HashSet<string> _takenTitles = new(StringComparer.OrdinalIgnoreCase);
 
    public Func<Window, Task<ChecklistSubtask?>>? RequestLink { get; set; }
 
-   public AddCheckWindow()
+   public AddCheckWindow(IEnumerable<string>? takenTitles = null)
    {
+      RememberTitles(takenTitles);
       InitializeComponent();
 
       Title = "Add Check";
@@ -46,8 +50,9 @@ public partial class AddCheckWindow : Window
          TitleTextBox.Focus();
    }
 
-   public AddCheckWindow(ChecklistItem item)
+   public AddCheckWindow(ChecklistItem item, IEnumerable<string>? takenTitles = null)
    {
+      RememberTitles(takenTitles);
       InitializeComponent();
 
       Title = "Edit Check";
@@ -111,6 +116,7 @@ public partial class AddCheckWindow : Window
       _subtasks.Add(new ChecklistSubtask { Title = title });
       SubtaskTextBox.Text = string.Empty;
       SubtaskTextBox.Focus();
+      Dispatcher.UIThread.Post(FormScroll.ScrollToEnd, DispatcherPriority.Loaded);
    }
 
    private void RemoveLink_Click(object? sender, RoutedEventArgs e)
@@ -141,6 +147,7 @@ public partial class AddCheckWindow : Window
          return;
 
       _links.Add(subtask);
+      Dispatcher.UIThread.Post(FormScroll.ScrollToEnd, DispatcherPriority.Loaded);
    }
 
    private void PriorityComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e) =>
@@ -389,6 +396,22 @@ public partial class AddCheckWindow : Window
       return 56;
    }
 
+   private void TitleTextBox_TextChanged(object? sender, TextChangedEventArgs e) =>
+       TitleError.IsVisible = false;
+
+   private void RememberTitles(IEnumerable<string>? takenTitles)
+   {
+      if (takenTitles is null)
+         return;
+
+      foreach (var title in takenTitles)
+      {
+         var trimmed = title.Trim();
+         if (trimmed.Length > 0)
+            _takenTitles.Add(trimmed);
+      }
+   }
+
    private void Cancel_Click(
        object? sender,
        RoutedEventArgs e)
@@ -401,10 +424,16 @@ public partial class AddCheckWindow : Window
        RoutedEventArgs e)
    {
       var title = TitleTextBox.Text?.Trim();
-      
 
       if (string.IsNullOrWhiteSpace(title))
          return;
+
+      if (_takenTitles.Contains(title))
+      {
+         TitleError.IsVisible = true;
+         TitleTextBox.Focus();
+         return;
+      }
 
       var category =
           (CategoryComboBox.SelectedItem as ComboBoxItem)

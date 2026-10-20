@@ -69,6 +69,11 @@
             <Setter Property="Foreground"
                     Value="#F8FAFC"/>
         </Style>
+
+        <!-- Avalonia 12 paints the window title over the custom title bar. -->
+        <Style Selector="WindowDrawnDecorations /template/ Panel#PART_TitleTextPanel">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
 <Style Selector="Border.workspace-tab">
     <Setter Property="MinWidth" Value="64"/>
     <Setter Property="MaxWidth" Value="190"/>

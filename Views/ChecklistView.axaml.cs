@@ -56,6 +56,11 @@ public partial class ChecklistView : UserControl
    private bool _documentCompleted;
    private bool _completionOfferOpen;
    private ChecklistItem? _selectedItem;
+   private ChecklistItem? _detailItem;
+   private CheckDetailWindow? _detailPopup;
+   private Window? _hostWindow;
+   private bool _detailOnSide;
+   private bool _switchingDetail;
    private readonly HashSet<Key> _itemKeysDown = new();
    private TopLevel? _inputRoot;
    public string WorkTitle { get; private set; }
@@ -178,6 +183,13 @@ public partial class ChecklistView : UserControl
        List<ChecklistItem> checklist)
    {
       InitializeComponent();
+      SizeChanged += (_, _) => SyncDetailLayout();
+      SideDetail.CloseRequested += (_, _) => CloseDetails();
+      SideDetail.EditRequested += (_, _) => EditOpenDetail();
+      SideDetail.DeleteRequested += (_, _) => DeleteOpenDetail();
+      SideDetail.CompleteRequested += (_, _) => CompleteOpenDetail();
+      SideDetail.LinkRequested += (_, subtask) =>
+          LinkedSubtaskOpenRequested?.Invoke(this, subtask);
 
       _workType = workType;
       _templateName = string.IsNullOrWhiteSpace(templateName) ? null : templateName.Trim();
@@ -683,6 +695,9 @@ public partial class ChecklistView : UserControl
    private Window? GetOwnerWindow() =>
        TopLevel.GetTopLevel(this) as Window;
 
+   private Window? DialogOwner() =>
+       _detailPopup is { IsVisible: true } ? _detailPopup : GetOwnerWindow();
+
    private void CheckBox_Click(object? sender, RoutedEventArgs e)
    {
       if (_syncingCheck)
@@ -914,6 +929,7 @@ public partial class ChecklistView : UserControl
          return;
 
       border.Focus();
+      OpenItemDetails(item);
    }
 
    private void CheckItem_GotFocus(object? sender, RoutedEventArgs e)
@@ -998,6 +1014,154 @@ public partial class ChecklistView : UserControl
          border.Classes.Add("selected");
       else
          border.Classes.Remove("selected");
+   }
+
+   private void OpenItemDetails(ChecklistItem item)
+   {
+      _detailItem = item;
+      PresentDetails();
+   }
+
+   private void SyncDetailLayout()
+   {
+      if (_detailItem is null)
+         return;
+
+      var side = UseSideDetail();
+      if (side == _detailOnSide && (side ? DetailPane.IsVisible : _detailPopup is not null))
+         return;
+
+      PresentDetails();
+   }
+
+   private void HostWindow_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+   {
+      if (e.Property == Window.WindowStateProperty)
+         SyncDetailLayout();
+   }
+
+   private bool UseSideDetail()
+   {
+      if (_hostWindow?.WindowState == WindowState.FullScreen)
+         return true;
+
+      var width = Bounds.Width;
+      if (width <= 1 && _hostWindow is not null)
+         width = _hostWindow.ClientSize.Width;
+
+      return width >= 1100;
+   }
+
+   private void PresentDetails()
+   {
+      if (_detailItem is null || !_checklist.Contains(_detailItem))
+      {
+         CloseDetails();
+         return;
+      }
+
+      var canEdit = !_documentCompleted;
+      if (UseSideDetail())
+      {
+         if (_detailPopup is not null)
+         {
+            _switchingDetail = true;
+            _detailPopup.Close();
+            _detailPopup = null;
+            _switchingDetail = false;
+         }
+
+         DetailPane.IsVisible = true;
+         SideDetail.Show(_detailItem, canEdit);
+         _detailOnSide = true;
+         return;
+      }
+
+      DetailPane.IsVisible = false;
+      _detailOnSide = false;
+      if (_detailPopup is null)
+      {
+         var owner = GetOwnerWindow();
+         if (owner is null)
+            return;
+
+         var popup = new CheckDetailWindow();
+         popup.Detail.EditRequested += (_, _) => EditOpenDetail();
+         popup.Detail.DeleteRequested += (_, _) => DeleteOpenDetail();
+         popup.Detail.CompleteRequested += (_, _) => CompleteOpenDetail();
+         popup.Detail.LinkRequested += (_, subtask) =>
+             LinkedSubtaskOpenRequested?.Invoke(this, subtask);
+         popup.Closed += (_, _) =>
+         {
+            if (ReferenceEquals(_detailPopup, popup))
+               _detailPopup = null;
+
+            if (!_switchingDetail)
+               _detailItem = null;
+         };
+         _detailPopup = popup;
+         popup.Show(owner);
+      }
+
+      _detailPopup.Detail.Show(_detailItem, canEdit);
+      _detailPopup.Title = string.IsNullOrWhiteSpace(_detailItem.Title)
+          ? "Check"
+          : _detailItem.Title;
+      _detailPopup.Activate();
+   }
+
+   private void SyncOpenDetail()
+   {
+      if (_detailItem is null)
+         return;
+
+      if (!_checklist.Contains(_detailItem))
+      {
+         CloseDetails();
+         return;
+      }
+
+      var canEdit = !_documentCompleted;
+      if (_detailOnSide && DetailPane.IsVisible)
+         SideDetail.Show(_detailItem, canEdit);
+      else if (_detailPopup is not null)
+      {
+         _detailPopup.Detail.Show(_detailItem, canEdit);
+         _detailPopup.Title = string.IsNullOrWhiteSpace(_detailItem.Title)
+             ? "Check"
+             : _detailItem.Title;
+      }
+   }
+
+   private void EditOpenDetail()
+   {
+      if (_detailItem is not null && !_documentCompleted)
+         EditItem(_detailItem);
+   }
+
+   private void DeleteOpenDetail()
+   {
+      if (_detailItem is not null && !_documentCompleted)
+         _ = RemoveItemAsync(_detailItem);
+   }
+
+   private void CompleteOpenDetail()
+   {
+      if (_detailItem is not null && !_documentCompleted)
+         ToggleItem(_detailItem);
+   }
+
+   private void CloseDetails()
+   {
+      _detailItem = null;
+      _detailOnSide = false;
+      DetailPane.IsVisible = false;
+      if (_detailPopup is null)
+         return;
+
+      var popup = _detailPopup;
+      _detailPopup = null;
+      popup.Close();
    }
 
    private static bool IsItemChrome(Visual source, Border row)
@@ -1182,6 +1346,15 @@ public partial class ChecklistView : UserControl
    {
       base.OnAttachedToVisualTree(e);
       _inputRoot = TopLevel.GetTopLevel(this);
+      if (_inputRoot is Window window && !ReferenceEquals(_hostWindow, window))
+      {
+         if (_hostWindow is not null)
+            _hostWindow.PropertyChanged -= HostWindow_PropertyChanged;
+
+         _hostWindow = window;
+         _hostWindow.PropertyChanged += HostWindow_PropertyChanged;
+      }
+
       _inputRoot?.AddHandler(
           PointerPressedEvent,
           Title_DismissPointerPressed,
@@ -1193,6 +1366,9 @@ public partial class ChecklistView : UserControl
    {
       _inputRoot?.RemoveHandler(PointerPressedEvent, Title_DismissPointerPressed);
       _inputRoot = null;
+      if (_hostWindow is not null)
+         _hostWindow.PropertyChanged -= HostWindow_PropertyChanged;
+      _hostWindow = null;
       base.OnDetachedFromVisualTree(e);
    }
 
@@ -1591,6 +1767,7 @@ public partial class ChecklistView : UserControl
          KeepSelectionVisible();
          UpdateItemActions();
          UpdateMoveButtons();
+         SyncOpenDetail();
          return;
       }
 
@@ -1601,6 +1778,7 @@ public partial class ChecklistView : UserControl
       KeepSelectionVisible();
       UpdateViewCount(visible.Count);
       UpdateItemActions();
+      SyncOpenDetail();
       Dispatcher.UIThread.Post(UpdateMoveButtons, DispatcherPriority.Loaded);
    }
 
@@ -1677,11 +1855,11 @@ public partial class ChecklistView : UserControl
       PullRequestBox.IsEnabled = !locked;
       OpenRepositoryButton.IsEnabled = !locked && ExternalLink.CanOpen(RepositoryBox.Text);
       OpenPullRequestButton.IsEnabled = !locked && ExternalLink.CanOpen(PullRequestBox.Text);
-      ChecklistItems.IsHitTestVisible = !locked;
       if (locked)
          ChecklistItems.Classes.Add("locked");
       else
          ChecklistItems.Classes.Remove("locked");
+      SyncOpenDetail();
    }
 
    private void ApplyShortcutTips()
@@ -1825,13 +2003,19 @@ public partial class ChecklistView : UserControl
       _ = AddCheckAsync();
    }
 
+   private IReadOnlyList<string> TakenTitles(ChecklistItem? except = null) =>
+       _checklist
+           .Where(item => !ReferenceEquals(item, except))
+           .Select(item => item.Title)
+           .ToList();
+
    private async Task AddCheckAsync()
    {
       var owner = GetOwnerWindow();
       if (owner is null)
          return;
 
-      var dialog = new AddCheckWindow();
+      var dialog = new AddCheckWindow(TakenTitles());
       dialog.RequestLink = RequestLink;
       var result = await dialog.ShowDialog<ChecklistItem?>(owner);
 
@@ -1875,14 +2059,14 @@ public partial class ChecklistView : UserControl
       if (_editOpen || !_checklist.Contains(item))
          return;
 
-      var owner = GetOwnerWindow();
+      var owner = DialogOwner();
       if (owner is null)
          return;
 
       _editOpen = true;
       try
       {
-         var dialog = new AddCheckWindow(item);
+         var dialog = new AddCheckWindow(item, TakenTitles(item));
          dialog.RequestLink = RequestLink;
          var result = await dialog.ShowDialog<ChecklistItem?>(owner);
          if (result is null)
@@ -1914,7 +2098,15 @@ public partial class ChecklistView : UserControl
           button.Tag is not ChecklistItem item)
          return;
 
-      var owner = GetOwnerWindow();
+      await RemoveItemAsync(item);
+   }
+
+   private async Task RemoveItemAsync(ChecklistItem item)
+   {
+      if (_documentCompleted || !_checklist.Contains(item))
+         return;
+
+      var owner = DialogOwner();
       if (owner is null)
          return;
 
@@ -1927,7 +2119,7 @@ public partial class ChecklistView : UserControl
 
       var result = await dialog.ShowDialog<bool>(owner);
 
-      if (!result)
+      if (!result || !_checklist.Contains(item))
          return;
 
       _checklist.Remove(item);

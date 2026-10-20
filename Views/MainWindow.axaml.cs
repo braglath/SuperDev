@@ -1265,7 +1265,6 @@ public partial class MainWindow : Window
         if (!OperatingSystem.IsWindows())
             return;
 
-        AppNameText.IsVisible = false;
         ExtendClientAreaToDecorationsHint = true;
         ExtendClientAreaTitleBarHeightHint = TitleChrome.Height;
         WindowMenu.IsVisible = true;
@@ -1286,7 +1285,9 @@ public partial class MainWindow : Window
     private void FitWindowsTitlePadding()
     {
         var off = OffScreenMargin;
-        TitleChrome.Padding = new Avalonia.Thickness(12 + off.Left, off.Top, 152 + off.Right, 0);
+        // Minimize, maximize, full screen, and close. The full-screen button is the extra one that covered the bell.
+        const double captionButtons = 46 * 4 + 12;
+        TitleChrome.Padding = new Avalonia.Thickness(12 + off.Left, off.Top, captionButtons + off.Right, 0);
         TitleChrome.Height = 40 + off.Top;
         ExtendClientAreaTitleBarHeightHint = TitleChrome.Height;
     }

@@ -1,0 +1,219 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:SuperDev.Controls"
+             x:Class="SuperDev.Views.CheckDetailView">
+
+    <UserControl.Styles>
+
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+        </Style>
+
+        <Style Selector="TextBlock.detail-label">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#64748B"/>
+        </Style>
+
+        <Style Selector="TextBlock.detail-value">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style Selector="Button.detail-close">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.detail-close:pointerover">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+        </Style>
+
+        <Style Selector="Button.detail-action">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.detail-action:disabled">
+            <Setter Property="Opacity" Value="0.4"/>
+        </Style>
+
+        <Style Selector="Button.detail-edit">
+            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+        </Style>
+
+        <Style Selector="Button.detail-edit:pointerover">
+            <Setter Property="Background" Value="#334155"/>
+        </Style>
+
+        <Style Selector="Button.detail-delete">
+            <Setter Property="Background" Value="#7F1D1D"/>
+            <Setter Property="Foreground" Value="#FECACA"/>
+        </Style>
+
+        <Style Selector="Button.detail-delete:pointerover">
+            <Setter Property="Background" Value="#991B1B"/>
+        </Style>
+
+        <Style Selector="Button.detail-complete">
+            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style Selector="Button.detail-complete:pointerover">
+            <Setter Property="Background" Value="#3B82F6"/>
+        </Style>
+
+        <Style Selector="Button.detail-link">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#60A5FA"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0,4"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.detail-link:pointerover">
+            <Setter Property="Foreground" Value="#93C5FD"/>
+        </Style>
+
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto"
+          RowSpacing="14">
+
+        <Grid ColumnDefinitions="*,Auto"
+              ColumnSpacing="8">
+
+            <TextBlock x:Name="TitleText"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"
+                       VerticalAlignment="Center"/>
+
+            <Button Grid.Column="1"
+                    Classes="detail-close"
+                    ToolTip.Tip="Close"
+                    Click="Close_Click"
+                    VerticalAlignment="Top">
+                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeThickness="1.6"
+                      StrokeLineCap="Round"
+                      Width="12"
+                      Height="12"
+                      Stretch="Uniform"
+                      Data="M2,2 L12,12 M12,2 L2,12"/>
+            </Button>
+
+        </Grid>
+
+        <ScrollViewer Grid.Row="1"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+
+            <StackPanel Spacing="16">
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Status" Classes="detail-label"/>
+                    <TextBlock x:Name="StatusText" Classes="detail-value"/>
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Category" Classes="detail-label"/>
+                    <TextBlock x:Name="CategoryText" Classes="detail-value"/>
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Priority" Classes="detail-label"/>
+                    <TextBlock x:Name="PriorityText" Classes="detail-value"/>
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Deadline" Classes="detail-label"/>
+                    <TextBlock x:Name="DeadlineText" Classes="detail-value"/>
+                    <TextBlock x:Name="NotifyText"
+                               FontSize="13"
+                               Foreground="#94A3B8"
+                               TextWrapping="Wrap"
+                               IsVisible="False"/>
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock Text="Notes" Classes="detail-label"/>
+                    <controls:NoteText x:Name="NotesText"
+                                       FontSize="14"
+                                       LineHeight="22"
+                                       Foreground="#CBD5E1"
+                                       TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <StackPanel x:Name="SubtaskSection"
+                            Spacing="6"
+                            IsVisible="False">
+                    <TextBlock x:Name="SubtaskHeading"
+                               Text="Subtasks"
+                               Classes="detail-label"/>
+                    <StackPanel x:Name="SubtaskList" Spacing="4"/>
+                </StackPanel>
+
+                <StackPanel x:Name="LinkSection"
+                            Spacing="6"
+                            IsVisible="False">
+                    <TextBlock Text="Linked checklists" Classes="detail-label"/>
+                    <StackPanel x:Name="LinkList" Spacing="2"/>
+                </StackPanel>
+
+            </StackPanel>
+
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2"
+                    Spacing="8">
+
+            <Grid ColumnDefinitions="*,*"
+                  ColumnSpacing="8">
+
+                <Button x:Name="EditButton"
+                        Classes="detail-action detail-edit"
+                        Content="Edit"
+                        HorizontalAlignment="Stretch"
+                        Click="Edit_Click"/>
+
+                <Button x:Name="DeleteButton"
+                        Grid.Column="1"
+                        Classes="detail-action detail-delete"
+                        Content="Delete"
+                        HorizontalAlignment="Stretch"
+                        Click="Delete_Click"/>
+
+            </Grid>
+
+            <Button x:Name="CompleteButton"
+                    Classes="detail-action detail-complete"
+                    Content="Mark as completed"
+                    HorizontalAlignment="Stretch"
+                    Click="Complete_Click"/>
+
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

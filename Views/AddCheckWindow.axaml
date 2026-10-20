@@ -320,15 +320,59 @@
             <Setter Property="Background" Value="#3B82F6"/>
         </Style>
 
+        <!-- Keep the scrollbar in its own gutter so it does not cover the right-side buttons. -->
+        <Style Selector="ScrollViewer.form /template/ ScrollBar#PART_VerticalScrollBar">
+            <Setter Property="AllowAutoHide" Value="True"/>
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="MinWidth" Value="8"/>
+            <Setter Property="MaxWidth" Value="8"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="ScrollViewer.form /template/ ScrollBar#PART_VerticalScrollBar /template/ RepeatButton#PART_LineUpButton,
+                         ScrollViewer.form /template/ ScrollBar#PART_VerticalScrollBar /template/ RepeatButton#PART_LineDownButton">
+            <Setter Property="IsVisible" Value="False"/>
+            <Setter Property="Height" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+        </Style>
+
+        <Style Selector="ScrollViewer.form /template/ ScrollBar#PART_VerticalScrollBar /template/ Thumb">
+            <Setter Property="Width" Value="4"/>
+            <Setter Property="MinWidth" Value="4"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="CornerRadius" Value="2"/>
+            <Setter Property="RenderTransform" Value="none"/>
+            <Setter Property="Background" Value="#64748B"/>
+        </Style>
+
+        <Style Selector="ScrollViewer.form /template/ ScrollBar#PART_VerticalScrollBar[IsExpanded=true]">
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="MinWidth" Value="8"/>
+            <Setter Property="MaxWidth" Value="8"/>
+        </Style>
+
+        <Style Selector="ScrollViewer.form /template/ ScrollBar#PART_VerticalScrollBar[IsExpanded=true] /template/ Thumb">
+            <Setter Property="Width" Value="4"/>
+            <Setter Property="MinWidth" Value="4"/>
+            <Setter Property="RenderTransform" Value="none"/>
+            <Setter Property="Background" Value="#94A3B8"/>
+        </Style>
+
     </Window.Styles>
 
     <Grid RowDefinitions="*,Auto"
       Margin="30"
       RowSpacing="20">
 
-    <Grid Grid.Row="0"
-          RowDefinitions="Auto,Auto,Auto,*,Auto"
-          RowSpacing="18">
+    <ScrollViewer x:Name="FormScroll"
+                  Grid.Row="0"
+                  Classes="form"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+          RowSpacing="18"
+          Margin="0,0,16,0">
 
             <!-- Check -->
             <StackPanel Grid.Row="1"
@@ -338,7 +382,14 @@
 
                 <TextBox x:Name="TitleTextBox"
                          Classes="field"
-                         Watermark="Enter checklist item..."/>
+                         Watermark="Enter checklist item..."
+                         TextChanged="TitleTextBox_TextChanged"/>
+                <TextBlock x:Name="TitleError"
+                           Text="A check with this title already exists."
+                           FontSize="12"
+                           Foreground="#F87171"
+                           TextWrapping="Wrap"
+                           IsVisible="False"/>
             </StackPanel>
 
 
@@ -551,7 +602,7 @@
 
             <!-- Notes -->
             <Grid Grid.Row="3"
-                  RowDefinitions="Auto,*"
+                  RowDefinitions="Auto,Auto"
                   RowSpacing="6">
 
                 <Grid ColumnDefinitions="*,Auto">
@@ -574,6 +625,8 @@
             </Grid>
 
     </Grid>
+
+    </ScrollViewer>
 
 
     <!-- Fixed buttons -->

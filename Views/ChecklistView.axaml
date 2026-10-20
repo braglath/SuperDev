@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:models="using:SuperDev.Models"
              xmlns:controls="using:SuperDev.Controls"
+             xmlns:views="using:SuperDev.Views"
              x:Class="SuperDev.Views.ChecklistView">
 
     <UserControl.Styles>
@@ -235,6 +236,10 @@
         <Style Selector="ItemsControl.locked Button.icon">
             <Setter Property="IsEnabled" Value="False"/>
             <Setter Property="Opacity" Value="0.35"/>
+        </Style>
+
+        <Style Selector="ItemsControl.locked CheckBox">
+            <Setter Property="IsEnabled" Value="False"/>
         </Style>
 
         <Style Selector="Button.icon.selected">
@@ -1082,7 +1087,11 @@
 
 
         <!-- CHECKLIST -->
-        <Border Grid.Row="2"
+        <Grid Grid.Row="2"
+              ColumnDefinitions="*,Auto"
+              ColumnSpacing="16">
+
+        <Border Grid.Column="0"
                 Background="#0F172A"
                 BorderBrush="#1E293B"
                 BorderThickness="1"
@@ -1358,6 +1367,22 @@
             </Grid>
 
         </Border>
+
+        <Border x:Name="DetailPane"
+                Grid.Column="1"
+                Width="400"
+                Background="#0F172A"
+                BorderBrush="#1E293B"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="18"
+                IsVisible="False">
+
+            <views:CheckDetailView x:Name="SideDetail"/>
+
+        </Border>
+
+        </Grid>
 
     </Grid>
 

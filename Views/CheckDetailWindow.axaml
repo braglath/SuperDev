@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:SuperDev.Views"
+        x:Class="SuperDev.Views.CheckDetailWindow"
+        Width="460"
+        Height="680"
+        MinWidth="360"
+        MinHeight="420"
+        Title="Check"
+        Icon="/Assets/app.ico"
+        Background="#0B1120"
+        WindowStartupLocation="CenterOwner">
+
+    <views:CheckDetailView x:Name="Detail" Margin="22"/>
+
+</Window>
