@@ -327,6 +327,38 @@
             <Setter Property="Foreground" Value="#FCA5A5"/>
         </Style>
 
+        <Style Selector="TextBlock.work-value">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="TextWrapping" Value="NoWrap"/>
+        </Style>
+
+        <Style Selector="Button.work-link">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.work-link TextBlock">
+            <Setter Property="Foreground" Value="#60A5FA"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="TextWrapping" Value="NoWrap"/>
+        </Style>
+
+        <Style Selector="Button.work-link:pointerover TextBlock">
+            <Setter Property="Foreground" Value="#93C5FD"/>
+            <Setter Property="TextDecorations" Value="Underline"/>
+        </Style>
+
         <Style Selector="TextBlock.item-deadline.late">
             <Setter Property="Foreground" Value="#F87171"/>
         </Style>
@@ -956,69 +988,72 @@
                     IsVisible="False"
                     Click="AddDetails_Click"/>
 
-                <StackPanel x:Name="DetailsPanel"
-                            Spacing="12"
-                            Margin="0,10,0,0"
-                            IsVisible="False">
+            <Grid x:Name="DetailsPanel"
+                  ColumnDefinitions="*,Auto"
+                  ColumnSpacing="8"
+                  Margin="0,10,0,0"
+                  IsVisible="False">
 
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Repository link"
-                                   Classes="meta-label"/>
-                        <Grid ColumnDefinitions="*,Auto"
-                              ColumnSpacing="8">
-                            <TextBox x:Name="RepositoryBox"
-                                     Classes="meta"
-                                     PlaceholderText="https://github.com/org/repo"
-                                     TextChanged="Repository_TextChanged"
-                                     LostFocus="Repository_LostFocus"/>
-                            <Button x:Name="OpenRepositoryButton"
-                                    Grid.Column="1"
-                                    Content="Open"
-                                    Classes="action secondary"
-                                    Height="36"
-                                    Padding="12,0"
-                                    IsEnabled="False"
-                                    Click="OpenRepository_Click"/>
-                        </Grid>
-                    </StackPanel>
-
-                    <Grid ColumnDefinitions="*,*"
-                          ColumnSpacing="12">
-
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Branch name"
-                                   Classes="meta-label"/>
-                        <TextBox x:Name="BranchNameBox"
-                                 Classes="meta"
-                                 PlaceholderText="feature/my-change"
-                                 LostFocus="Branch_LostFocus"/>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1"
-                                Spacing="4">
-                        <TextBlock Text="PR link"
-                                   Classes="meta-label"/>
-                        <Grid ColumnDefinitions="*,Auto"
-                              ColumnSpacing="8">
-                            <TextBox x:Name="PullRequestBox"
-                                     Classes="meta"
-                                     PlaceholderText="https://github.com/.../pull/1"
-                                     TextChanged="PullRequest_TextChanged"
-                                     LostFocus="PullRequest_LostFocus"/>
-                            <Button x:Name="OpenPullRequestButton"
-                                    Grid.Column="1"
-                                    Content="Open"
-                                    Classes="action secondary"
-                                    Height="36"
-                                    Padding="12,0"
-                                    IsEnabled="False"
-                                    Click="OpenPullRequest_Click"/>
-                        </Grid>
-                    </StackPanel>
-
+                <StackPanel Spacing="2">
+                    <Grid x:Name="BranchLine"
+                          ColumnDefinitions="Auto,*"
+                          IsVisible="False">
+                        <TextBlock Text="Branch -"
+                                   Classes="page-subtitle"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock x:Name="BranchValue"
+                                   Grid.Column="1"
+                                   Classes="work-value"
+                                   Margin="6,0,0,0"
+                                   VerticalAlignment="Center"/>
                     </Grid>
-
+                    <Grid x:Name="RepositoryLine"
+                          ColumnDefinitions="Auto,*"
+                          IsVisible="False">
+                        <TextBlock Text="Repository -"
+                                   Classes="page-subtitle"
+                                   VerticalAlignment="Center"/>
+                        <Button x:Name="RepositoryLink"
+                                Grid.Column="1"
+                                Classes="work-link"
+                                Margin="6,0,0,0"
+                                Click="OpenRepository_Click">
+                            <TextBlock x:Name="RepositoryLinkText"/>
+                        </Button>
+                    </Grid>
+                    <Grid x:Name="PullRequestLine"
+                          ColumnDefinitions="Auto,*"
+                          IsVisible="False">
+                        <TextBlock Text="PR -"
+                                   Classes="page-subtitle"
+                                   VerticalAlignment="Center"/>
+                        <Button x:Name="PullRequestLink"
+                                Grid.Column="1"
+                                Classes="work-link"
+                                Margin="6,0,0,0"
+                                Click="OpenPullRequest_Click">
+                            <TextBlock x:Name="PullRequestLinkText"/>
+                        </Button>
+                    </Grid>
                 </StackPanel>
+
+                <Button x:Name="EditDetailsButton"
+                        Grid.Column="1"
+                        Classes="icon"
+                        VerticalAlignment="Center"
+                        ToolTip.Tip="Edit"
+                        Click="EditDetails_Click">
+                    <Viewbox Width="15"
+                             Height="15">
+                        <Path Stroke="{Binding $parent[Button].Foreground}"
+                              StrokeThickness="1.6"
+                              StrokeLineCap="Round"
+                              StrokeJoin="Round"
+                              Data="M12,20 H21 M16.5,3.5 A2.12,2.12 0 0 1 19.5,6.5 L7,19 L3,20 L4,16 Z M15,5 L19,9"/>
+                    </Viewbox>
+                </Button>
+
+            </Grid>
 
             </StackPanel>
 
@@ -1042,15 +1077,9 @@
                 Classes="action secondary keep-alive"
                 Click="Save_Click"/>
 
-        <Button x:Name="SaveAsButton"
-                Content="Save As"
-                Classes="action secondary keep-alive"
-                Click="SaveAs_Click"/>
-
         <Button x:Name="SaveAsTemplateButton"
                 Content="Save as template"
                 Classes="action secondary"
-                ToolTip.Tip="Save this checklist as a home template"
                 Click="SaveAsTemplate_Click"/>
 
         <Button x:Name="CopyButton"
@@ -1068,7 +1097,6 @@
         <Button x:Name="RearrangeButton"
                 Content="Rearrange"
                 Classes="action secondary"
-                ToolTip.Tip="Drag checks into a new order"
                 Click="Rearrange_Click"/>
 
         <Button x:Name="FilterToggleButton"

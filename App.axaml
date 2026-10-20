@@ -40,6 +40,19 @@
     <Application.Styles>
         <FluentTheme />
 
+        <!-- Drawn decorations sit outside the window tree, so these have to live on the app. -->
+        <Style Selector="WindowDrawnDecorations /template/ Panel#PART_TitleTextPanel > TextBlock">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+        <Style Selector="WindowDrawnDecorations /template/ Button#PART_MaximizeButton">
+            <Setter Property="IsVisible" Value="False"/>
+            <Setter Property="Width" Value="0"/>
+        </Style>
+        <Style Selector="WindowDrawnDecorations /template/ Button#PART_FullScreenButton">
+            <Setter Property="IsVisible" Value="False"/>
+            <Setter Property="Width" Value="0"/>
+        </Style>
+
         <Style Selector="FlyoutPresenter.app-popup">
             <Setter Property="Background" Value="#0F172A"/>
             <Setter Property="BorderBrush" Value="#334155"/>

@@ -1,0 +1,124 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:SuperDev.Controls"
+        x:Class="SuperDev.Views.WorkLinksWindow"
+        Width="480"
+        SizeToContent="Height"
+        CanResize="False"
+        Title="Repository, branch, and PR"
+        Icon="/Assets/app.ico"
+        Background="#0B1120"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+        </Style>
+
+        <Style Selector="TextBlock.field-label">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+        </Style>
+
+        <Style Selector="TextBox.field">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Background" Value="#111827"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="PlaceholderForeground" Value="#64748B"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="TextBox.field:focus">
+            <Setter Property="BorderBrush" Value="#3B82F6"/>
+        </Style>
+
+        <Style Selector="Button.dialog-button">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.dialog-button.primary">
+            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style Selector="Button.dialog-button.primary:pointerover">
+            <Setter Property="Background" Value="#3B82F6"/>
+        </Style>
+
+        <Style Selector="Button.dialog-button.secondary">
+            <Setter Property="Background" Value="#172033"/>
+            <Setter Property="Foreground" Value="#CBD5E1"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.dialog-button.secondary:pointerover">
+            <Setter Property="Background" Value="#1E2A3F"/>
+            <Setter Property="BorderBrush" Value="#3B82F6"/>
+        </Style>
+
+    </Window.Styles>
+
+    <StackPanel Margin="24"
+                Spacing="14">
+
+        <StackPanel Spacing="6">
+            <TextBlock Text="Branch"
+                       Classes="field-label"/>
+            <TextBox x:Name="BranchBox"
+                     Classes="field"
+                     PlaceholderText="feature/my-change"
+                     controls:TextBoxClearButton.WhenFocused="True"/>
+        </StackPanel>
+
+        <StackPanel Spacing="6">
+            <TextBlock Text="Repository"
+                       Classes="field-label"/>
+            <TextBox x:Name="RepositoryBox"
+                     Classes="field"
+                     PlaceholderText="https://github.com/org/repo"
+                     controls:TextBoxClearButton.WhenFocused="True"/>
+        </StackPanel>
+
+        <StackPanel Spacing="6">
+            <TextBlock Text="PR"
+                       Classes="field-label"/>
+            <TextBox x:Name="PullRequestBox"
+                     Classes="field"
+                     PlaceholderText="https://github.com/.../pull/1"
+                     controls:TextBoxClearButton.WhenFocused="True"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8"
+                    Margin="0,4,0,0">
+            <Button Content="Cancel"
+                    Classes="dialog-button secondary"
+                    IsCancel="True"
+                    Click="Cancel_Click"/>
+            <Button Content="Save"
+                    Classes="dialog-button primary"
+                    IsDefault="True"
+                    Click="Save_Click"/>
+        </StackPanel>
+
+    </StackPanel>
+
+</Window>

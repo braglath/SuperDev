@@ -49,10 +49,10 @@ public partial class ChecklistView : UserControl
    private readonly ObservableCollection<ChecklistItem> _checklist;
    private readonly ObservableCollection<ChecklistItem> _visible = new();
    private bool _viewReady;
-   private bool _detailsOpen;
    private bool _filtersVisible = true;
    private bool _syncingCheck;
    private bool _editOpen;
+   private bool _linksOpen;
    private bool _documentCompleted;
    private bool _completionOfferOpen;
    private ChecklistItem? _selectedItem;
@@ -98,8 +98,6 @@ public partial class ChecklistView : UserControl
    public event EventHandler? DocumentReopened;
 
    public event EventHandler? SaveRequested;
-
-   public event EventHandler? SaveAsRequested;
 
    public event EventHandler? SaveAsTemplateRequested;
 
@@ -207,14 +205,7 @@ public partial class ChecklistView : UserControl
       _checklist = new ObservableCollection<ChecklistItem>(checklist);
 
       WorkflowTitleBox.Text = workTitle;
-      BranchNameBox.Text = branchName;
-      RepositoryBox.Text = repositoryUrl;
-      PullRequestBox.Text = pullRequestUrl;
-      OpenRepositoryButton.IsEnabled = ExternalLink.CanOpen(repositoryUrl);
-      _detailsOpen = !string.IsNullOrWhiteSpace(branchName) ||
-                     !string.IsNullOrWhiteSpace(repositoryUrl) ||
-                     !string.IsNullOrWhiteSpace(pullRequestUrl);
-      ApplyDetailsVisibility();
+      ApplyWorkLinks();
       UpdateDeadlinePresentation();
       ChecklistItems.ItemsSource = _visible;
 
@@ -1254,9 +1245,6 @@ public partial class ChecklistView : UserControl
    public void SetManualSaveVisible(bool visible) =>
        SaveButton.IsVisible = visible;
 
-   private void SaveAs_Click(object? sender, RoutedEventArgs e) =>
-       SaveAsRequested?.Invoke(this, EventArgs.Empty);
-
    public void SaveAsTemplate()
    {
       if (_documentCompleted)
@@ -1398,89 +1386,78 @@ public partial class ChecklistView : UserControl
       return false;
    }
 
-   private TextBox? FocusedDetailBox()
-   {
-      if (WorkflowTitleBox.IsFocused)
-         return WorkflowTitleBox;
+   private TextBox? FocusedDetailBox() =>
+       WorkflowTitleBox.IsFocused ? WorkflowTitleBox : null;
 
-      if (BranchNameBox.IsFocused)
-         return BranchNameBox;
-
-      if (RepositoryBox.IsFocused)
-         return RepositoryBox;
-
-      if (PullRequestBox.IsFocused)
-         return PullRequestBox;
-
-      return null;
-   }
-
-   public void CommitDetails()
-   {
-      CommitTitle();
-      CommitBranch();
-      CommitRepository();
-      CommitPullRequest();
-   }
+   public void CommitDetails() =>
+       CommitTitle();
 
    private void Title_LostFocus(object? sender, RoutedEventArgs e) =>
        CommitTitle();
 
-   private void AddDetails_Click(object? sender, RoutedEventArgs e)
+   private void AddDetails_Click(object? sender, RoutedEventArgs e) =>
+       _ = EditWorkLinksAsync();
+
+   private void EditDetails_Click(object? sender, RoutedEventArgs e) =>
+       _ = EditWorkLinksAsync();
+
+   private async Task EditWorkLinksAsync()
    {
-      _detailsOpen = true;
-      DetailsPanel.IsVisible = true;
-      AddDetailsButton.IsVisible = false;
-      RepositoryBox.Focus();
+      if (_documentCompleted || _linksOpen)
+         return;
+
+      var owner = GetOwnerWindow();
+      if (owner is null)
+         return;
+
+      _linksOpen = true;
+      try
+      {
+         var dialog = new WorkLinksWindow(BranchName, RepositoryUrl, PullRequestUrl);
+         var result = await dialog.ShowDialog<WorkLinks?>(owner);
+         if (result is null)
+            return;
+
+         var changed = result.Branch != BranchName ||
+                       result.Repository != RepositoryUrl ||
+                       result.PullRequest != PullRequestUrl;
+         BranchName = result.Branch;
+         RepositoryUrl = result.Repository;
+         PullRequestUrl = result.PullRequest;
+         ApplyWorkLinks();
+         if (changed)
+            DocumentEdited?.Invoke(this, EventArgs.Empty);
+      }
+      finally
+      {
+         _linksOpen = false;
+      }
    }
 
-   private void Branch_LostFocus(object? sender, RoutedEventArgs e)
+   private void ApplyWorkLinks()
    {
-      CommitBranch();
-      ScheduleDetailsRefresh();
+      var hasBranch = !string.IsNullOrWhiteSpace(BranchName);
+      var hasRepository = !string.IsNullOrWhiteSpace(RepositoryUrl);
+      var hasPullRequest = !string.IsNullOrWhiteSpace(PullRequestUrl);
+
+      BranchLine.IsVisible = hasBranch;
+      BranchValue.Text = BranchName;
+
+      RepositoryLine.IsVisible = hasRepository;
+      RepositoryLinkText.Text = RepositoryUrl;
+      ToolTip.SetTip(RepositoryLink, RepositoryUrl);
+
+      PullRequestLine.IsVisible = hasPullRequest;
+      PullRequestLinkText.Text = PullRequestUrl;
+      ToolTip.SetTip(PullRequestLink, PullRequestUrl);
+
+      var hasDetails = hasBranch || hasRepository || hasPullRequest;
+      DetailsPanel.IsVisible = hasDetails;
+      AddDetailsButton.IsVisible = !hasDetails;
    }
-
-   private void Repository_LostFocus(object? sender, RoutedEventArgs e)
-   {
-      CommitRepository();
-      ScheduleDetailsRefresh();
-   }
-
-   private void PullRequest_LostFocus(object? sender, RoutedEventArgs e)
-   {
-      CommitPullRequest();
-      ScheduleDetailsRefresh();
-   }
-
-   private void ScheduleDetailsRefresh() =>
-       Dispatcher.UIThread.Post(ApplyDetailsVisibility);
-
-   private void ApplyDetailsVisibility()
-   {
-      var hasDetails =
-          !string.IsNullOrWhiteSpace(BranchName) ||
-          !string.IsNullOrWhiteSpace(RepositoryUrl) ||
-          !string.IsNullOrWhiteSpace(PullRequestUrl);
-      var editing = BranchNameBox.IsFocused ||
-                    RepositoryBox.IsFocused ||
-                    PullRequestBox.IsFocused;
-
-      if (hasDetails || editing)
-         _detailsOpen = true;
-      else
-         _detailsOpen = false;
-
-      DetailsPanel.IsVisible = _detailsOpen;
-      AddDetailsButton.IsVisible = !_detailsOpen;
-   }
-
-   private void Repository_TextChanged(object? sender, TextChangedEventArgs e) =>
-       OpenRepositoryButton.IsEnabled = ExternalLink.CanOpen(RepositoryBox.Text);
 
    private async void OpenRepository_Click(object? sender, RoutedEventArgs e)
    {
-      CommitRepository();
-
       if (ExternalLink.TryOpen(RepositoryUrl))
          return;
 
@@ -1492,13 +1469,8 @@ public partial class ChecklistView : UserControl
       await dialog.ShowDialog(owner);
    }
 
-   private void PullRequest_TextChanged(object? sender, TextChangedEventArgs e) =>
-       OpenPullRequestButton.IsEnabled = ExternalLink.CanOpen(PullRequestBox.Text);
-
    private async void OpenPullRequest_Click(object? sender, RoutedEventArgs e)
    {
-      CommitPullRequest();
-
       if (ExternalLink.TryOpen(PullRequestUrl))
          return;
 
@@ -1528,49 +1500,6 @@ public partial class ChecklistView : UserControl
 
       WorkTitle = title;
       WorkflowTitleBox.Text = title;
-      DocumentEdited?.Invoke(this, EventArgs.Empty);
-   }
-
-   private void CommitBranch()
-   {
-      var branch = BranchNameBox.Text?.Trim() ?? string.Empty;
-      if (BranchNameBox.Text != branch)
-         BranchNameBox.Text = branch;
-
-      if (branch == BranchName)
-         return;
-
-      BranchName = branch;
-      DocumentEdited?.Invoke(this, EventArgs.Empty);
-   }
-
-   private void CommitRepository()
-   {
-      var url = RepositoryBox.Text?.Trim() ?? string.Empty;
-      if (RepositoryBox.Text != url)
-         RepositoryBox.Text = url;
-
-      OpenRepositoryButton.IsEnabled = ExternalLink.CanOpen(url);
-
-      if (url == RepositoryUrl)
-         return;
-
-      RepositoryUrl = url;
-      DocumentEdited?.Invoke(this, EventArgs.Empty);
-   }
-
-   private void CommitPullRequest()
-   {
-      var url = PullRequestBox.Text?.Trim() ?? string.Empty;
-      if (PullRequestBox.Text != url)
-         PullRequestBox.Text = url;
-
-      OpenPullRequestButton.IsEnabled = ExternalLink.CanOpen(url);
-
-      if (url == PullRequestUrl)
-         return;
-
-      PullRequestUrl = url;
       DocumentEdited?.Invoke(this, EventArgs.Empty);
    }
 
@@ -1850,11 +1779,7 @@ public partial class ChecklistView : UserControl
       ReminderButton.IsEnabled = !locked;
       ClearReminderButton.IsEnabled = !locked;
       AddDetailsButton.IsEnabled = !locked;
-      BranchNameBox.IsEnabled = !locked;
-      RepositoryBox.IsEnabled = !locked;
-      PullRequestBox.IsEnabled = !locked;
-      OpenRepositoryButton.IsEnabled = !locked && ExternalLink.CanOpen(RepositoryBox.Text);
-      OpenPullRequestButton.IsEnabled = !locked && ExternalLink.CanOpen(PullRequestBox.Text);
+      EditDetailsButton.IsEnabled = !locked;
       if (locked)
          ChecklistItems.Classes.Add("locked");
       else
@@ -1866,7 +1791,8 @@ public partial class ChecklistView : UserControl
    {
       ToolTip.SetTip(AddCheckButton, AppShortcuts.WithShortcut(AppShortcuts.AddItem));
       ToolTip.SetTip(SaveButton, AppShortcuts.WithShortcut(AppShortcuts.Save));
-      ToolTip.SetTip(SaveAsButton, AppShortcuts.WithShortcut(AppShortcuts.SaveAs));
+      ToolTip.SetTip(SaveAsTemplateButton, AppShortcuts.WithShortcut(AppShortcuts.SaveAsTemplate, "Save this checklist as a home template"));
+      ToolTip.SetTip(RearrangeButton, AppShortcuts.WithShortcut(AppShortcuts.Rearrange, "Drag checks into a new order"));
       ToolTip.SetTip(SearchTextBox, AppShortcuts.WithShortcut(AppShortcuts.Search));
    }
 

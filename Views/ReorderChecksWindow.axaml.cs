@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using SuperDev.Models;
 
 namespace SuperDev.Views;
@@ -13,12 +14,17 @@ public partial class ReorderChecksWindow : Window
     private readonly List<ChecklistItem> _items = [];
     private readonly List<Border> _rows = [];
     private Border? _dragRow;
+    private IPointer? _pointer;
     private Avalonia.Point _dragStart;
     private bool _dragging;
+    private int _pendingTarget = -1;
+    private bool _moveQueued;
 
     public ReorderChecksWindow(IReadOnlyList<ChecklistItem> items)
     {
         InitializeComponent();
+        AddHandler(PointerMovedEvent, DragPointerMoved, RoutingStrategies.Tunnel, true);
+        AddHandler(PointerReleasedEvent, DragPointerReleased, RoutingStrategies.Tunnel, true);
 
         foreach (var item in items)
         {
@@ -80,8 +86,6 @@ public partial class ReorderChecksWindow : Window
         };
 
         row.PointerPressed += Row_PointerPressed;
-        row.PointerMoved += Row_PointerMoved;
-        row.PointerReleased += Row_PointerReleased;
         return row;
     }
 
@@ -90,24 +94,27 @@ public partial class ReorderChecksWindow : Window
         if (sender is not Border row)
             return;
 
-        if (!e.GetCurrentPoint(row).Properties.IsLeftButtonPressed)
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             return;
 
+        // The row is removed from the list as it moves. Capturing it would end the gesture after one step.
         _dragRow = row;
+        _pointer = e.Pointer;
         _dragStart = e.GetPosition(OrderList);
         _dragging = false;
-        e.Pointer.Capture(row);
+        _pendingTarget = -1;
+        e.Pointer.Capture(this);
         e.Handled = true;
     }
 
-    private void Row_PointerMoved(object? sender, PointerEventArgs e)
+    private void DragPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (sender is not Border row || _dragRow != row)
+        if (_dragRow is not { } row || _pointer != e.Pointer)
             return;
 
-        if (!e.GetCurrentPoint(row).Properties.IsLeftButtonPressed)
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
-            FinishDrag(row, e);
+            EndDrag(e);
             return;
         }
 
@@ -124,27 +131,74 @@ public partial class ReorderChecksWindow : Window
         }
 
         ScrollWhileDragging(e.GetPosition(OrderScroll));
-        var target = IndexAt(e.GetPosition(OrderList).Y, row);
-        MoveRow(row, target);
+        QueueMove(IndexAt(position.Y, row));
         e.Handled = true;
     }
 
-    private void Row_PointerReleased(object? sender, PointerReleasedEventArgs e)
+    private void DragPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
-        if (sender is Border row)
-            FinishDrag(row, e);
-    }
-
-    private void FinishDrag(Border row, PointerEventArgs e)
-    {
-        if (_dragRow != row)
+        if (_dragRow is null || _pointer != e.Pointer)
             return;
 
+        EndDrag(e);
+        e.Handled = true;
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        if (_dragRow is null)
+            return;
+
+        CommitPendingMove();
+        ClearDrag();
+    }
+
+    private void EndDrag(PointerEventArgs e)
+    {
+        CommitPendingMove();
+        ClearDrag();
+        if (e.Pointer.Captured == this)
+            e.Pointer.Capture(null);
+    }
+
+    private void ClearDrag()
+    {
+        if (_dragRow is { } row)
+        {
+            row.Classes.Remove("dragging");
+            row.ZIndex = 0;
+        }
+
         _dragRow = null;
+        _pointer = null;
         _dragging = false;
-        row.Classes.Remove("dragging");
-        row.ZIndex = 0;
-        e.Pointer.Capture(null);
+        _pendingTarget = -1;
+    }
+
+    private void QueueMove(int target)
+    {
+        _pendingTarget = target;
+        if (_moveQueued)
+            return;
+
+        _moveQueued = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _moveQueued = false;
+            CommitPendingMove();
+        }, DispatcherPriority.Input);
+    }
+
+    private void CommitPendingMove()
+    {
+        if (_dragRow is not Border row)
+            return;
+
+        var target = _pendingTarget;
+        _pendingTarget = -1;
+        if (target >= 0)
+            MoveRow(row, target);
     }
 
     private void ScrollWhileDragging(Avalonia.Point pointer)

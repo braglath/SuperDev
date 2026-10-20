@@ -70,9 +70,17 @@
                     Value="#F8FAFC"/>
         </Style>
 
-        <!-- Avalonia 12 paints the window title over the custom title bar. -->
-        <Style Selector="WindowDrawnDecorations /template/ Panel#PART_TitleTextPanel">
+        <!-- The title panel's visibility is bound in the template, so hide the text itself. -->
+        <Style Selector="WindowDrawnDecorations /template/ Panel#PART_TitleTextPanel > TextBlock">
             <Setter Property="IsVisible" Value="False"/>
+        </Style>
+        <Style Selector="WindowDrawnDecorations /template/ Button#PART_MaximizeButton">
+            <Setter Property="IsVisible" Value="False"/>
+            <Setter Property="Width" Value="0"/>
+        </Style>
+        <Style Selector="WindowDrawnDecorations /template/ Button#PART_FullScreenButton">
+            <Setter Property="IsVisible" Value="False"/>
+            <Setter Property="Width" Value="0"/>
         </Style>
 <Style Selector="Border.workspace-tab">
     <Setter Property="MinWidth" Value="64"/>

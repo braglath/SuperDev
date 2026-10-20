@@ -28,6 +28,8 @@ public static class AppShortcuts
     public const string OpenChecklist = "open-checklist";
     public const string Save = "save";
     public const string SaveAs = "save-as";
+    public const string SaveAsTemplate = "save-as-template";
+    public const string Rearrange = "rearrange";
     public const string Settings = "settings";
     public const string CloseTab = "close-tab";
     public const string NextTab = "next-tab";
@@ -45,7 +47,6 @@ public static class AppShortcuts
         Command(NewChecklist, "New checklist", ShortcutGroup.Application, ShortcutScope.Window, Key.N, shift: false, "Ctrl+N", "Command+N"),
         Command(OpenChecklist, "Open checklist", ShortcutGroup.Application, ShortcutScope.Window, Key.O, shift: false, "Ctrl+O", "Command+O"),
         Command(Save, "Save checklist", ShortcutGroup.Application, ShortcutScope.Window, Key.S, shift: false, "Ctrl+S", "Command+S"),
-        Command(SaveAs, "Save As", ShortcutGroup.Application, ShortcutScope.Window, Key.S, shift: true, "Ctrl+Shift+S", "Command+Shift+S"),
         Command(Settings, "Keyboard shortcuts", ShortcutGroup.Application, ShortcutScope.Window, Key.OemComma, shift: false, "Ctrl+,", "Command+,"),
 
         Command(CloseTab, "Close active tab", ShortcutGroup.Workspace, ShortcutScope.Window, Key.W, shift: false, "Ctrl+W", "Command+W"),
@@ -54,6 +55,8 @@ public static class AppShortcuts
         Command(Search, "Search checklist items", ShortcutGroup.Workspace, ShortcutScope.Window, Key.F, shift: false, "Ctrl+F", "Command+F"),
 
         Command(AddItem, "Add checklist item", ShortcutGroup.ChecklistItems, ShortcutScope.Window, Key.N, shift: true, "Ctrl+Shift+N", "Command+Shift+N"),
+        Command(Rearrange, "Rearrange items", ShortcutGroup.ChecklistItems, ShortcutScope.Window, Key.R, shift: false, "Ctrl+R", "Command+R"),
+        Command(SaveAsTemplate, "Save as template", ShortcutGroup.ChecklistItems, ShortcutScope.Window, Key.S, shift: true, "Ctrl+Shift+S", "Command+Shift+S"),
         Plain(EditItem, "Edit selected item", ShortcutGroup.ChecklistItems, ShortcutScope.Checklist, Key.F2, KeyModifiers.None, "F2", "F2"),
         Plain(ToggleItem, "Toggle selected item completion", ShortcutGroup.ChecklistItems, ShortcutScope.Checklist, Key.Space, KeyModifiers.None, "Space", "Space")
     ];

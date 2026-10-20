@@ -129,9 +129,6 @@ public partial class MainWindow : Window
                         _saveMenuItem = item;
                         ApplyMenuGesture(item, AppShortcuts.Save);
                         break;
-                    case "Save As…":
-                        ApplyMenuGesture(item, AppShortcuts.SaveAs);
-                        break;
                     case "Keyboard Shortcuts":
                         ApplyMenuGesture(item, AppShortcuts.Settings);
                         break;
@@ -141,9 +138,11 @@ public partial class MainWindow : Window
                         break;
                     case "Save as template":
                         _saveTemplateMenuItem = item;
+                        ApplyMenuGesture(item, AppShortcuts.SaveAsTemplate);
                         break;
                     case "Rearrange…":
                         _rearrangeMenuItem = item;
+                        ApplyMenuGesture(item, AppShortcuts.Rearrange);
                         break;
                     case "Copy to…":
                         _copyToMenuItem = item;
@@ -672,7 +671,6 @@ public partial class MainWindow : Window
         view.DocumentCompleted += (_, _) => OnDocumentCompleted(tab);
         view.DocumentReopened += (_, _) => OnDocumentReopened(tab);
         view.SaveRequested += (_, _) => _ = RunFileOperation(() => SaveAsync(tab));
-        view.SaveAsRequested += (_, _) => _ = RunFileOperation(() => SaveAsAsync(tab));
         view.SaveAsTemplateRequested += (_, _) => _ = SaveTabAsTemplateAsync(tab);
         view.CopyRequested += (_, _) => _ = RunFileOperation(() => CopyChecklistAsync(tab));
         view.SubtasksRequired += (_, message) => ShowToast(message);
@@ -1285,8 +1283,8 @@ public partial class MainWindow : Window
     private void FitWindowsTitlePadding()
     {
         var off = OffScreenMargin;
-        // Minimize, maximize, full screen, and close. The full-screen button is the extra one that covered the bell.
-        const double captionButtons = 46 * 4 + 12;
+        // Minimize and close. Title text, maximize, and full screen are hidden.
+        const double captionButtons = 46 * 2 + 12;
         TitleChrome.Padding = new Avalonia.Thickness(12 + off.Left, off.Top, captionButtons + off.Right, 0);
         TitleChrome.Height = 40 + off.Top;
         ExtendClientAreaTitleBarHeightHint = TitleChrome.Height;
@@ -1304,8 +1302,9 @@ public partial class MainWindow : Window
                     "New Checklist" => AppShortcuts.NewChecklist,
                     "Open…" => AppShortcuts.OpenChecklist,
                     "Save" => AppShortcuts.Save,
-                    "Save As…" => AppShortcuts.SaveAs,
                     "Add Check" => AppShortcuts.AddItem,
+                    "Save as template" => AppShortcuts.SaveAsTemplate,
+                    "Rearrange…" => AppShortcuts.Rearrange,
                     "Keyboard Shortcuts" => AppShortcuts.Settings,
                     _ => null
                 };
@@ -1341,10 +1340,10 @@ public partial class MainWindow : Window
                 InvokeShortcut(AppShortcuts.AddItem);
                 break;
             case "Save as template":
-                SaveAsTemplateMenu_Click(this, EventArgs.Empty);
+                InvokeShortcut(AppShortcuts.SaveAsTemplate);
                 break;
             case "Rearrange…":
-                RearrangeMenu_Click(this, EventArgs.Empty);
+                InvokeShortcut(AppShortcuts.Rearrange);
                 break;
             case "Copy to…":
                 CopyMenu_Click(this, EventArgs.Empty);
@@ -1885,6 +1884,22 @@ public partial class MainWindow : Window
             case AppShortcuts.SaveAs:
                 SaveActiveTab(saveAs: true);
                 break;
+            case AppShortcuts.SaveAsTemplate:
+                if (ActiveTab() is { } templating && !templating.Document.IsCompleted)
+                {
+                    if (_settingsOpen || _remindersOpen)
+                        ActivateTab(templating);
+                    templating.View.SaveAsTemplate();
+                }
+                break;
+            case AppShortcuts.Rearrange:
+                if (ActiveTab() is { } rearranging && !rearranging.Document.IsCompleted && rearranging.View.Items.Count > 1)
+                {
+                    if (_settingsOpen || _remindersOpen)
+                        ActivateTab(rearranging);
+                    rearranging.View.RearrangeChecks();
+                }
+                break;
             case AppShortcuts.Settings:
                 ShowSettings();
                 break;
@@ -1965,10 +1980,10 @@ public partial class MainWindow : Window
         InvokeShortcut(AppShortcuts.AddItem);
 
     private void SaveAsTemplateMenu_Click(object? sender, EventArgs e) =>
-        ActiveTab()?.View.SaveAsTemplate();
+        InvokeShortcut(AppShortcuts.SaveAsTemplate);
 
     private void RearrangeMenu_Click(object? sender, EventArgs e) =>
-        ActiveTab()?.View.RearrangeChecks();
+        InvokeShortcut(AppShortcuts.Rearrange);
 
     private void PinTabMenu_Click(object? sender, EventArgs e)
     {
