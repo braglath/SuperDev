@@ -95,6 +95,16 @@
             <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
         </Style>
 
+        <Style Selector="Button.detail-link.source TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+            <Setter Property="TextDecorations" Value="Underline"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style Selector="Button.detail-link.source:pointerover TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
+        </Style>
+
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto"
@@ -134,6 +144,22 @@
                 <StackPanel Spacing="4">
                     <TextBlock Text="Status" Classes="detail-label"/>
                     <TextBlock x:Name="StatusText" Classes="detail-value"/>
+                </StackPanel>
+
+                <StackPanel x:Name="CopiedFromSection"
+                            Spacing="4"
+                            IsVisible="False">
+                    <TextBlock Text="Copied from" Classes="detail-label"/>
+                    <TextBlock x:Name="CopiedFromText"
+                               Classes="detail-value"
+                               IsVisible="False"/>
+                    <Button x:Name="CopiedFromLink"
+                            Classes="detail-link source"
+                            HorizontalAlignment="Left"
+                            HorizontalContentAlignment="Left"
+                            ToolTip.Tip="Open this file"
+                            IsVisible="False"
+                            Click="CopiedFrom_Click"/>
                 </StackPanel>
 
                 <StackPanel Spacing="4">

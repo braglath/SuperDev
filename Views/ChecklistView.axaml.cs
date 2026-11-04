@@ -118,6 +118,8 @@ public partial class ChecklistView : UserControl
 
    public event EventHandler<ChecklistSubtask>? LinkedSubtaskOpenRequested;
 
+   public event EventHandler<string>? CopiedFromOpenRequested;
+
    public Func<Window, Task<ChecklistSubtask?>>? RequestLink { get; set; }
 
    public void SetDocumentCompleted(bool completed)
@@ -199,6 +201,8 @@ public partial class ChecklistView : UserControl
       SideDetail.CompleteRequested += (_, _) => CompleteOpenDetail();
       SideDetail.LinkRequested += (_, subtask) =>
           LinkedSubtaskOpenRequested?.Invoke(this, subtask);
+      SideDetail.CopiedFromRequested += (_, path) =>
+          CopiedFromOpenRequested?.Invoke(this, path);
 
       _workType = workType;
       _templateName = string.IsNullOrWhiteSpace(templateName) ? null : templateName.Trim();
@@ -1245,6 +1249,15 @@ public partial class ChecklistView : UserControl
       LinkedSubtaskOpenRequested?.Invoke(this, subtask);
    }
 
+   private void OpenCopiedFrom_Click(object? sender, RoutedEventArgs e)
+   {
+      if (sender is not Button { DataContext: ChecklistItem item } ||
+          string.IsNullOrWhiteSpace(item.CopiedFromPath))
+         return;
+
+      CopiedFromOpenRequested?.Invoke(this, item.CopiedFromPath);
+   }
+
    private void LinkedSubtask_Loaded(object? sender, RoutedEventArgs e)
    {
       if (sender is not Button button || button.DataContext is not ChecklistSubtask subtask)
@@ -1538,6 +1551,8 @@ public partial class ChecklistView : UserControl
          popup.Detail.CompleteRequested += (_, _) => CompleteOpenDetail();
          popup.Detail.LinkRequested += (_, subtask) =>
              LinkedSubtaskOpenRequested?.Invoke(this, subtask);
+         popup.Detail.CopiedFromRequested += (_, path) =>
+             CopiedFromOpenRequested?.Invoke(this, path);
          popup.Closed += (_, _) =>
          {
             if (ReferenceEquals(_detailPopup, popup))
@@ -1739,12 +1754,12 @@ public partial class ChecklistView : UserControl
       return removed;
    }
 
-   public int AppendCopies(IReadOnlyList<ChecklistItem> items)
+   public int AppendCopies(IReadOnlyList<ChecklistItem> items, string copiedFrom, string? copiedFromPath)
    {
       var added = 0;
       foreach (var item in items)
       {
-         _checklist.Insert(added, CopyItem(item));
+         _checklist.Insert(added, CopyItem(item, copiedFrom, copiedFromPath));
          added++;
       }
 
@@ -1754,7 +1769,7 @@ public partial class ChecklistView : UserControl
       return added;
    }
 
-   private static ChecklistItem CopyItem(ChecklistItem item) =>
+   private static ChecklistItem CopyItem(ChecklistItem item, string copiedFrom, string? copiedFromPath) =>
        new()
        {
           Id = Guid.NewGuid(),
@@ -1767,7 +1782,9 @@ public partial class ChecklistView : UserControl
           NotifyBeforeMinutes = item.NotifyBeforeMinutes,
           DeadlineSilent = item.DeadlineSilent,
           Subtasks = CopySubtasks(item.Subtasks),
-          IsCompleted = item.IsCompleted
+          IsCompleted = item.IsCompleted,
+          CopiedFrom = copiedFrom,
+          CopiedFromPath = copiedFromPath
        };
 
    private static List<ChecklistSubtask> CopySubtasks(IEnumerable<ChecklistSubtask>? subtasks) =>

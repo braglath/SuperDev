@@ -109,6 +109,38 @@ public class ChecklistItem
            : $"{Category} · {Priority}";
 
    public bool IsCompleted { get; set; }
+
+   /// <summary>
+   /// File name of the checklist this check was copied from. Missing when the check was created here.
+   /// </summary>
+   [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+   public string? CopiedFrom
+   {
+      get => _copiedFrom;
+      set => _copiedFrom = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+   }
+
+   /// <summary>
+   /// Full path of that checklist when it had been saved. Missing for an unsaved source.
+   /// </summary>
+   [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+   public string? CopiedFromPath
+   {
+      get => _copiedFromPath;
+      set => _copiedFromPath = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+   }
+
+   [JsonIgnore]
+   public bool HasCopiedFrom => CopiedFrom is not null;
+
+   [JsonIgnore]
+   public bool CanOpenCopiedFrom => CopiedFromPath is not null;
+
+   [JsonIgnore]
+   public bool CopiedFromIsPlain => HasCopiedFrom && !CanOpenCopiedFrom;
+
+   private string? _copiedFrom;
+   private string? _copiedFromPath;
 }
 
 public enum ChecklistPriority

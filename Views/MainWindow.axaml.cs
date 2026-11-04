@@ -702,6 +702,7 @@ public partial class MainWindow : Window
         view.CopyRequested += (_, _) => _ = RunFileOperation(() => CopyChecklistAsync(tab));
         view.SubtasksRequired += (_, message) => ShowToast(message);
         view.LinkedSubtaskOpenRequested += (_, subtask) => _ = OpenLinkedSubtaskAsync(subtask);
+        view.CopiedFromOpenRequested += (_, path) => _ = RunFileOperation(() => OpenCopiedFromAsync(path));
         view.RequestLink = owner => PickLinkedChecklistAsync(tab, owner);
 
         tabHeader.PointerPressed += (_, e) => BeginTabDrag(tab, e);
@@ -2374,7 +2375,8 @@ public partial class MainWindow : Window
             return;
 
         var destination = destinations[choice.DestinationIndex];
-        var added = destination.View.AppendCopies(selected);
+        var copySource = DescribeCopySource(source);
+        var added = destination.View.AppendCopies(selected, copySource.Name, copySource.Path);
         ActivateTab(destination);
         await ShowMessage(
             $"Copied {added} {(added == 1 ? "check" : "checks")} to \"{destination.Document.Title}\".");
@@ -2403,6 +2405,7 @@ public partial class MainWindow : Window
         }
 
         var now = DateTime.UtcNow;
+        var copySource = DescribeCopySource(source);
         var copy = new ChecklistDocument
         {
             FormatVersion = ChecklistDocument.CurrentFormatVersion,
@@ -2425,7 +2428,7 @@ public partial class MainWindow : Window
             IsCompleted = items.Count == source.View.Items.Count &&
                           source.Document.IsCompleted &&
                           !source.View.HasIncompleteRequiredChecks(),
-            Items = items.Select(CopyItem).ToList()
+            Items = items.Select(item => CopyItem(item, copySource.Name, copySource.Path)).ToList()
         };
 
         var replaceDifferentDocument = await PrepareOverwriteAsync(path, copy.Id);
@@ -2462,7 +2465,24 @@ public partial class MainWindow : Window
         return $"{tab.Document.Title} · {Path.GetFileName(tab.FilePath)}";
     }
 
-    private static ChecklistItem CopyItem(ChecklistItem item) =>
+    private readonly record struct CopySource(string Name, string? Path);
+
+    private static CopySource DescribeCopySource(ChecklistTab source)
+    {
+        if (!string.IsNullOrWhiteSpace(source.FilePath))
+        {
+            var path = NormalizePath(source.FilePath) ?? source.FilePath;
+            return new CopySource(Path.GetFileName(path), path);
+        }
+
+        var title = source.View.WorkTitle?.Trim();
+        if (string.IsNullOrWhiteSpace(title))
+            title = source.Document.Title?.Trim();
+
+        return new CopySource(string.IsNullOrWhiteSpace(title) ? "Untitled" : title, null);
+    }
+
+    private static ChecklistItem CopyItem(ChecklistItem item, string copiedFrom, string? copiedFromPath) =>
         new()
         {
             Id = Guid.NewGuid(),
@@ -2484,8 +2504,36 @@ public partial class MainWindow : Window
                     LinkedFilePath = subtask.LinkedFilePath
                 })
                 .ToList(),
-            IsCompleted = item.IsCompleted
+            IsCompleted = item.IsCompleted,
+            CopiedFrom = copiedFrom,
+            CopiedFromPath = copiedFromPath
         };
+
+    private async Task OpenCopiedFromAsync(string path)
+    {
+        var fullPath = NormalizePath(path);
+        if (fullPath is not null)
+        {
+            var alreadyOpen = FindTabByPath(fullPath);
+            if (alreadyOpen is not null)
+            {
+                ActivateTab(alreadyOpen);
+                return;
+            }
+        }
+
+        if (fullPath is null || !File.Exists(fullPath))
+        {
+            var name = string.IsNullOrWhiteSpace(fullPath)
+                ? "That checklist"
+                : Path.GetFileName(fullPath);
+            await ShowMessage(
+                $"Couldn't open \"{name}\". The file was removed or renamed.");
+            return;
+        }
+
+        await OpenChecklistPathAsync(fullPath);
+    }
 
     /// <summary>
     /// Null means the user cancelled. False means the file can be written as this

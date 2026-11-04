@@ -411,6 +411,30 @@
             <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
         </Style>
 
+        <Style Selector="Button.copied-from-link">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.copied-from-link TextBlock">
+            <Setter Property="FontSize" Value="{DynamicResource Font11}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+            <Setter Property="TextDecorations" Value="Underline"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style Selector="Button.copied-from-link:pointerover TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
+        </Style>
+
         <Style Selector="Button.notes-link.late">
             <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}"/>
         </Style>
@@ -1339,6 +1363,29 @@
                    VerticalAlignment="Center"
                    Loaded="ItemDeadline_Loaded"/>
     </StackPanel>
+
+    <Grid ColumnDefinitions="Auto,*"
+          ColumnSpacing="4"
+          IsVisible="{Binding HasCopiedFrom}">
+        <TextBlock Grid.Column="0"
+                   Text="Copied from"
+                   Classes="priority"
+                   VerticalAlignment="Center"/>
+        <Button Grid.Column="1"
+                Classes="copied-from-link"
+                IsVisible="{Binding CanOpenCopiedFrom}"
+                ToolTip.Tip="Open this file"
+                Click="OpenCopiedFrom_Click">
+            <TextBlock Text="{Binding CopiedFrom}"
+                       TextWrapping="Wrap"/>
+        </Button>
+        <TextBlock Grid.Column="1"
+                   Text="{Binding CopiedFrom}"
+                   Classes="priority"
+                   VerticalAlignment="Center"
+                   TextWrapping="Wrap"
+                   IsVisible="{Binding CopiedFromIsPlain}"/>
+    </Grid>
 
 <StackPanel Spacing="6"
             IsVisible="{Binding HasNotes}">

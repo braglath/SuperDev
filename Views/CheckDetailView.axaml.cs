@@ -20,6 +20,8 @@ public partial class CheckDetailView : UserControl
 
    public event EventHandler<ChecklistSubtask>? LinkRequested;
 
+   public event EventHandler<string>? CopiedFromRequested;
+
    public CheckDetailView()
    {
       InitializeComponent();
@@ -28,6 +30,12 @@ public partial class CheckDetailView : UserControl
    public void Show(ChecklistItem item, bool canEdit)
    {
       TitleText.Text = string.IsNullOrWhiteSpace(item.Title) ? "Untitled check" : item.Title;
+      CopiedFromSection.IsVisible = item.HasCopiedFrom;
+      CopiedFromText.IsVisible = item.CopiedFromIsPlain;
+      CopiedFromText.Text = item.CopiedFrom ?? string.Empty;
+      CopiedFromLink.IsVisible = item.CanOpenCopiedFrom;
+      CopiedFromLink.Content = item.CopiedFrom;
+      CopiedFromLink.Tag = item.CopiedFromPath;
       StatusText.Text = item.IsCompleted ? "Completed" : "Open";
       StatusText.Foreground = item.IsCompleted
           ? AppearanceService.Brush("SuccessTextBrush")
@@ -109,5 +117,11 @@ public partial class CheckDetailView : UserControl
    {
       if (sender is Button { Tag: ChecklistSubtask subtask })
          LinkRequested?.Invoke(this, subtask);
+   }
+
+   private void CopiedFrom_Click(object? sender, RoutedEventArgs e)
+   {
+      if (CopiedFromLink.Tag is string path && !string.IsNullOrWhiteSpace(path))
+         CopiedFromRequested?.Invoke(this, path);
    }
 }
