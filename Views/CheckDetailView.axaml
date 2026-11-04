@@ -219,7 +219,8 @@
 
         </ScrollViewer>
 
-        <StackPanel Grid.Row="2"
+        <StackPanel x:Name="ActionBar"
+                    Grid.Row="2"
                     Spacing="8">
 
             <Grid ColumnDefinitions="*,*"

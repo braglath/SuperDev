@@ -198,7 +198,7 @@ public sealed class AISetupManager
             return AISetupResult.Fail(
                 AiSetupFailureKind.Cancelled,
                 "Setup was cancelled.",
-                "Choose Generate with AI when you want to set it up.");
+                "Choose Generate when you want to set it up.");
         }
         catch (AISetupException ex)
         {

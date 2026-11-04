@@ -1,0 +1,170 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:SuperDev.Controls"
+        x:Class="SuperDev.Views.ChecklistReviewWindow"
+        Width="920"
+        Height="780"
+        MinWidth="680"
+        MinHeight="520"
+        CanResize="True"
+        Title="Review"
+        Background="{DynamicResource AppBackgroundBrush}"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style Selector="TextBlock.section-label">
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+        </Style>
+
+        <Style Selector="Border.finding">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+
+        <Style Selector="Button.form-button">
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.mini">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
+        </Style>
+
+        <Style Selector="Button.secondary">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.secondary:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+        <Style Selector="Button.cancel">
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.primary:disabled, Button.secondary:disabled, Button.cancel:disabled, Button.mini:disabled">
+            <Setter Property="Opacity" Value="0.55"/>
+        </Style>
+
+        <Style Selector="ProgressBar.progress">
+            <Setter Property="Height" Value="6"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="24" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="16">
+        <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="4">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Review"
+                               FontSize="{DynamicResource Font28}"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"/>
+                    <controls:AiMark Width="32" Height="32" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock x:Name="ChecklistNameText"
+                           FontSize="{DynamicResource Font16}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"/>
+                <TextBlock Classes="hint"
+                           Text="The review does not change this checklist. Apply a suggestion when you want to keep it."/>
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="1" Spacing="8">
+            <TextBlock x:Name="StatusText"
+                       FontSize="{DynamicResource Font14}"
+                       FontWeight="SemiBold"
+                       Text="Preparing the review…"/>
+            <TextBlock x:Name="WarningText"
+                       Classes="hint"
+                       IsVisible="False"/>
+            <ProgressBar x:Name="ReviewProgress"
+                         Classes="progress"
+                         IsIndeterminate="True"
+                         IsVisible="False"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="2"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="FindingsPanel" Spacing="12"/>
+        </ScrollViewer>
+
+        <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
+            <Button x:Name="SelectButton"
+                    Content="Select applicable"
+                    Classes="form-button secondary"
+                    Click="Select_Click"/>
+            <Button x:Name="ApplyButton"
+                    Grid.Column="1"
+                    Content="Apply selected"
+                    Classes="form-button primary"
+                    Click="ApplySelected_Click"/>
+            <Button x:Name="CancelButton"
+                    Grid.Column="3"
+                    Content="Cancel"
+                    Classes="form-button cancel"
+                    IsVisible="False"
+                    Click="Cancel_Click"/>
+            <Button x:Name="RerunButton"
+                    Grid.Column="4"
+                    Content="Rerun review"
+                    Classes="form-button secondary"
+                    Click="Rerun_Click"/>
+            <Button x:Name="CloseButton"
+                    Grid.Column="5"
+                    Content="Close"
+                    Classes="form-button cancel"
+                    Click="Close_Click"/>
+        </Grid>
+    </Grid>
+</Window>

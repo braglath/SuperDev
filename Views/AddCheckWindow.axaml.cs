@@ -12,6 +12,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using SuperDev.Controls;
 using SuperDev.Models;
 using SuperDev.Services;
 using SuperDev.Services.Ai;
@@ -955,7 +956,7 @@ public partial class AddCheckWindow : Window
 
    private const string DuplicateTitleMessage = "A check with this title already exists.";
 
-   private const string CheckTitleRequiredMessage = "Enter a check, then click Generate with AI.";
+   private const string CheckTitleRequiredMessage = "Enter a check, then click Generate.";
 
    private async void GenerateAi_Click(object? sender, RoutedEventArgs e)
    {
@@ -1032,7 +1033,7 @@ public partial class AddCheckWindow : Window
          _generating = false;
          if (!_closed)
          {
-            GenerateAiButton.Content = "Generate with AI";
+            GenerateAiButton.Content = new AiLabel { Text = "Generate", IconSize = 20 };
             ToolTip.SetTip(GenerateAiButton, "Draft this check with the local model");
          }
       }

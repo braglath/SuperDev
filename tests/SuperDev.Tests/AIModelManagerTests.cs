@@ -15,7 +15,7 @@ public class AIModelManagerTests
 
         Assert.Equal(OllamaStatus.NotInstalled, status.Status);
         Assert.False(status.CanGenerate);
-        Assert.Contains("Generate with AI", status.Guidance, StringComparison.Ordinal);
+        Assert.Contains("Choose Generate", status.Guidance, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class AIModelManagerTests
         Assert.Equal(OllamaStatus.ModelMissing, status.Status);
         Assert.Equal("Ollama connected", status.ConnectionText);
         Assert.Equal("Model missing", status.ModelStateText);
-        Assert.Contains("Generate with AI", status.Guidance, StringComparison.Ordinal);
+        Assert.Contains("Choose Generate", status.Guidance, StringComparison.Ordinal);
     }
 
     [Fact]

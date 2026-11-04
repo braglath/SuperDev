@@ -2,7 +2,7 @@
 
 Super Dev is distributed without Ollama and without model weights. Manual templates and hand-built checklists work with no AI components installed.
 
-**Generate with AI** checks the computer, asks before any runtime or model download, then installs only what is missing. The checklist request still goes to `http://127.0.0.1:11434`. Super Dev does not call a cloud model API.
+**Generate** checks the computer, asks before any runtime or model download, then installs only what is missing. The checklist request still goes to `http://127.0.0.1:11434`. Super Dev does not call a cloud model API.
 
 The required model is `qwen3.5:0.8b`.
 

@@ -715,14 +715,15 @@
                     VerticalAlignment="Center"
                     Margin="0,0,12,0">
             <Button x:Name="GenerateAiButton"
-                    Content="Generate with AI"
                     Classes="form-button cancel"
                     MinWidth="0"
                     Padding="14,8"
                     HorizontalAlignment="Left"
                     IsVisible="False"
                     ToolTip.Tip="Draft this check with the local model"
-                    Click="GenerateAi_Click"/>
+                    Click="GenerateAi_Click">
+                <controls:AiLabel Text="Generate" IconSize="20"/>
+            </Button>
             <TextBlock x:Name="GenerateStatus"
                        FontSize="{DynamicResource Font12}"
                        Foreground="{DynamicResource TextMutedBrush}"

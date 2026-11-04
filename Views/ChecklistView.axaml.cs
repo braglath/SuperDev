@@ -17,6 +17,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using SuperDev.Models;
 using SuperDev.Services;
+using SuperDev.Services.Ai;
 
 namespace SuperDev.Views;
 
@@ -60,6 +61,8 @@ public partial class ChecklistView : UserControl
    private ChecklistItem? _selectedItem;
    private ChecklistItem? _detailItem;
    private CheckDetailWindow? _detailPopup;
+   private ChecklistReviewWindow? _reviewWindow;
+   private ChecklistReviewResult? _reviewResult;
    private Window? _hostWindow;
    private bool _detailOnSide;
    private bool _switchingDetail;
@@ -128,6 +131,24 @@ public partial class ChecklistView : UserControl
    public Func<Window, CancellationToken, Task<bool>>? EnsureAiReady { get; set; }
 
    public Func<CheckGenerationRequest, CancellationToken, Task<AiGenerationResult>>? GenerateOneCheck { get; set; }
+
+   public Func<ChecklistReviewRequest, CancellationToken, Task<ChecklistReviewOutcome>>? ReviewChecklist { get; set; }
+
+   public string? TaskDescription { get; private set; }
+
+   public string? AiPlatform { get; private set; }
+
+   public string? AiFramework { get; private set; }
+
+   public void SetAiContext(string? taskDescription, string? platform, string? framework)
+   {
+      TaskDescription = CleanContext(taskDescription);
+      AiPlatform = CleanContext(platform);
+      AiFramework = CleanContext(framework);
+   }
+
+   private static string? CleanContext(string? value) =>
+       string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
    public void SetDocumentCompleted(bool completed)
    {
@@ -1872,6 +1893,7 @@ public partial class ChecklistView : UserControl
       if (_hostWindow is not null)
          _hostWindow.PropertyChanged -= HostWindow_PropertyChanged;
       _hostWindow = null;
+      _reviewWindow?.Close();
       base.OnDetachedFromVisualTree(e);
    }
 
@@ -2412,6 +2434,124 @@ public partial class ChecklistView : UserControl
 
       _visible.RemoveAt(index);
       _visible.Insert(index, item);
+   }
+
+   private void ReviewWithAi_Click(object? sender, RoutedEventArgs e) =>
+       OpenReview();
+
+   private void OpenReview()
+   {
+      var owner = GetOwnerWindow();
+      if (owner is null || EnsureAiReady is null || ReviewChecklist is null)
+         return;
+
+      if (_reviewWindow is not null)
+      {
+         _reviewWindow.Activate();
+         return;
+      }
+
+      _ = OpenReviewAsync(owner);
+   }
+
+   private async Task OpenReviewAsync(Window owner)
+   {
+      if (EnsureAiReady is null || ReviewChecklist is null)
+         return;
+
+      if (!await EnsureAiReady(owner, CancellationToken.None))
+         return;
+
+      if (_reviewWindow is not null)
+      {
+         _reviewWindow.Activate();
+         return;
+      }
+
+      var session = new ChecklistReviewSession
+      {
+         Result = _reviewResult,
+         Capture = CaptureReviewRequest,
+         Review = (request, token) => ReviewChecklist(request, token),
+         Apply = ApplyReviewFinding,
+         Revert = RevertReviewFinding,
+         Dismiss = finding => ChecklistReviewApplicator.Dismiss(finding),
+         Reveal = RevealItem,
+         Find = id => _checklist.FirstOrDefault(item => item.Id == id),
+         CanApply = () => !_documentCompleted
+      };
+      var window = new ChecklistReviewWindow(session);
+      _reviewWindow = window;
+      window.Closed += (_, _) =>
+      {
+         _reviewResult = session.Result;
+         if (ReferenceEquals(_reviewWindow, window))
+            _reviewWindow = null;
+      };
+      window.Show(owner);
+   }
+
+   private ChecklistReviewRequest CaptureReviewRequest() =>
+       ChecklistReviewMapper.CreateRequest(
+           WorkTitle,
+           _workType,
+           TaskDescription,
+           AiPlatform,
+           AiFramework,
+           _templateName,
+           _checklist);
+
+   private ReviewApplyResult ApplyReviewFinding(ChecklistReviewFinding finding)
+   {
+      if (_documentCompleted)
+         return ReviewApplyResult.None("Reopen the checklist before applying suggestions.");
+
+      var result = ChecklistReviewApplicator.Apply(_checklist, finding);
+      if (result.Changed)
+         MarkEdited();
+
+      return result;
+   }
+
+   private ReviewApplyResult RevertReviewFinding(ChecklistReviewFinding finding)
+   {
+      if (_documentCompleted)
+         return ReviewApplyResult.None("Reopen the checklist before changing suggestions.");
+
+      var result = ChecklistReviewApplicator.Revert(_checklist, finding);
+      if (result.Changed)
+         MarkEdited();
+
+      return result;
+   }
+
+   public bool RevealItem(Guid id)
+   {
+      var item = _checklist.FirstOrDefault(entry => entry.Id == id);
+      if (item is null)
+         return false;
+
+      if (!_visible.Contains(item))
+      {
+         SearchTextBox.Text = string.Empty;
+         StatusFilterBox.SelectedIndex = 0;
+         PriorityFilterBox.SelectedIndex = 0;
+         ApplyView();
+      }
+
+      SelectItem(item);
+      Dispatcher.UIThread.Post(() =>
+      {
+         foreach (var border in ChecklistItems.GetVisualDescendants().OfType<Border>())
+         {
+            if (border.Classes.Contains("check-item") && ReferenceEquals(border.DataContext, item))
+            {
+               border.BringIntoView();
+               break;
+            }
+         }
+      }, DispatcherPriority.Loaded);
+      return true;
    }
 
    private void AddCheck_Click(object? sender, RoutedEventArgs e) =>

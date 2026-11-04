@@ -210,6 +210,12 @@ public sealed class AiChecklistDraft
     public required string TemplateName { get; init; }
 
     public required List<ChecklistItem> Items { get; init; }
+
+    public string? TaskDescription { get; init; }
+
+    public string? AiPlatform { get; init; }
+
+    public string? AiFramework { get; init; }
 }
 
 public sealed class AiFailure
@@ -367,13 +373,13 @@ public static class AiMessages
     public static string For(AiFailureKind kind, string model) => kind switch
     {
         AiFailureKind.NotInstalled =>
-            "Local AI is not set up yet. Choose Generate with AI and Super Dev can download it onto this computer.",
+            "Local AI is not set up yet. Choose Generate and Super Dev can download it onto this computer.",
         AiFailureKind.NotRunning =>
-            "Ollama is installed but not running. Choose Generate with AI to start it.",
+            "Ollama is installed but not running. Choose Generate to start it.",
         AiFailureKind.ConnectionRefused =>
-            "Super Dev could not connect to the local AI service. Choose Generate with AI to start it.",
+            "Super Dev could not connect to the local AI service. Choose Generate to start it.",
         AiFailureKind.ModelMissing =>
-            "The local model is not on this computer yet. Choose Generate with AI to download " + model + ".",
+            "The local model is not on this computer yet. Choose Generate to download " + model + ".",
         AiFailureKind.Timeout =>
             "The model took too long to respond. Try again with a shorter task description.",
         AiFailureKind.Cancelled =>

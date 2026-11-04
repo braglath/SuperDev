@@ -239,12 +239,16 @@ public partial class GenerateChecklistWindow : Window
             return;
         }
 
+        var task = request.Description?.Trim();
         Close(new AiChecklistDraft
         {
             Title = inspection.Checklist.Title.Trim(),
             WorkType = AiChecklistMapper.ToWorkType(work.Value),
             TemplateName = AiChecklistMapper.TemplateName(request),
-            Items = items
+            Items = items,
+            TaskDescription = string.IsNullOrEmpty(task) ? null : task,
+            AiPlatform = AiCatalog.PlatformLabel(request.Platform),
+            AiFramework = AiCatalog.FrameworkLabel(request.Framework)
         });
     }
 

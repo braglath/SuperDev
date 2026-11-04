@@ -28,6 +28,12 @@ public partial class CheckDetailView : UserControl
       set => CloseButton.IsVisible = value;
    }
 
+   public bool ActionsVisible
+   {
+      get => ActionBar.IsVisible;
+      set => ActionBar.IsVisible = value;
+   }
+
    public CheckDetailView()
    {
       InitializeComponent();

@@ -50,7 +50,7 @@ public class OllamaServiceTests
         Assert.False(available);
         Assert.Equal(0, chats);
         Assert.Equal(AiFailureKind.ModelMissing, result.Failure!.Kind);
-        Assert.Contains("Generate with AI", result.Failure.Message, StringComparison.Ordinal);
+        Assert.Contains("Choose Generate", result.Failure.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("Exception", result.Failure.Message, StringComparison.Ordinal);
     }
 

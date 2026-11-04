@@ -401,6 +401,22 @@ public sealed class OllamaService : ILocalAIService, IDisposable
             content => AiGenerationResult.FromCheck(_validator.ReadCheck(content), _model));
     }
 
+    public async Task<string> RequestStructuredAsync(
+        Prompt prompt,
+        JsonElement schema,
+        int numPredict,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await IsModelAvailableAsync(_model, cancellationToken).ConfigureAwait(false))
+            throw new OllamaRequestException(AiFailureKind.ModelMissing, "model-check");
+
+        var content = await ChatAsync(prompt, schema, numPredict, cancellationToken).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(content))
+            throw new OllamaRequestException(AiFailureKind.EmptyResponse, "message-content");
+
+        return content;
+    }
+
     public void Dispose()
     {
         if (_ownsClient)

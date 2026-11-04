@@ -27,6 +27,24 @@ public sealed class ChecklistDocument
     public string? TemplateName { get; set; }
 
     /// <summary>
+    /// Task text from Generate. Missing on manual checklists and older files.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? TaskDescription { get; set; }
+
+    /// <summary>
+    /// Platform chosen in Generate. Missing when the checklist was created by hand.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? AiPlatform { get; set; }
+
+    /// <summary>
+    /// Framework chosen in Generate. Missing when the checklist was created by hand.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? AiFramework { get; set; }
+
+    /// <summary>
     /// Optional calendar deadline. Missing on older files, and left unset until the user picks one.
     /// </summary>
     public DateOnly? Deadline { get; set; }

@@ -28,6 +28,7 @@ public partial class MainWindow : Window
 {
     private readonly ChecklistTemplateService _checklistService = new();
     private readonly OllamaService _localAi = OllamaService.CreateLocal();
+    private readonly ChecklistReviewService _reviews;
     private readonly AIModelManager _aiModels;
     private readonly AISetupManager _aiSetup;
     private bool _aiSetupBusy;
@@ -81,6 +82,7 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        _reviews = new ChecklistReviewService(_localAi);
         _aiModels = new AIModelManager(_localAi);
         _aiSetup = AISetupManager.Create(_localAi);
         InitializeComponent();
@@ -521,6 +523,9 @@ public partial class MainWindow : Window
             Title = draft.Title.Trim(),
             WorkType = draft.WorkType,
             TemplateName = draft.TemplateName,
+            TaskDescription = draft.TaskDescription,
+            AiPlatform = draft.AiPlatform,
+            AiFramework = draft.AiFramework,
             CreatedOn = now,
             UpdatedOn = now,
             IsCompleted = false,
@@ -660,8 +665,10 @@ public partial class MainWindow : Window
             document.ReminderEveryMinutes,
             document.ReminderSilent,
             document.Items);
+        view.SetAiContext(document.TaskDescription, document.AiPlatform, document.AiFramework);
         view.EnsureAiReady = EnsureLocalAiAsync;
         view.GenerateOneCheck = (request, token) => _localAi.GenerateCheckAsync(request, token);
+        view.ReviewChecklist = (request, token) => _reviews.ReviewAsync(request, token);
 
         // Title sizes the tab. It ellipsizes at the width left inside the tab max
         // (190) after horizontal padding (16), the pin button (18), the gaps (12),
@@ -2566,6 +2573,9 @@ public partial class MainWindow : Window
             ReminderSilent = source.View.ReminderSilent,
             WorkType = source.View.WorkType,
             TemplateName = source.View.TemplateName,
+            TaskDescription = source.View.TaskDescription,
+            AiPlatform = source.View.AiPlatform,
+            AiFramework = source.View.AiFramework,
             CreatedOn = now,
             UpdatedOn = now,
             IsCompleted = items.Count == source.View.Items.Count &&
@@ -2869,6 +2879,9 @@ public partial class MainWindow : Window
         tab.Document.ReminderSilent = tab.View.ReminderSilent;
         tab.Document.WorkType = tab.View.WorkType;
         tab.Document.TemplateName = tab.View.TemplateName;
+        tab.Document.TaskDescription = tab.View.TaskDescription;
+        tab.Document.AiPlatform = tab.View.AiPlatform;
+        tab.Document.AiFramework = tab.View.AiFramework;
         tab.Document.Items = tab.View.Items.ToList();
     }
 

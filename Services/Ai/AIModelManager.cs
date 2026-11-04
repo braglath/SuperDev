@@ -105,7 +105,7 @@ public sealed class AIModelManager
             ConnectionText = timedOut ? "Ollama is not responding" : "Ollama disconnected",
             ModelStateText = "Not checked",
             Guidance = timedOut
-                ? "The local AI service did not respond. Choose Generate with AI to start it again."
+                ? "The local AI service did not respond. Choose Generate to start it again."
                 : AiMessages.For(AiFailureKind.NotRunning, _model)
         };
     }

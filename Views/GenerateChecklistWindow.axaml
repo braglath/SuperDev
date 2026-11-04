@@ -1,12 +1,13 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:SuperDev.Controls"
         x:Class="SuperDev.Views.GenerateChecklistWindow"
         Width="960"
         Height="820"
         MinWidth="640"
         MinHeight="520"
         CanResize="True"
-        Title="Generate with AI"
+        Title="Generate"
         Background="{DynamicResource AppBackgroundBrush}"
         WindowStartupLocation="CenterOwner">
 
@@ -147,9 +148,13 @@
     <Grid Margin="24" RowDefinitions="Auto,*,Auto" RowSpacing="16">
         <Grid ColumnDefinitions="*,Auto">
             <StackPanel Spacing="4">
-                <TextBlock Text="Generate with AI"
-                           FontSize="{DynamicResource Font28}"
-                           FontWeight="Bold"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Generate"
+                               FontSize="{DynamicResource Font28}"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"/>
+                    <controls:AiMark Width="32" Height="32" VerticalAlignment="Center"/>
+                </StackPanel>
                 <TextBlock Classes="hint"
                            Text="Local Ollama only. Nothing is saved until you create the checklist."/>
             </StackPanel>

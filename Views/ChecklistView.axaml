@@ -1170,7 +1170,8 @@
 
         <!-- ACTION BAR -->
 <Grid Grid.Row="1"
-      ColumnDefinitions="*,Auto">
+      ColumnDefinitions="*,Auto,Auto"
+      ColumnSpacing="10">
 
     <StackPanel Orientation="Horizontal"
                 Spacing="10"
@@ -1213,8 +1214,16 @@
                 Click="FilterToggle_Click"/>
     </StackPanel>
 
-    <Button x:Name="CompleteButton"
+    <Button x:Name="ReviewWithAiButton"
             Grid.Column="1"
+            Classes="action primary"
+            ToolTip.Tip="Review this checklist for missing, duplicate, or unclear checks"
+            Click="ReviewWithAi_Click">
+        <controls:AiLabel Text="Review" IconSize="22"/>
+    </Button>
+
+    <Button x:Name="CompleteButton"
+            Grid.Column="2"
             Content="✓  Complete"
             Classes="action primary complete-toggle"
             Click="Complete_Click"/>

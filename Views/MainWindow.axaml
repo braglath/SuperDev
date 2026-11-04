@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:SuperDev.Controls"
         x:Class="SuperDev.Views.MainWindow"
         Width="1000"
         Height="850"
@@ -1143,9 +1144,10 @@
 
                 <Button x:Name="GenerateWithAiButton"
                         Classes="create open"
-                        Content="Generate with AI"
                         ToolTip.Tip="Create a checklist with a local Ollama model"
-                        Click="GenerateWithAi_Click"/>
+                        Click="GenerateWithAi_Click">
+                    <controls:AiLabel Text="Generate" IconSize="22"/>
+                </Button>
 
                 <Button x:Name="CreateButton"
                         Classes="create"
