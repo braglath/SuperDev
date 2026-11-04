@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Threading;
 using SuperDev.Models;
 
@@ -24,7 +25,15 @@ public partial class AddCheckWindow : Window
    private bool _deadlineSilent;
    private readonly ObservableCollection<ChecklistSubtask> _links = [];
    private readonly ObservableCollection<ChecklistSubtask> _subtasks = [];
+   private readonly List<SubtaskEditor> _subtaskEditors = [];
    private readonly HashSet<string> _takenTitles = new(StringComparer.OrdinalIgnoreCase);
+   private Border? _subtaskDragRow;
+   private IPointer? _subtaskPointer;
+   private Point _subtaskDragStart;
+   private bool _subtaskDragging;
+   private int _subtaskPendingTarget = -1;
+   private bool _subtaskMoveQueued;
+   private bool _subtaskDeleteOpen;
 
    public Func<Window, Task<ChecklistSubtask?>>? RequestLink { get; set; }
 
@@ -39,7 +48,7 @@ public partial class AddCheckWindow : Window
       PriorityComboBox.SelectedIndex = 1;
       ApplyPriorityColor();
       LinkList.ItemsSource = _links;
-      SubtaskList.ItemsSource = _subtasks;
+      PrepareSubtaskEditor();
    }
 
    protected override void OnOpened(EventArgs e)
@@ -91,7 +100,7 @@ public partial class AddCheckWindow : Window
       }
 
       LinkList.ItemsSource = _links;
-      SubtaskList.ItemsSource = _subtasks;
+      PrepareSubtaskEditor();
       ApplyDeadlineLink();
    }
 
@@ -113,22 +122,327 @@ public partial class AddCheckWindow : Window
       if (string.IsNullOrWhiteSpace(title))
          return;
 
-      _subtasks.Add(new ChecklistSubtask { Title = title });
+      var subtask = new ChecklistSubtask { Title = title };
+      _subtasks.Add(subtask);
+      AddSubtaskRow(subtask);
       SubtaskTextBox.Text = string.Empty;
       SubtaskTextBox.Focus();
       Dispatcher.UIThread.Post(FormScroll.ScrollToEnd, DispatcherPriority.Loaded);
+   }
+
+   private void PrepareSubtaskEditor()
+   {
+      AddHandler(PointerMovedEvent, SubtaskPointerMoved, RoutingStrategies.Tunnel, true);
+      AddHandler(PointerReleasedEvent, SubtaskPointerReleased, RoutingStrategies.Tunnel, true);
+      foreach (var subtask in _subtasks)
+         AddSubtaskRow(subtask);
+   }
+
+   private void AddSubtaskRow(ChecklistSubtask subtask)
+   {
+      var title = new TextBox
+      {
+         Classes = { "subtask-field" },
+         Text = subtask.Title
+      };
+      ToolTip.SetTip(title, "Edit subtask title");
+
+      var remove = new Button
+      {
+         Classes = { "subtask-remove" },
+         Content = "×"
+      };
+      ToolTip.SetTip(remove, "Delete subtask");
+
+      var grip = new Border
+      {
+         Classes = { "subtask-grip" },
+         Child = new TextBlock
+         {
+            Text = "⋮⋮",
+            Classes = { "subtask-grip-mark" }
+         }
+      };
+      ToolTip.SetTip(grip, "Drag to reorder");
+
+      var fields = new Grid
+      {
+         ColumnDefinitions = ColumnDefinitions.Parse("22,*,32"),
+         ColumnSpacing = 8,
+         VerticalAlignment = VerticalAlignment.Center
+      };
+      Grid.SetColumn(title, 1);
+      Grid.SetColumn(remove, 2);
+      fields.Children.Add(grip);
+      fields.Children.Add(title);
+      fields.Children.Add(remove);
+
+      var row = new Border
+      {
+         Classes = { "subtask-row" },
+         Child = fields
+      };
+
+      var editor = new SubtaskEditor(row, title, subtask);
+      title.LostFocus += (_, _) => CommitSubtaskTitle(editor, restoreEmpty: true);
+      title.KeyDown += (_, e) => SubtaskTitle_KeyDown(editor, e);
+      remove.Click += (_, _) => _ = ConfirmRemoveSubtaskAsync(editor);
+      grip.PointerPressed += (_, e) => StartSubtaskDrag(row, e);
+
+      _subtaskEditors.Add(editor);
+      SubtaskList.Children.Add(row);
+   }
+
+   private static void SubtaskTitle_KeyDown(SubtaskEditor editor, KeyEventArgs e)
+   {
+      if (e.Key == Key.Escape)
+      {
+         editor.Title.Text = editor.Subtask.Title;
+         e.Handled = true;
+         return;
+      }
+
+      if (e.Key != Key.Enter && e.Key != Key.Return)
+         return;
+
+      CommitSubtaskTitle(editor, restoreEmpty: true);
+      e.Handled = true;
+   }
+
+   private static void CommitSubtaskTitle(SubtaskEditor editor, bool restoreEmpty)
+   {
+      var text = editor.Title.Text?.Trim() ?? string.Empty;
+      if (text.Length == 0)
+      {
+         if (restoreEmpty && editor.Title.Text != editor.Subtask.Title)
+            editor.Title.Text = editor.Subtask.Title;
+         return;
+      }
+
+      editor.Subtask.Title = text;
+      if (restoreEmpty && editor.Title.Text != text)
+         editor.Title.Text = text;
+   }
+
+   private async Task ConfirmRemoveSubtaskAsync(SubtaskEditor editor)
+   {
+      if (_subtaskDeleteOpen)
+         return;
+
+      var title = editor.Title.Text?.Trim();
+      if (string.IsNullOrWhiteSpace(title))
+         title = editor.Subtask.Title.Trim();
+
+      var message = string.IsNullOrWhiteSpace(title)
+          ? "Are you sure you want to delete this subtask?"
+          : $"Are you sure you want to delete \"{title}\"?";
+
+      _subtaskDeleteOpen = true;
+      try
+      {
+         var confirm = new StyledDialog(
+             "Delete subtask?",
+             message,
+             "Delete",
+             "Cancel",
+             danger: true);
+         if (await confirm.ShowDialog<bool>(this) != true)
+            return;
+      }
+      finally
+      {
+         _subtaskDeleteOpen = false;
+      }
+
+      if (!_subtaskEditors.Contains(editor))
+         return;
+
+      if (ReferenceEquals(_subtaskDragRow, editor.Row))
+      {
+         var pointer = _subtaskPointer;
+         _subtaskPendingTarget = -1;
+         ClearSubtaskDrag();
+         if (pointer?.Captured == this)
+            pointer.Capture(null);
+      }
+
+      _subtasks.Remove(editor.Subtask);
+      _subtaskEditors.Remove(editor);
+      SubtaskList.Children.Remove(editor.Row);
+   }
+
+   private void StartSubtaskDrag(Border row, PointerPressedEventArgs e)
+   {
+      if (_subtaskDragRow is not null)
+         return;
+
+      if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+         return;
+
+      // The row is removed from the list as it moves. Capturing it would end the gesture after one step.
+      _subtaskDragRow = row;
+      _subtaskPointer = e.Pointer;
+      _subtaskDragStart = e.GetPosition(SubtaskList);
+      _subtaskDragging = false;
+      _subtaskPendingTarget = -1;
+      e.Pointer.Capture(this);
+      e.Handled = true;
+   }
+
+   private void SubtaskPointerMoved(object? sender, PointerEventArgs e)
+   {
+      if (_subtaskDragRow is not { } row || _subtaskPointer != e.Pointer)
+         return;
+
+      if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+      {
+         EndSubtaskDrag(e);
+         return;
+      }
+
+      var position = e.GetPosition(SubtaskList);
+      if (!_subtaskDragging)
+      {
+         var delta = position - _subtaskDragStart;
+         if (Math.Abs(delta.X) < 4 && Math.Abs(delta.Y) < 4)
+            return;
+
+         _subtaskDragging = true;
+         row.Classes.Add("dragging");
+         row.ZIndex = 2;
+      }
+
+      ScrollSubtasksWhileDragging(e.GetPosition(FormScroll));
+      QueueSubtaskMove(SubtaskIndexAt(position.Y, row));
+      e.Handled = true;
+   }
+
+   private void SubtaskPointerReleased(object? sender, PointerReleasedEventArgs e)
+   {
+      if (_subtaskDragRow is null || _subtaskPointer != e.Pointer)
+         return;
+
+      EndSubtaskDrag(e);
+      e.Handled = true;
+   }
+
+   protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+   {
+      base.OnPointerCaptureLost(e);
+      if (_subtaskDragRow is null)
+         return;
+
+      CommitPendingSubtaskMove();
+      ClearSubtaskDrag();
+   }
+
+   private void EndSubtaskDrag(PointerEventArgs e)
+   {
+      CommitPendingSubtaskMove();
+      ClearSubtaskDrag();
+      if (e.Pointer.Captured == this)
+         e.Pointer.Capture(null);
+   }
+
+   private void ClearSubtaskDrag()
+   {
+      if (_subtaskDragRow is { } row)
+      {
+         row.Classes.Remove("dragging");
+         row.ZIndex = 0;
+      }
+
+      _subtaskDragRow = null;
+      _subtaskPointer = null;
+      _subtaskDragging = false;
+      _subtaskPendingTarget = -1;
+   }
+
+   private void QueueSubtaskMove(int target)
+   {
+      _subtaskPendingTarget = target;
+      if (_subtaskMoveQueued)
+         return;
+
+      _subtaskMoveQueued = true;
+      Dispatcher.UIThread.Post(() =>
+      {
+         _subtaskMoveQueued = false;
+         CommitPendingSubtaskMove();
+      }, DispatcherPriority.Input);
+   }
+
+   private void CommitPendingSubtaskMove()
+   {
+      if (_subtaskDragRow is not Border row)
+         return;
+
+      var target = _subtaskPendingTarget;
+      _subtaskPendingTarget = -1;
+      if (target >= 0)
+         MoveSubtaskRow(row, target);
+   }
+
+   private void ScrollSubtasksWhileDragging(Point pointer)
+   {
+      var height = FormScroll.Bounds.Height;
+      if (height <= 0)
+         return;
+
+      var offset = FormScroll.Offset.Y;
+      if (pointer.Y < 28)
+         offset -= 16;
+      else if (pointer.Y > height - 28)
+         offset += 16;
+      else
+         return;
+
+      var max = FormScroll.Extent.Height - height;
+      if (max < 0)
+         max = 0;
+      if (offset < 0)
+         offset = 0;
+      if (offset > max)
+         offset = max;
+
+      FormScroll.Offset = new Vector(0, offset);
+   }
+
+   private int SubtaskIndexAt(double y, Border dragging)
+   {
+      var index = 0;
+      foreach (var editor in _subtaskEditors)
+      {
+         if (ReferenceEquals(editor.Row, dragging))
+            continue;
+
+         var bounds = editor.Row.Bounds;
+         if (y > bounds.Y + bounds.Height / 2)
+            index++;
+      }
+
+      return index;
+   }
+
+   private void MoveSubtaskRow(Border row, int target)
+   {
+      var from = _subtaskEditors.FindIndex(editor => ReferenceEquals(editor.Row, row));
+      if (from < 0 || target < 0 || target == from || target >= _subtaskEditors.Count)
+         return;
+
+      var editor = _subtaskEditors[from];
+      _subtaskEditors.RemoveAt(from);
+      _subtaskEditors.Insert(target, editor);
+      _subtasks.RemoveAt(from);
+      _subtasks.Insert(target, editor.Subtask);
+      SubtaskList.Children.RemoveAt(from);
+      SubtaskList.Children.Insert(target, row);
    }
 
    private void RemoveLink_Click(object? sender, RoutedEventArgs e)
    {
       if (sender is Button { DataContext: ChecklistSubtask subtask })
          _links.Remove(subtask);
-   }
-
-   private void RemoveSubtask_Click(object? sender, RoutedEventArgs e)
-   {
-      if (sender is Button { DataContext: ChecklistSubtask subtask })
-         _subtasks.Remove(subtask);
    }
 
    private async void LinkChecklist_Click(object? sender, RoutedEventArgs e)
@@ -445,8 +759,11 @@ public partial class AddCheckWindow : Window
 
       var notes = NotesTextBox.Text?.Trim() ?? string.Empty;
 
+      foreach (var editor in _subtaskEditors)
+         CommitSubtaskTitle(editor, restoreEmpty: true);
+
       var subtasks = _links
-          .Concat(_subtasks)
+          .Concat(_subtaskEditors.Select(editor => editor.Subtask))
           .Where(subtask => !string.IsNullOrWhiteSpace(subtask.Title))
           .Select(subtask => new ChecklistSubtask
           {
@@ -477,5 +794,21 @@ public partial class AddCheckWindow : Window
       };
 
       Close(item);
+   }
+
+   private sealed class SubtaskEditor
+   {
+      public SubtaskEditor(Border row, TextBox title, ChecklistSubtask subtask)
+      {
+         Row = row;
+         Title = title;
+         Subtask = subtask;
+      }
+
+      public Border Row { get; }
+
+      public TextBox Title { get; }
+
+      public ChecklistSubtask Subtask { get; }
    }
 }

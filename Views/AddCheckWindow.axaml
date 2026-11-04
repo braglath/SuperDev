@@ -357,6 +357,71 @@
             <Setter Property="Background" Value="{DynamicResource TextMutedBrush}"/>
         </Style>
 
+        <Style Selector="TextBox.subtask-field">
+            <Setter Property="Height" Value="{DynamicResource ControlHeightSm}"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="(controls:TextBoxClearButton.Show)" Value="False"/>
+        </Style>
+
+        <Style Selector="TextBox.subtask-field:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+        <Style Selector="Border.subtask-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="2,0"/>
+        </Style>
+
+        <Style Selector="Border.subtask-row.dragging">
+            <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
+        </Style>
+
+        <Style Selector="Border.subtask-grip">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Cursor" Value="SizeAll"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style Selector="TextBlock.subtask-grip-mark">
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.subtask-remove">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeightSm}"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.subtask-remove:pointerover">
+            <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}"/>
+        </Style>
+
     </Window.Styles>
 
     <Grid RowDefinitions="*,Auto"
@@ -566,8 +631,15 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock Text="Subtasks"
-                           Classes="field-label"/>
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Subtasks"
+                               Classes="field-label"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="Drag the handle to reorder"
+                               FontSize="{DynamicResource Font12}"
+                               Foreground="{DynamicResource TextSubtleBrush}"
+                               VerticalAlignment="Center"/>
+                </Grid>
                 <Grid ColumnDefinitions="*,Auto"
                       ColumnSpacing="8">
                     <TextBox x:Name="SubtaskTextBox"
@@ -579,24 +651,7 @@
                             Classes="expand-notes"
                             Click="AddSubtask_Click"/>
                 </Grid>
-                <ItemsControl x:Name="SubtaskList">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="models:ChecklistSubtask">
-                            <Grid ColumnDefinitions="*,Auto"
-                                  ColumnSpacing="8"
-                                  Margin="0,0,0,6">
-                                <TextBlock Text="{Binding Title}"
-                                           VerticalAlignment="Center"
-                                           TextWrapping="Wrap"
-                                           FontSize="{DynamicResource Font14}"/>
-                                <Button Grid.Column="1"
-                                        Classes="deadline-clear"
-                                        Content="×"
-                                        Click="RemoveSubtask_Click"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <StackPanel x:Name="SubtaskList" Spacing="6"/>
             </StackPanel>
 
             <!-- Notes -->

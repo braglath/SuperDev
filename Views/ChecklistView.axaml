@@ -166,6 +166,98 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
 
+        <Style Selector="TextBox.subtask-inline">
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBodyBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="4,1"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="(controls:TextBoxClearButton.Show)" Value="False"/>
+        </Style>
+
+        <Style Selector="TextBox.subtask-inline:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+        </Style>
+
+        <Style Selector="TextBox.subtask-inline:focus">
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+        <Style Selector="ItemsControl.locked TextBox.subtask-inline,
+                         ItemsControl.locked TextBox.subtask-inline:pointerover,
+                         ItemsControl.locked TextBox.subtask-inline:focus">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+            <Setter Property="Focusable" Value="False"/>
+        </Style>
+
+        <Style Selector="Border.subtask-row">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="1,0"/>
+        </Style>
+
+        <Style Selector="Border.subtask-row.dragging">
+            <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
+        </Style>
+
+        <Style Selector="Border.subtask-grip">
+            <Setter Property="Width" Value="16"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Cursor" Value="SizeAll"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style Selector="ItemsControl.locked Border.subtask-grip">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="TextBlock.subtask-grip-mark">
+            <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
+
+        <Style Selector="Button.subtask-remove">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.subtask-remove:pointerover">
+            <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}"/>
+        </Style>
+
+        <Style Selector="ItemsControl.locked Button.subtask-remove">
+            <Setter Property="IsVisible" Value="False"/>
+        </Style>
+
         <!-- Priority -->
         <Style Selector="TextBlock.priority">
             <Setter Property="FontSize" Value="{DynamicResource Font11}"/>
@@ -1189,7 +1281,8 @@
 
             <Grid Grid.Row="1">
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ScrollViewer x:Name="ChecklistScroll"
+                          VerticalScrollBarVisibility="Auto">
 
                 <ItemsControl x:Name="ChecklistItems">
 
@@ -1275,24 +1368,10 @@
     </ItemsControl.ItemTemplate>
 </ItemsControl>
 
-<ItemsControl ItemsSource="{Binding ManualSubtasks}"
-              Margin="0,4,0,0"
-              IsVisible="{Binding HasManualSubtasks}">
-    <ItemsControl.ItemTemplate>
-        <DataTemplate x:DataType="models:ChecklistSubtask">
-            <Grid ColumnDefinitions="Auto,*"
-                  ColumnSpacing="8"
-                  Margin="0,0,0,4">
-                <CheckBox IsChecked="{Binding IsCompleted}"
-                          Click="SubtaskCheck_Click"
-                          VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1"
-                           Text="{Binding Title}"
-                           Classes="subtask-title"/>
-            </Grid>
-        </DataTemplate>
-    </ItemsControl.ItemTemplate>
-</ItemsControl>
+<StackPanel Classes="manual-subtasks"
+            Margin="0,4,0,0"
+            IsVisible="False"
+            Loaded="ManualSubtasks_Loaded"/>
 
 </StackPanel>
 

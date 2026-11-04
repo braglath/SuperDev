@@ -10,6 +10,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -63,6 +64,16 @@ public partial class ChecklistView : UserControl
    private bool _switchingDetail;
    private readonly HashSet<Key> _itemKeysDown = new();
    private TopLevel? _inputRoot;
+   private Border? _subtaskDragRow;
+   private StackPanel? _subtaskDragHost;
+   private ChecklistItem? _subtaskDragItem;
+   private IPointer? _subtaskPointer;
+   private Point _subtaskDragStart;
+   private bool _subtaskDragging;
+   private int _subtaskPendingTarget = -1;
+   private bool _subtaskMoveQueued;
+   private bool _subtaskReordered;
+   private bool _subtaskDeleteOpen;
    public string WorkTitle { get; private set; }
 
    public string BranchName { get; private set; }
@@ -219,6 +230,8 @@ public partial class ChecklistView : UserControl
       ApplyShortcutTips();
       AddHandler(KeyDownEvent, ItemShortcutKeyDown, RoutingStrategies.Tunnel);
       AddHandler(KeyUpEvent, ItemShortcutKeyUp, RoutingStrategies.Tunnel);
+      AddHandler(PointerMovedEvent, SubtaskPointerMoved, RoutingStrategies.Tunnel, true);
+      AddHandler(PointerReleasedEvent, SubtaskPointerReleased, RoutingStrategies.Tunnel, true);
    }
 
    private string FormatTemplateLine(WorkType workType, string? reminder)
@@ -743,12 +756,455 @@ public partial class ChecklistView : UserControl
       MarkEdited();
    }
 
+   private void ManualSubtasks_Loaded(object? sender, RoutedEventArgs e)
+   {
+      if (sender is not StackPanel host || FindOwnerItem(host) is not ChecklistItem item)
+         return;
+
+      host.Children.Clear();
+      foreach (var subtask in item.Subtasks)
+      {
+         if (!subtask.IsManual)
+            continue;
+
+         host.Children.Add(CreateManualSubtaskRow(subtask));
+      }
+
+      host.IsVisible = host.Children.Count > 0;
+   }
+
+   private Border CreateManualSubtaskRow(ChecklistSubtask subtask)
+   {
+      var title = new TextBox
+      {
+         Classes = { "subtask-inline" },
+         Text = subtask.Title,
+         PlaceholderText = "Subtask",
+         DataContext = subtask
+      };
+      ToolTip.SetTip(title, "Edit subtask title");
+
+      var check = new CheckBox
+      {
+         IsChecked = subtask.IsCompleted,
+         VerticalAlignment = VerticalAlignment.Center,
+         DataContext = subtask
+      };
+      check.Click += SubtaskCheck_Click;
+
+      var remove = new Button
+      {
+         Classes = { "subtask-remove" },
+         Content = "×",
+         DataContext = subtask
+      };
+      ToolTip.SetTip(remove, "Delete subtask");
+      remove.Click += DeleteSubtask_Click;
+
+      var grip = new Border
+      {
+         Classes = { "subtask-grip" },
+         Child = new TextBlock
+         {
+            Text = "⋮⋮",
+            Classes = { "subtask-grip-mark" }
+         }
+      };
+      ToolTip.SetTip(grip, "Drag to reorder");
+      grip.PointerPressed += SubtaskGrip_PointerPressed;
+
+      var fields = new Grid
+      {
+         ColumnDefinitions = ColumnDefinitions.Parse("Auto,Auto,*,Auto"),
+         ColumnSpacing = 8,
+         VerticalAlignment = VerticalAlignment.Center
+      };
+      Grid.SetColumn(check, 1);
+      Grid.SetColumn(title, 2);
+      Grid.SetColumn(remove, 3);
+      fields.Children.Add(grip);
+      fields.Children.Add(check);
+      fields.Children.Add(title);
+      fields.Children.Add(remove);
+
+      var row = new Border
+      {
+         Classes = { "subtask-row" },
+         DataContext = subtask,
+         Margin = new Thickness(0, 0, 0, 2),
+         Child = fields
+      };
+
+      title.LostFocus += SubtaskTitle_LostFocus;
+      title.KeyDown += SubtaskTitle_KeyDown;
+      return row;
+   }
+
+   private void SubtaskTitle_LostFocus(object? sender, RoutedEventArgs e)
+   {
+      if (sender is TextBox box && box.DataContext is ChecklistSubtask subtask)
+         CommitSubtaskTitle(box, subtask);
+   }
+
+   private void SubtaskTitle_KeyDown(object? sender, KeyEventArgs e)
+   {
+      if (sender is not TextBox box || box.DataContext is not ChecklistSubtask subtask)
+         return;
+
+      if (e.Key == Key.Escape)
+      {
+         box.Text = subtask.Title;
+         e.Handled = true;
+         if (FindOwnerItem(box) is { } owner && FindItemBorder(owner) is { } border)
+            border.Focus();
+         return;
+      }
+
+      if (e.Key != Key.Enter && e.Key != Key.Return)
+         return;
+
+      e.Handled = true;
+      CommitSubtaskTitle(box, subtask);
+      if (FindOwnerItem(box) is { } item && FindItemBorder(item) is { } row)
+         row.Focus();
+   }
+
+   private void CommitSubtaskTitle(TextBox box, ChecklistSubtask subtask)
+   {
+      if (_documentCompleted)
+      {
+         if (box.Text != subtask.Title)
+            box.Text = subtask.Title;
+         return;
+      }
+
+      var text = box.Text?.Trim() ?? string.Empty;
+      if (text.Length == 0)
+      {
+         if (box.Text != subtask.Title)
+            box.Text = subtask.Title;
+         return;
+      }
+
+      if (box.Text != text)
+         box.Text = text;
+
+      if (subtask.Title == text)
+         return;
+
+      subtask.Title = text;
+      MarkEdited();
+   }
+
+   private async void DeleteSubtask_Click(object? sender, RoutedEventArgs e)
+   {
+      if (_documentCompleted || _subtaskDeleteOpen)
+         return;
+
+      if (sender is not Button button || button.DataContext is not ChecklistSubtask subtask)
+         return;
+
+      Border? row = null;
+      for (Visual? current = button; current is not null; current = current.GetVisualParent())
+      {
+         if (current is Border border && border.Classes.Contains("subtask-row"))
+         {
+            row = border;
+            break;
+         }
+      }
+
+      if (row is null || FindOwnerItem(row) is not ChecklistItem item)
+         return;
+
+      var title = subtask.Title.Trim();
+      var message = string.IsNullOrWhiteSpace(title)
+          ? "Are you sure you want to delete this subtask?"
+          : $"Are you sure you want to delete \"{title}\"?";
+      var owner = DialogOwner();
+      if (owner is null)
+         return;
+
+      _subtaskDeleteOpen = true;
+      bool confirmed;
+      try
+      {
+         var dialog = new StyledDialog(
+             "Delete subtask?",
+             message,
+             "Delete",
+             "Cancel",
+             danger: true);
+         confirmed = await dialog.ShowDialog<bool>(owner);
+      }
+      finally
+      {
+         _subtaskDeleteOpen = false;
+      }
+
+      if (!confirmed || !item.Subtasks.Contains(subtask))
+         return;
+
+      if (ReferenceEquals(_subtaskDragRow, row))
+      {
+         var pointer = _subtaskPointer;
+         _subtaskPendingTarget = -1;
+         ClearSubtaskDrag();
+         if (pointer?.Captured == this)
+            pointer.Capture(null);
+      }
+
+      item.Subtasks.Remove(subtask);
+      if (!item.CanComplete)
+         item.IsCompleted = false;
+
+      if (row.Parent is StackPanel host)
+      {
+         host.Children.Remove(row);
+         host.IsVisible = host.Children.Count > 0;
+      }
+
+      SyncParentCheckBox(item);
+      SelectItem(item);
+      MarkEdited();
+   }
+
+   private void SubtaskGrip_PointerPressed(object? sender, PointerPressedEventArgs e)
+   {
+      if (_documentCompleted || sender is not Border grip)
+         return;
+
+      Border? row = null;
+      for (Visual? current = grip; current is not null; current = current.GetVisualParent())
+      {
+         if (current is Border border && border.Classes.Contains("subtask-row"))
+         {
+            row = border;
+            break;
+         }
+      }
+
+      if (row?.Parent is not StackPanel host || FindOwnerItem(row) is not ChecklistItem item)
+         return;
+
+      if (_subtaskDragRow is not null)
+         return;
+
+      if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+         return;
+
+      // The row is removed from the list as it moves. Capturing it would end the gesture after one step.
+      _subtaskDragRow = row;
+      _subtaskDragHost = host;
+      _subtaskDragItem = item;
+      _subtaskPointer = e.Pointer;
+      _subtaskDragStart = e.GetPosition(host);
+      _subtaskDragging = false;
+      _subtaskPendingTarget = -1;
+      _subtaskReordered = false;
+      e.Pointer.Capture(this);
+      e.Handled = true;
+      SelectItem(item);
+   }
+
+   private void SubtaskPointerMoved(object? sender, PointerEventArgs e)
+   {
+      if (_subtaskDragRow is not { } row || _subtaskDragHost is not { } host || _subtaskPointer != e.Pointer)
+         return;
+
+      if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+      {
+         EndSubtaskDrag(e);
+         return;
+      }
+
+      var position = e.GetPosition(host);
+      if (!_subtaskDragging)
+      {
+         var delta = position - _subtaskDragStart;
+         if (Math.Abs(delta.X) < 4 && Math.Abs(delta.Y) < 4)
+            return;
+
+         _subtaskDragging = true;
+         row.Classes.Add("dragging");
+         row.ZIndex = 2;
+      }
+
+      ScrollSubtasksWhileDragging(e.GetPosition(ChecklistScroll));
+      QueueSubtaskMove(SubtaskIndexAt(host, position.Y, row));
+      e.Handled = true;
+   }
+
+   private void SubtaskPointerReleased(object? sender, PointerReleasedEventArgs e)
+   {
+      if (_subtaskDragRow is null || _subtaskPointer != e.Pointer)
+         return;
+
+      EndSubtaskDrag(e);
+      e.Handled = true;
+   }
+
+   protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+   {
+      base.OnPointerCaptureLost(e);
+      if (_subtaskDragRow is null)
+         return;
+
+      CommitPendingSubtaskMove();
+      var changed = _subtaskReordered;
+      ClearSubtaskDrag();
+      if (changed)
+         MarkEdited();
+   }
+
+   private void EndSubtaskDrag(PointerEventArgs e)
+   {
+      CommitPendingSubtaskMove();
+      var changed = _subtaskReordered;
+      ClearSubtaskDrag();
+      if (e.Pointer.Captured == this)
+         e.Pointer.Capture(null);
+      if (changed)
+         MarkEdited();
+   }
+
+   private void ClearSubtaskDrag()
+   {
+      if (_subtaskDragRow is { } row)
+      {
+         row.Classes.Remove("dragging");
+         row.ZIndex = 0;
+      }
+
+      _subtaskDragRow = null;
+      _subtaskDragHost = null;
+      _subtaskDragItem = null;
+      _subtaskPointer = null;
+      _subtaskDragging = false;
+      _subtaskPendingTarget = -1;
+      _subtaskReordered = false;
+   }
+
+   private void QueueSubtaskMove(int target)
+   {
+      _subtaskPendingTarget = target;
+      if (_subtaskMoveQueued)
+         return;
+
+      _subtaskMoveQueued = true;
+      Dispatcher.UIThread.Post(() =>
+      {
+         _subtaskMoveQueued = false;
+         CommitPendingSubtaskMove();
+      }, DispatcherPriority.Input);
+   }
+
+   private void CommitPendingSubtaskMove()
+   {
+      if (_subtaskDragRow is not Border row)
+         return;
+
+      var target = _subtaskPendingTarget;
+      _subtaskPendingTarget = -1;
+      if (target >= 0)
+         MoveSubtaskRow(row, target);
+   }
+
+   private void ScrollSubtasksWhileDragging(Point pointer)
+   {
+      var height = ChecklistScroll.Bounds.Height;
+      if (height <= 0)
+         return;
+
+      var offset = ChecklistScroll.Offset.Y;
+      if (pointer.Y < 28)
+         offset -= 16;
+      else if (pointer.Y > height - 28)
+         offset += 16;
+      else
+         return;
+
+      var max = ChecklistScroll.Extent.Height - height;
+      if (max < 0)
+         max = 0;
+      if (offset < 0)
+         offset = 0;
+      if (offset > max)
+         offset = max;
+
+      ChecklistScroll.Offset = new Vector(0, offset);
+   }
+
+   private static int SubtaskIndexAt(StackPanel host, double y, Border dragging)
+   {
+      var index = 0;
+      foreach (var child in host.Children)
+      {
+         if (ReferenceEquals(child, dragging))
+            continue;
+
+         var bounds = child.Bounds;
+         if (y > bounds.Y + bounds.Height / 2)
+            index++;
+      }
+
+      return index;
+   }
+
+   private void MoveSubtaskRow(Border row, int target)
+   {
+      if (_subtaskDragHost is not StackPanel host || _subtaskDragItem is not ChecklistItem item)
+         return;
+
+      var from = host.Children.IndexOf(row);
+      if (from < 0 || target < 0 || target == from || target >= host.Children.Count)
+         return;
+
+      if (row.DataContext is not ChecklistSubtask subtask)
+         return;
+
+      host.Children.RemoveAt(from);
+      host.Children.Insert(target, row);
+      if (ReorderManual(item, subtask, target))
+      {
+         _subtaskReordered = true;
+         return;
+      }
+
+      host.Children.RemoveAt(target);
+      host.Children.Insert(from, row);
+   }
+
+   private static bool ReorderManual(ChecklistItem item, ChecklistSubtask subtask, int targetManualIndex)
+   {
+      var manuals = item.Subtasks.Where(entry => entry.IsManual).ToList();
+      var from = manuals.FindIndex(entry => ReferenceEquals(entry, subtask));
+      if (from < 0 || targetManualIndex < 0 || targetManualIndex >= manuals.Count || targetManualIndex == from)
+         return false;
+
+      manuals.RemoveAt(from);
+      manuals.Insert(targetManualIndex, subtask);
+
+      var next = 0;
+      for (var i = 0; i < item.Subtasks.Count; i++)
+      {
+         if (!item.Subtasks[i].IsManual)
+            continue;
+
+         item.Subtasks[i] = manuals[next++];
+      }
+
+      return true;
+   }
+
    private void SyncParentCheckBox(ChecklistItem item)
    {
       if (FindItemBorder(item) is not { } border)
          return;
 
-      var box = border.GetVisualDescendants().OfType<CheckBox>().FirstOrDefault();
+      var box = border.GetVisualDescendants()
+          .OfType<CheckBox>()
+          .FirstOrDefault(candidate => candidate.DataContext is ChecklistItem);
       if (box is not null)
          SetCheckBox(box, item.IsCompleted);
    }
@@ -1160,6 +1616,9 @@ public partial class ChecklistView : UserControl
       for (var current = source; current is not null && current != row; current = current.GetVisualParent())
       {
          if (current is Button or CheckBox or TextBox)
+            return true;
+
+         if (current is Border border && border.Classes.Contains("subtask-grip"))
             return true;
       }
 
