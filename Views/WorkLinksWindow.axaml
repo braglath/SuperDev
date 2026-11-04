@@ -6,45 +6,44 @@
         SizeToContent="Height"
         CanResize="False"
         Title="Repository, branch, and PR"
-        Icon="/Assets/app.ico"
-        Background="#0B1120"
+        Background="{DynamicResource AppBackgroundBrush}"
         WindowStartupLocation="CenterOwner">
 
     <Window.Styles>
 
         <Style Selector="TextBlock">
             <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         </Style>
 
         <Style Selector="TextBlock.field-label">
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
         </Style>
 
         <Style Selector="TextBox.field">
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
             <Setter Property="Padding" Value="12,0"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Background" Value="#111827"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="PlaceholderForeground" Value="#64748B"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="PlaceholderForeground" Value="{DynamicResource TextSubtleBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style Selector="TextBox.field:focus">
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
 
         <Style Selector="Button.dialog-button">
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
             <Setter Property="MinWidth" Value="96"/>
             <Setter Property="Padding" Value="16,0"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -52,25 +51,25 @@
         </Style>
 
         <Style Selector="Button.dialog-button.primary">
-            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
         <Style Selector="Button.dialog-button.primary:pointerover">
-            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
 
         <Style Selector="Button.dialog-button.secondary">
-            <Setter Property="Background" Value="#172033"/>
-            <Setter Property="Foreground" Value="#CBD5E1"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBodyBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <Style Selector="Button.dialog-button.secondary:pointerover">
-            <Setter Property="Background" Value="#1E2A3F"/>
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
 
     </Window.Styles>

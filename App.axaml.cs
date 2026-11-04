@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using SuperDev.Services;
 using SuperDev.ViewModels;
 using SuperDev.Views;
 
@@ -13,6 +14,7 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        AppearanceService.Install();
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -47,7 +49,7 @@ public partial class App : Application
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                     window.OpenFromNotification(request.DocumentId, request.FilePath)));
             MacNotificationCenter.EnsureReady();
-            MacDockIcon.Apply();
+            AppearanceService.ApplyWindowIcon(window);
             SystemNotification.RegisterFileAssociation();
         }
 

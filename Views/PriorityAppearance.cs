@@ -1,15 +1,16 @@
 using Avalonia.Media;
 using SuperDev.Models;
+using SuperDev.Services;
 
 namespace SuperDev.Views;
 
 internal static class PriorityAppearance
 {
-    public static readonly IBrush Neutral = Brush("#F8FAFC");
-    public static readonly IBrush Critical = Brush("#F87171");
-    public static readonly IBrush Required = Brush("#FBBF24");
-    public static readonly IBrush Conditional = Brush("#38BDF8");
-    public static readonly IBrush Review = Brush("#C4B5FD");
+    public static readonly IBrush Neutral = AppearanceService.Brush("TextPrimaryBrush");
+    public static readonly IBrush Critical = AppearanceService.Brush("DangerTextBrush");
+    public static readonly IBrush Required = AppearanceService.Brush("WarningTextBrush");
+    public static readonly IBrush Conditional = AppearanceService.Brush("InfoTextBrush");
+    public static readonly IBrush Review = AppearanceService.Brush("ReviewTextBrush");
 
     public static string ClassName(ChecklistPriority priority) => priority switch
     {
@@ -26,6 +27,4 @@ internal static class PriorityAppearance
         ChecklistPriority.Conditional => Conditional,
         _ => Review
     };
-
-    private static SolidColorBrush Brush(string hex) => SolidColorBrush.Parse(hex);
 }

@@ -29,7 +29,7 @@ public sealed class EditReminderWindow : Window
         SizeToContent = SizeToContent.Height;
         CanResize = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = Brush("#0B1120");
+        Background = AppearanceService.Brush("AppBackgroundBrush");
 
         var local = reminder.NextOn.ToLocalTime();
         _whenBox = Field(local.ToString("dd MMM yyyy h:mm tt", CultureInfo.InvariantCulture));
@@ -37,7 +37,7 @@ public sealed class EditReminderWindow : Window
         {
             Content = "Repeat",
             IsChecked = reminder.EveryMinutes > 0,
-            Foreground = Brush("#E2E8F0"),
+            Foreground = AppearanceService.Brush("TextSecondaryBrush"),
             Margin = new Thickness(0, 12, 0, 0)
         };
         _intervalBox = Field(RepeatCount(reminder.EveryMinutes).ToString(CultureInfo.InvariantCulture));
@@ -50,12 +50,12 @@ public sealed class EditReminderWindow : Window
         {
             Content = "Silent",
             IsChecked = reminder.Silent,
-            Foreground = Brush("#E2E8F0"),
+            Foreground = AppearanceService.Brush("TextSecondaryBrush"),
             Margin = new Thickness(0, 12, 0, 0)
         };
         _error = new TextBlock
         {
-            Foreground = Brush("#F87171"),
+            Foreground = AppearanceService.Brush("DangerTextBrush"),
             TextWrapping = TextWrapping.Wrap,
             IsVisible = false,
             Margin = new Thickness(0, 8, 0, 0)
@@ -83,8 +83,8 @@ public sealed class EditReminderWindow : Window
         var whenText = new TextBlock
         {
             Text = ReminderText.Clock(reminder.NextOn),
-            Foreground = Brush("#F8FAFC"),
-            FontSize = 15,
+            Foreground = AppearanceService.Brush("TextPrimaryBrush"),
+            FontSize = AppearanceService.Font(15),
             IsVisible = !scheduleEditable
         };
         var note = new TextBlock
@@ -92,17 +92,17 @@ public sealed class EditReminderWindow : Window
             Text = scheduleEditable
                 ? "Example: 16 Oct 2026 9:30 AM"
                 : "This reminder follows the checklist deadline.",
-            Foreground = Brush("#64748B"),
-            FontSize = 12,
+            Foreground = AppearanceService.Brush("TextSubtleBrush"),
+            FontSize = AppearanceService.Font(12),
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 6, 0, 0)
         };
 
-        var remove = DialogButton("Remove", "#3F1D1D", "#FECACA");
+        var remove = DialogButton("Remove", AppearanceService.DangerSurfaceBrush, AppearanceService.DangerTextBrush);
         remove.Click += (_, _) => Close(new ReminderEditResult(true, default, 0, false));
-        var cancel = DialogButton("Cancel", "#172033", "#E2E8F0");
+        var cancel = DialogButton("Cancel", AppearanceService.CardBrush, AppearanceService.TextSecondaryBrush);
         cancel.Click += (_, _) => Close(null);
-        var save = DialogButton("Save", "#2563EB", "#FFFFFF");
+        var save = DialogButton("Save", AppearanceService.AccentBrush, AppearanceService.TextOnAccentBrush);
         save.Click += (_, _) => Save(reminder);
 
         var buttons = new StackPanel
@@ -122,16 +122,16 @@ public sealed class EditReminderWindow : Window
                 new TextBlock
                 {
                     Text = string.IsNullOrWhiteSpace(reminder.Title) ? "Reminder" : reminder.Title,
-                    Foreground = Brush("#F8FAFC"),
-                    FontSize = 18,
+                    Foreground = AppearanceService.Brush("TextPrimaryBrush"),
+                    FontSize = AppearanceService.Font(18),
                     FontWeight = FontWeight.SemiBold,
                     TextWrapping = TextWrapping.Wrap
                 },
                 new TextBlock
                 {
                     Text = Kind(reminder),
-                    Foreground = Brush("#94A3B8"),
-                    FontSize = 13,
+                    Foreground = AppearanceService.Brush("TextMutedBrush"),
+                    FontSize = AppearanceService.Font(13),
                     Margin = new Thickness(0, 4, 0, 14)
                 },
                 whenText,
@@ -222,28 +222,28 @@ public sealed class EditReminderWindow : Window
     private static TextBlock Label(string text) => new()
     {
         Text = text,
-        Foreground = Brush("#94A3B8"),
-        FontSize = 13,
+        Foreground = AppearanceService.Brush("TextMutedBrush"),
+        FontSize = AppearanceService.Font(13),
         Margin = new Thickness(0, 0, 0, 6)
     };
 
     private static TextBox Field(string text) => new()
     {
         Text = text,
-        Background = Brush("#111827"),
-        Foreground = Brush("#F8FAFC"),
-        BorderBrush = Brush("#334155"),
+        Background = AppearanceService.Brush("SurfaceInsetBrush"),
+        Foreground = AppearanceService.Brush("TextPrimaryBrush"),
+        BorderBrush = AppearanceService.Brush("BorderBrush"),
         BorderThickness = new Thickness(1),
         CornerRadius = new CornerRadius(8),
         Padding = new Thickness(10, 8),
-        FontSize = 14
+        FontSize = AppearanceService.Font(14)
     };
 
     private static Button DialogButton(string content, string background, string foreground) => new()
     {
         Content = content,
-        Background = Brush(background),
-        Foreground = Brush(foreground),
+        Background = AppearanceService.Brush(background),
+        Foreground = AppearanceService.Brush(foreground),
         BorderThickness = new Thickness(0),
         CornerRadius = new CornerRadius(8),
         Padding = new Thickness(14, 0),
@@ -251,6 +251,4 @@ public sealed class EditReminderWindow : Window
         HorizontalContentAlignment = HorizontalAlignment.Center,
         VerticalContentAlignment = VerticalAlignment.Center
     };
-
-    private static SolidColorBrush Brush(string color) => new(Color.Parse(color));
 }

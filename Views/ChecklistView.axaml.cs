@@ -1330,9 +1330,23 @@ public partial class ChecklistView : UserControl
       DocumentEdited?.Invoke(this, EventArgs.Empty);
    }
 
+   public void ApplyAppearance()
+   {
+      if (AppearanceService.Settings.Density == AppDensity.Compact)
+         HeaderPanel.Classes.Add("compact");
+      else
+         HeaderPanel.Classes.Remove("compact");
+   }
+
+   private void Appearance_Changed(object? sender, EventArgs e) =>
+       ApplyAppearance();
+
    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
    {
       base.OnAttachedToVisualTree(e);
+      AppearanceService.Changed -= Appearance_Changed;
+      AppearanceService.Changed += Appearance_Changed;
+      ApplyAppearance();
       _inputRoot = TopLevel.GetTopLevel(this);
       if (_inputRoot is Window window && !ReferenceEquals(_hostWindow, window))
       {
@@ -1352,6 +1366,7 @@ public partial class ChecklistView : UserControl
 
    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
    {
+      AppearanceService.Changed -= Appearance_Changed;
       _inputRoot?.RemoveHandler(PointerPressedEvent, Title_DismissPointerPressed);
       _inputRoot = null;
       if (_hostWindow is not null)

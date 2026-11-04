@@ -16,7 +16,7 @@ public class NoteText : TextBlock
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Cursor HandCursor = new(StandardCursorType.Hand);
-    private static readonly IBrush LinkBrush = new SolidColorBrush(Color.Parse("#60A5FA"));
+    private static readonly IBrush LinkBrush = AppearanceService.Brush("AccentTextBrush");
 
     public static readonly StyledProperty<string?> SourceProperty =
         AvaloniaProperty.Register<NoteText, string?>(nameof(Source));

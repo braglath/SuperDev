@@ -6,8 +6,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Chrome;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -39,6 +41,7 @@ public partial class MainWindow : Window
     private bool _fileOperationInProgress;
     private readonly Queue<string> _pendingFileOpens = new();
     private bool _settingsOpen;
+    private bool _shortcutsOpen;
     private bool _settingsOverChecklist;
     private bool _settingsOverReminders;
     private bool _remindersOpen;
@@ -58,6 +61,11 @@ public partial class MainWindow : Window
     private bool _notificationListOpen;
     private string? _openNoticeKeys;
     private DateTime _lastSaveToastUtc = DateTime.MinValue;
+    private bool _updateBusy;
+    private bool _restartingForUpdate;
+    private bool _automaticUpdateStarted;
+    private bool _syncingUpdateOptions;
+    private UpdateCheckResult? _availableUpdate;
     private const int AutoSaveDelayMilliseconds = 800;
     private static readonly TimeSpan SaveToastInterval = TimeSpan.FromMinutes(30);
 
@@ -67,6 +75,17 @@ public partial class MainWindow : Window
         BindChecklistMenuItems();
         ConfigureTitleChrome();
         BuildShortcutSettings();
+        BuildAccentSwatches();
+        SyncAppearanceSelection();
+        AppearanceService.Changed += (_, _) =>
+        {
+            SyncAppearanceSelection();
+            BuildShortcutSettings();
+            RefreshRecentList();
+            BuildTemplateCards(_selectedTemplateId);
+            foreach (var tab in _tabs)
+                tab.View.ApplyAppearance();
+        };
         AddHandler(KeyDownEvent, ShortcutKeyDown, RoutingStrategies.Tunnel);
         AddHandler(KeyUpEvent, ShortcutKeyUp, RoutingStrategies.Tunnel);
         Deactivated += (_, _) => _keysDown.Clear();
@@ -76,6 +95,7 @@ public partial class MainWindow : Window
         ToolTip.SetTip(NewTabButton, AppShortcuts.WithShortcut(AppShortcuts.NewChecklist));
         ToolTip.SetTip(OpenChecklistButton, AppShortcuts.WithShortcut(AppShortcuts.OpenChecklist));
         StartReminderTimer();
+        BindUpdateSettings();
         if (Program.OwnsActivationServer)
         {
             InstanceBridge.StartServer(request =>
@@ -90,6 +110,13 @@ public partial class MainWindow : Window
         {
             foreach (var request in Program.StartupActivations)
                 OpenFromNotification(request.DocumentId, request.FilePath);
+        }
+
+        if (!_automaticUpdateStarted &&
+            (UpdateService.CheckAutomatically || UpdateService.InstallAutomatically))
+        {
+            _automaticUpdateStarted = true;
+            _ = RunUpdateCheckAsync(fromMenu: false, automatic: UpdateService.InstallAutomatically, announce: true);
         }
     }
 
@@ -129,7 +156,7 @@ public partial class MainWindow : Window
                         _saveMenuItem = item;
                         ApplyMenuGesture(item, AppShortcuts.Save);
                         break;
-                    case "Keyboard Shortcuts":
+                    case "Settings":
                         ApplyMenuGesture(item, AppShortcuts.Settings);
                         break;
                     case "Add Check":
@@ -602,7 +629,7 @@ public partial class MainWindow : Window
             IsVisible = false,
             Child = new Avalonia.Controls.Shapes.Path
             {
-                Stroke = new SolidColorBrush(Color.Parse("#4ADE80")),
+                Stroke = AppearanceService.Brush("SuccessTextBrush"),
                 StrokeThickness = 1.8,
                 StrokeLineCap = PenLineCap.Round,
                 StrokeJoin = PenLineJoin.Round,
@@ -744,8 +771,8 @@ public partial class MainWindow : Window
             StrokeThickness = filled ? 0 : 1.6,
             StrokeLineCap = PenLineCap.Round,
             StrokeJoin = PenLineJoin.Round,
-            Stroke = new SolidColorBrush(Color.Parse(filled ? "#FFFFFF" : "#F8FAFC")),
-            Fill = new SolidColorBrush(Color.Parse(filled ? "#FFFFFF" : "#00000000")),
+            Stroke = AppearanceService.Brush(filled ? AppearanceService.TextOnAccentBrush : AppearanceService.TextPrimaryBrush),
+            Fill = filled ? AppearanceService.Brush(AppearanceService.TextOnAccentBrush) : Brushes.Transparent,
             Data = Geometry.Parse(filled ? solid : outline)
         };
     }
@@ -1179,12 +1206,14 @@ public partial class MainWindow : Window
         tab.HeaderContainer.Classes.Add("selected");
 
         _settingsOpen = false;
+        _shortcutsOpen = false;
         _settingsOverChecklist = false;
         _settingsOverReminders = false;
         _remindersOpen = false;
         RemindersButton.Classes.Remove("selected");
         RemindersPanel.IsVisible = false;
         SettingsPanel.IsVisible = false;
+        ShortcutsPanel.IsVisible = false;
         WorkspaceContent.Content = tab.View;
         WorkspaceContent.IsVisible = true;
         TabBar.IsVisible = true;
@@ -1203,11 +1232,13 @@ public partial class MainWindow : Window
     private void ShowHomeScreen()
     {
         _settingsOpen = false;
+        _shortcutsOpen = false;
         _settingsOverChecklist = false;
         _settingsOverReminders = false;
         _remindersOpen = false;
         RemindersButton.Classes.Remove("selected");
         SettingsPanel.IsVisible = false;
+        ShortcutsPanel.IsVisible = false;
         RemindersPanel.IsVisible = false;
         WorkspaceContent.IsVisible = false;
         WorkspaceContent.Content = null;
@@ -1238,7 +1269,7 @@ public partial class MainWindow : Window
 
     private void UpdatePinMenuItem()
     {
-        var checklistOpen = !HomePanel.IsVisible && !SettingsPanel.IsVisible && !RemindersPanel.IsVisible && ActiveTab() is not null;
+        var checklistOpen = !HomePanel.IsVisible && !SettingsPanel.IsVisible && !ShortcutsPanel.IsVisible && !RemindersPanel.IsVisible && ActiveTab() is not null;
         var pinLabel = ActiveTab()?.IsPinned == true ? "Unpin Tab" : "Pin Tab";
         if (_pinTabMenuItem is not null)
             _pinTabMenuItem.Header = pinLabel;
@@ -1305,7 +1336,7 @@ public partial class MainWindow : Window
                     "Add Check" => AppShortcuts.AddItem,
                     "Save as template" => AppShortcuts.SaveAsTemplate,
                     "Rearrange…" => AppShortcuts.Rearrange,
-                    "Keyboard Shortcuts" => AppShortcuts.Settings,
+                    "Settings" => AppShortcuts.Settings,
                     _ => null
                 };
 
@@ -1355,27 +1386,41 @@ public partial class MainWindow : Window
             case "Unpin Tab":
                 PinTabMenu_Click(this, EventArgs.Empty);
                 break;
-            case "Keyboard Shortcuts":
+            case "Settings":
                 InvokeShortcut(AppShortcuts.Settings);
+                break;
+            case "Keyboard Shortcuts":
+                ShowShortcuts();
+                break;
+            case "Check for Updates…":
+                CheckForUpdatesMenu_Click(this, EventArgs.Empty);
                 break;
         }
     }
 
-    private void ShowSettings()
+    private void ShowSettings() => ShowOverlay(settings: true);
+
+    private void ShowShortcuts() => ShowOverlay(settings: false);
+
+    private void ShowOverlay(bool settings)
     {
-        if (!_settingsOpen)
+        if (!_settingsOpen && !_shortcutsOpen)
         {
             _settingsOverReminders = _remindersOpen;
             _settingsOverChecklist = !_remindersOpen && ActiveTab() is not null;
         }
 
-        _settingsOpen = true;
+        _settingsOpen = settings;
+        _shortcutsOpen = !settings;
         _remindersOpen = false;
         RemindersButton.Classes.Remove("selected");
         HomePanel.IsVisible = false;
         WorkspaceContent.IsVisible = false;
         RemindersPanel.IsVisible = false;
-        SettingsPanel.IsVisible = true;
+        SettingsPanel.IsVisible = settings;
+        ShortcutsPanel.IsVisible = !settings;
+        if (settings)
+            SyncAppearanceSelection();
         TabBar.IsVisible = _tabs.Count > 0;
         UpdateManualSaveVisibility();
     }
@@ -1415,6 +1460,7 @@ public partial class MainWindow : Window
     private void ShowReminders()
     {
         _settingsOpen = false;
+        _shortcutsOpen = false;
         _settingsOverChecklist = false;
         _settingsOverReminders = false;
         _remindersOpen = true;
@@ -1423,6 +1469,7 @@ public partial class MainWindow : Window
         RemindersButton.Classes.Add("selected");
         HomePanel.IsVisible = false;
         SettingsPanel.IsVisible = false;
+        ShortcutsPanel.IsVisible = false;
         WorkspaceContent.IsVisible = false;
         WorkspaceContent.Content = null;
         RemindersPanel.IsVisible = true;
@@ -1454,16 +1501,16 @@ public partial class MainWindow : Window
                 new TextBlock
                 {
                     Text = string.IsNullOrWhiteSpace(reminder.Title) ? "Checklist" : reminder.Title,
-                    FontSize = 15,
+                    FontSize = AppearanceService.Font(15),
                     FontWeight = FontWeight.SemiBold,
-                    Foreground = new SolidColorBrush(Color.Parse("#F8FAFC")),
+                    Foreground = AppearanceService.Brush("TextPrimaryBrush"),
                     TextWrapping = TextWrapping.Wrap
                 },
                 new TextBlock
                 {
                     Text = $"{ReminderKind(reminder)} · {when}{repeat}{silent}",
-                    FontSize = 12,
-                    Foreground = new SolidColorBrush(Color.Parse("#94A3B8")),
+                    FontSize = AppearanceService.Font(12),
+                    Foreground = AppearanceService.Brush("TextMutedBrush"),
                     TextWrapping = TextWrapping.Wrap
                 }
             }
@@ -1487,8 +1534,8 @@ public partial class MainWindow : Window
 
         return new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#0F172A")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#1E293B")),
+            Background = AppearanceService.Brush("SurfaceBrush"),
+            BorderBrush = AppearanceService.Brush("BorderSubtleBrush"),
             BorderThickness = new Avalonia.Thickness(1),
             CornerRadius = new Avalonia.CornerRadius(10),
             Padding = new Avalonia.Thickness(12),
@@ -1687,9 +1734,9 @@ public partial class MainWindow : Window
         Content = content,
         Height = 34,
         Padding = new Avalonia.Thickness(12, 0),
-        Background = new SolidColorBrush(Color.Parse("#172033")),
-        Foreground = new SolidColorBrush(Color.Parse("#E2E8F0")),
-        BorderBrush = new SolidColorBrush(Color.Parse("#334155")),
+        Background = AppearanceService.Brush("CardBrush"),
+        Foreground = AppearanceService.Brush("TextSecondaryBrush"),
+        BorderBrush = AppearanceService.Brush("BorderBrush"),
         BorderThickness = new Avalonia.Thickness(1),
         CornerRadius = new Avalonia.CornerRadius(8),
         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
@@ -1697,11 +1744,71 @@ public partial class MainWindow : Window
         VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center
     };
 
+    private void Theme_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string tag } && Enum.TryParse<AppTheme>(tag, out var theme))
+            AppearanceService.SetTheme(theme);
+    }
+
+    private void Density_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string tag } && Enum.TryParse<AppDensity>(tag, out var density))
+            AppearanceService.SetDensity(density);
+    }
+
+    private void FontSize_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string tag } && Enum.TryParse<AppFontSize>(tag, out var fontSize))
+            AppearanceService.SetFontSize(fontSize);
+    }
+
+    private void BuildAccentSwatches()
+    {
+        foreach (var accent in Enum.GetValues<AppAccent>())
+        {
+            var button = new Button
+            {
+                Classes = { "accent-swatch" },
+                Tag = accent,
+                Background = new SolidColorBrush(AppearanceService.Swatch(accent))
+            };
+            ToolTip.SetTip(button, accent.ToString());
+            button.Click += (_, _) => AppearanceService.SetAccent(accent);
+            AccentSwatches.Children.Add(button);
+        }
+    }
+
+    private void SyncAppearanceSelection()
+    {
+        var theme = AppearanceService.Settings.Theme.ToString();
+        var density = AppearanceService.Settings.Density.ToString();
+        var fontSize = AppearanceService.Settings.FontSize.ToString();
+        foreach (var button in this.GetLogicalDescendants().OfType<Button>())
+        {
+            if (!button.Classes.Contains("appearance-choice") || button.Tag is not string tag)
+                continue;
+
+            if (tag == theme || tag == density || tag == fontSize)
+                button.Classes.Add("on");
+            else
+                button.Classes.Remove("on");
+        }
+
+        foreach (var child in AccentSwatches.Children.OfType<Button>())
+        {
+            if (child.Tag is AppAccent accent && accent == AppearanceService.Settings.Accent)
+                child.Classes.Add("on");
+            else
+                child.Classes.Remove("on");
+        }
+    }
+
     private void BuildShortcutSettings()
     {
+        ShortcutSections.Children.Clear();
         var onMac = OperatingSystem.IsMacOS();
-        var muted = new SolidColorBrush(Color.Parse("#64748B"));
-        var line = new SolidColorBrush(Color.Parse("#1E293B"));
+        var muted = AppearanceService.Brush("TextSubtleBrush");
+        var line = AppearanceService.Brush("BorderSubtleBrush");
 
         foreach (ShortcutGroup group in Enum.GetValues<ShortcutGroup>())
         {
@@ -1713,9 +1820,9 @@ public partial class MainWindow : Window
             section.Children.Add(new TextBlock
             {
                 Text = AppShortcuts.GroupTitle(group),
-                FontSize = 14,
+                FontSize = AppearanceService.Font(14),
                 FontWeight = FontWeight.SemiBold,
-                Foreground = new SolidColorBrush(Color.Parse("#CBD5E1"))
+                Foreground = AppearanceService.Brush("TextBodyBrush")
             });
 
             var grid = new Grid
@@ -1734,7 +1841,7 @@ public partial class MainWindow : Window
                     new TextBlock
                     {
                         Text = shortcut.Action,
-                        FontSize = 14,
+                        FontSize = AppearanceService.Font(14),
                         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                         Margin = new Avalonia.Thickness(12, 10)
                     },
@@ -1746,7 +1853,7 @@ public partial class MainWindow : Window
 
             section.Children.Add(new Border
             {
-                Background = new SolidColorBrush(Color.Parse("#0F172A")),
+                Background = AppearanceService.Brush("SurfaceBrush"),
                 BorderBrush = line,
                 BorderThickness = new Avalonia.Thickness(1),
                 CornerRadius = new Avalonia.CornerRadius(12),
@@ -1791,7 +1898,7 @@ public partial class MainWindow : Window
         new()
         {
             Text = text,
-            FontSize = 12,
+            FontSize = AppearanceService.Font(12),
             Foreground = foreground,
             HorizontalAlignment = left
                 ? Avalonia.Layout.HorizontalAlignment.Left
@@ -1803,8 +1910,8 @@ public partial class MainWindow : Window
     private static Border ShortcutChip(string text, bool current) =>
         new()
         {
-            Background = new SolidColorBrush(Color.Parse(current ? "#172F55" : "#172033")),
-            BorderBrush = new SolidColorBrush(Color.Parse(current ? "#3B82F6" : "#334155")),
+            Background = AppearanceService.Brush(current ? AppearanceService.AccentSubtleBrush : AppearanceService.CardBrush),
+            BorderBrush = AppearanceService.Brush(current ? AppearanceService.AccentHoverBrush : AppearanceService.BorderBrush),
             BorderThickness = new Avalonia.Thickness(1),
             CornerRadius = new Avalonia.CornerRadius(6),
             Padding = new Avalonia.Thickness(8, 4),
@@ -1813,10 +1920,10 @@ public partial class MainWindow : Window
             Child = new TextBlock
             {
                 Text = text,
-                FontSize = 12,
+                FontSize = AppearanceService.Font(12),
                 FontWeight = FontWeight.SemiBold,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                Foreground = new SolidColorBrush(Color.Parse(current ? "#DBEAFE" : "#E2E8F0"))
+                Foreground = AppearanceService.Brush(current ? AppearanceService.AccentTextHoverBrush : AppearanceService.TextSecondaryBrush)
             }
         };
 
@@ -1887,7 +1994,7 @@ public partial class MainWindow : Window
             case AppShortcuts.SaveAsTemplate:
                 if (ActiveTab() is { } templating && !templating.Document.IsCompleted)
                 {
-                    if (_settingsOpen || _remindersOpen)
+                    if (_settingsOpen || _shortcutsOpen || _remindersOpen)
                         ActivateTab(templating);
                     templating.View.SaveAsTemplate();
                 }
@@ -1895,7 +2002,7 @@ public partial class MainWindow : Window
             case AppShortcuts.Rearrange:
                 if (ActiveTab() is { } rearranging && !rearranging.Document.IsCompleted && rearranging.View.Items.Count > 1)
                 {
-                    if (_settingsOpen || _remindersOpen)
+                    if (_settingsOpen || _shortcutsOpen || _remindersOpen)
                         ActivateTab(rearranging);
                     rearranging.View.RearrangeChecks();
                 }
@@ -1916,7 +2023,7 @@ public partial class MainWindow : Window
             case AppShortcuts.Search:
                 if (ActiveTab() is { } searching)
                 {
-                    if (_settingsOpen || _remindersOpen)
+                    if (_settingsOpen || _shortcutsOpen || _remindersOpen)
                         ActivateTab(searching);
                     searching.View.FocusSearch();
                 }
@@ -1924,7 +2031,7 @@ public partial class MainWindow : Window
             case AppShortcuts.AddItem:
                 if (ActiveTab() is { } adding && !adding.Document.IsCompleted)
                 {
-                    if (_settingsOpen || _remindersOpen)
+                    if (_settingsOpen || _shortcutsOpen || _remindersOpen)
                         ActivateTab(adding);
                     adding.View.AddCheck();
                 }
@@ -1965,8 +2072,14 @@ public partial class MainWindow : Window
     private void SaveAsMenu_Click(object? sender, EventArgs e) =>
         InvokeShortcut(AppShortcuts.SaveAs);
 
-    private void KeyboardShortcutsMenu_Click(object? sender, EventArgs e) =>
+    private void SettingsMenu_Click(object? sender, EventArgs e) =>
         InvokeShortcut(AppShortcuts.Settings);
+
+    private void KeyboardShortcutsMenu_Click(object? sender, EventArgs e) =>
+        ShowShortcuts();
+
+    private void CheckForUpdatesMenu_Click(object? sender, EventArgs e) =>
+        _ = RunUpdateCheckAsync(fromMenu: true, automatic: false, announce: false);
 
     private void CopyMenu_Click(object? sender, EventArgs e)
     {
@@ -2010,7 +2123,7 @@ public partial class MainWindow : Window
 
     private ChecklistTab? ActiveTab()
     {
-        if (HomePanel.IsVisible || (_settingsOpen && !_settingsOverChecklist))
+        if (HomePanel.IsVisible || ((_settingsOpen || _shortcutsOpen) && !_settingsOverChecklist))
             return null;
 
         return _activeTab;
@@ -2451,9 +2564,9 @@ public partial class MainWindow : Window
             var titleText = new TextBlock
             {
                 Text = title,
-                FontSize = 14,
+                FontSize = AppearanceService.Font(14),
                 FontWeight = FontWeight.SemiBold,
-                Foreground = new SolidColorBrush(Color.Parse("#F8FAFC")),
+                Foreground = AppearanceService.Brush("TextPrimaryBrush"),
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 TextAlignment = TextAlignment.Left,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch
@@ -2462,8 +2575,8 @@ public partial class MainWindow : Window
             var detailText = new TextBlock
             {
                 Text = detail,
-                FontSize = 12,
-                Foreground = new SolidColorBrush(Color.Parse(missing ? "#F87171" : "#94A3B8")),
+                FontSize = AppearanceService.Font(12),
+                Foreground = AppearanceService.Brush(missing ? AppearanceService.DangerTextBrush : AppearanceService.TextMutedBrush),
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 TextAlignment = TextAlignment.Left,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch
@@ -2490,8 +2603,8 @@ public partial class MainWindow : Window
                 var mark = new TextBlock
                 {
                     Text = "Completed",
-                    FontSize = 12,
-                    Foreground = new SolidColorBrush(Color.Parse("#4ADE80")),
+                    FontSize = AppearanceService.Font(12),
+                    Foreground = AppearanceService.Brush("SuccessTextBrush"),
                     VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                     Margin = new Avalonia.Thickness(12, 0, 0, 0)
                 };
@@ -3223,7 +3336,7 @@ public partial class MainWindow : Window
             ReminderList.Children.Add(new TextBlock
             {
                 Text = "No notifications",
-                Foreground = new SolidColorBrush(Color.Parse("#64748B")),
+                Foreground = AppearanceService.Brush("TextSubtleBrush"),
                 Margin = new Avalonia.Thickness(8, 8, 8, 6)
             });
             return;
@@ -3456,6 +3569,269 @@ public partial class MainWindow : Window
     {
         var dialog = new StyledDialog("Super Dev", message);
         await dialog.ShowDialog(this);
+    }
+
+    private void BindUpdateSettings()
+    {
+        UpdateVersionText.Text = "Version " + UpdateService.CurrentText;
+        UpdateStatusText.Text = "Check for a newer release.";
+        SyncUpdateOptions();
+        AutoCheckBox.IsCheckedChanged += (_, _) =>
+        {
+            if (_syncingUpdateOptions)
+                return;
+
+            UpdateService.CheckAutomatically = AutoCheckBox.IsChecked == true;
+            SyncUpdateOptions();
+        };
+        AutoUpgradeBox.IsCheckedChanged += (_, _) =>
+        {
+            if (_syncingUpdateOptions)
+                return;
+
+            UpdateService.InstallAutomatically = AutoUpgradeBox.IsChecked == true;
+            SyncUpdateOptions();
+        };
+    }
+
+    private void SyncUpdateOptions()
+    {
+        _syncingUpdateOptions = true;
+        AutoCheckBox.IsChecked = UpdateService.CheckAutomatically;
+        AutoUpgradeBox.IsChecked = UpdateService.InstallAutomatically;
+        _syncingUpdateOptions = false;
+    }
+
+    private async void CheckForUpdates_Click(object? sender, RoutedEventArgs e) =>
+        await RunUpdateCheckAsync(fromMenu: false, automatic: false, announce: false);
+
+    private async void InstallUpdate_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_updateBusy || _availableUpdate is not { IsNewer: true } update)
+            return;
+
+        if (!update.CanInstall)
+        {
+            ExternalLink.TryOpen(update.ReleaseUrl);
+            return;
+        }
+
+        await RunInstallAsync(update, confirmRestart: true);
+    }
+
+    private async Task RunUpdateCheckAsync(bool fromMenu, bool automatic, bool announce)
+    {
+        if (_updateBusy)
+            return;
+
+        _updateBusy = true;
+        SetUpdateControlsEnabled(false);
+        try
+        {
+            SetUpdateStatus("Checking for updates…");
+            var result = await UpdateService.CheckAsync();
+            ApplyCheckResult(result);
+
+            if (result.Error is not null)
+            {
+                if (fromMenu)
+                    await ShowMessage(result.Error);
+                return;
+            }
+
+            if (!result.IsNewer || result.LatestText is null)
+            {
+                if (fromMenu)
+                    await ShowMessage($"Super Dev {UpdateService.CurrentText} is up to date.");
+                return;
+            }
+
+            if (automatic)
+            {
+                if (result.CanInstall)
+                    await InstallCoreAsync(result, confirmRestart: false);
+                else if (announce)
+                    ShowToast(StatusFor(result));
+                return;
+            }
+
+            if (announce)
+                ShowToast(StatusFor(result));
+
+            if (!fromMenu)
+                return;
+
+            if (!result.CanInstall)
+            {
+                if (await ConfirmAsync("Update available", StatusFor(result), "View release", "Later"))
+                    ExternalLink.TryOpen(result.ReleaseUrl);
+                return;
+            }
+
+            if (await ConfirmAsync("Update available", $"Super Dev {result.LatestText} is available.", "Install", "Later"))
+                await InstallCoreAsync(result, confirmRestart: true);
+        }
+        finally
+        {
+            _updateBusy = false;
+            if (!_restartingForUpdate)
+                SetUpdateControlsEnabled(true);
+        }
+    }
+
+    private async Task RunInstallAsync(UpdateCheckResult update, bool confirmRestart)
+    {
+        if (_updateBusy)
+            return;
+
+        _updateBusy = true;
+        SetUpdateControlsEnabled(false);
+        try
+        {
+            await InstallCoreAsync(update, confirmRestart);
+        }
+        finally
+        {
+            _updateBusy = false;
+            if (!_restartingForUpdate)
+                SetUpdateControlsEnabled(true);
+        }
+    }
+
+    private async Task InstallCoreAsync(UpdateCheckResult update, bool confirmRestart)
+    {
+        var progress = new Progress<string>(SetUpdateStatus);
+        var prepared = await UpdateService.PrepareInstallAsync(update, progress);
+        if (prepared.Error is not null)
+        {
+            SetUpdateStatus(prepared.Error);
+            if (!confirmRestart)
+                ShowToast(prepared.Error);
+            return;
+        }
+
+        if (confirmRestart)
+        {
+            var restart = await ConfirmAsync(
+                "Restart to update",
+                RestartMessage(update),
+                update.Kind == UpdatePackageKind.WindowsMsix ? "Install" : "Restart",
+                "Later");
+            if (!restart)
+            {
+                prepared.Cancel();
+                SetUpdateStatus(StatusFor(update));
+                return;
+            }
+        }
+
+        if (!await PrepareToRestartAsync(promptForNewFiles: confirmRestart))
+        {
+            prepared.Cancel();
+            SetUpdateStatus(confirmRestart
+                ? StatusFor(update)
+                : $"Super Dev {update.LatestText} is available. Save open checklists, then install it.");
+            return;
+        }
+
+        try
+        {
+            SetUpdateStatus("Restarting…");
+            ShowToast(update.Kind == UpdatePackageKind.WindowsMsix
+                ? "Opening the installer…"
+                : "Restarting to install the update…");
+            prepared.Apply();
+        }
+        catch (Exception)
+        {
+            prepared.Cancel();
+            SetUpdateStatus("Couldn't install the update.");
+            return;
+        }
+
+        _restartingForUpdate = true;
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            desktop.Shutdown();
+        else
+            Close();
+    }
+
+    private void ApplyCheckResult(UpdateCheckResult result)
+    {
+        _availableUpdate = result.IsNewer ? result : null;
+        if (result.Error is not null)
+        {
+            SetUpdateStatus(result.Error);
+            InstallUpdateButton.IsVisible = false;
+            return;
+        }
+
+        if (!result.IsNewer || result.LatestText is null)
+        {
+            SetUpdateStatus($"Super Dev {UpdateService.CurrentText} is up to date.");
+            InstallUpdateButton.IsVisible = false;
+            return;
+        }
+
+        SetUpdateStatus(StatusFor(result));
+        InstallUpdateButton.Content = result.CanInstall ? "Install update" : "View release";
+        InstallUpdateButton.IsVisible = result.CanInstall || !string.IsNullOrWhiteSpace(result.ReleaseUrl);
+    }
+
+    private static string StatusFor(UpdateCheckResult result)
+    {
+        var status = $"Super Dev {result.LatestText} is available.";
+        if (!string.IsNullOrWhiteSpace(result.Note))
+            status += " " + result.Note;
+        return status;
+    }
+
+    private static string RestartMessage(UpdateCheckResult update)
+    {
+        if (update.Kind == UpdatePackageKind.WindowsMsix)
+            return $"Super Dev {update.LatestText} is ready. Super Dev will close and Windows will open the installer.";
+
+        return $"Super Dev {update.LatestText} is ready. Restart now to finish installing?";
+    }
+
+    private async Task<bool> PrepareToRestartAsync(bool promptForNewFiles)
+    {
+        foreach (var tab in _tabs.ToList())
+        {
+            tab.AutoSaveTimer?.Stop();
+            while (tab.AutoSaveTask is { } pending)
+                await pending;
+
+            if (!string.IsNullOrWhiteSpace(tab.FilePath))
+            {
+                if (tab.IsDirty && !await WriteDocumentAsync(tab, tab.FilePath, announce: false))
+                    return false;
+                continue;
+            }
+
+            if (!tab.IsDirty)
+                continue;
+
+            if (!promptForNewFiles)
+                return false;
+
+            var choice = await PromptUnsavedAsync(tab.Document.Title);
+            if (choice == ClosePromptResult.Cancel)
+                return false;
+
+            if (choice == ClosePromptResult.Save && !await SaveAsync(tab))
+                return false;
+        }
+
+        return true;
+    }
+
+    private void SetUpdateStatus(string message) => UpdateStatusText.Text = message;
+
+    private void SetUpdateControlsEnabled(bool enabled)
+    {
+        CheckUpdatesButton.IsEnabled = enabled;
+        InstallUpdateButton.IsEnabled = enabled;
     }
 
     private sealed class ChecklistTab(

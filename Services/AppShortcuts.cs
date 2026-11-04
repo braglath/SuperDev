@@ -47,7 +47,7 @@ public static class AppShortcuts
         Command(NewChecklist, "New checklist", ShortcutGroup.Application, ShortcutScope.Window, Key.N, shift: false, "Ctrl+N", "Command+N"),
         Command(OpenChecklist, "Open checklist", ShortcutGroup.Application, ShortcutScope.Window, Key.O, shift: false, "Ctrl+O", "Command+O"),
         Command(Save, "Save checklist", ShortcutGroup.Application, ShortcutScope.Window, Key.S, shift: false, "Ctrl+S", "Command+S"),
-        Command(Settings, "Keyboard shortcuts", ShortcutGroup.Application, ShortcutScope.Window, Key.OemComma, shift: false, "Ctrl+,", "Command+,"),
+        Command(Settings, "Settings", ShortcutGroup.Application, ShortcutScope.Window, Key.OemComma, shift: false, "Ctrl+,", "Command+,"),
 
         Command(CloseTab, "Close active tab", ShortcutGroup.Workspace, ShortcutScope.Window, Key.W, shift: false, "Ctrl+W", "Command+W"),
         Plain(NextTab, "Next tab", ShortcutGroup.Workspace, ShortcutScope.Window, Key.Tab, KeyModifiers.Control, "Ctrl+Tab", "Ctrl+Tab"),

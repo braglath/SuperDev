@@ -6,8 +6,7 @@
         MinWidth="800"
         MinHeight="700"
         Title="Super Dev"
-        Icon="/Assets/app.ico"
-        Background="#0B1120">
+        Background="{DynamicResource AppBackgroundBrush}">
 
     <NativeMenu.Menu>
         <NativeMenu>
@@ -26,6 +25,8 @@
             </NativeMenuItem>
             <NativeMenuItem Header="Options">
                 <NativeMenu>
+                    <NativeMenuItem Header="Settings"
+                                    Click="SettingsMenu_Click"/>
                     <NativeMenuItem Header="Reminders"
                                     Click="RemindersMenu_Click"/>
                     <NativeMenuItem Header="Add Check"
@@ -50,6 +51,8 @@
             </NativeMenuItem>
             <NativeMenuItem Header="Help">
                 <NativeMenu>
+                    <NativeMenuItem Header="Check for Updates…"
+                                    Click="CheckForUpdatesMenu_Click"/>
                     <NativeMenuItem Header="Keyboard Shortcuts"
                                     Click="KeyboardShortcutsMenu_Click"/>
                 </NativeMenu>
@@ -67,7 +70,7 @@
             <Setter Property="FontFamily"
                     Value="Inter, Segoe UI, sans-serif"/>
             <Setter Property="Foreground"
-                    Value="#F8FAFC"/>
+                    Value="{DynamicResource TextPrimaryBrush}"/>
         </Style>
 
         <!-- The title panel's visibility is bound in the template, so hide the text itself. -->
@@ -85,22 +88,22 @@
 <Style Selector="Border.workspace-tab">
     <Setter Property="MinWidth" Value="64"/>
     <Setter Property="MaxWidth" Value="190"/>
-    <Setter Property="Height" Value="40"/>
+    <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
     <Setter Property="Padding" Value="8,3"/>
-    <Setter Property="Background" Value="#172033"/>
-    <Setter Property="BorderBrush" Value="#263449"/>
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
     <Setter Property="CornerRadius" Value="9"/>
 </Style>
 
 <Style Selector="Border.workspace-tab.selected">
-    <Setter Property="Background" Value="#172F55"/>
-    <Setter Property="BorderBrush" Value="#3B82F6"/>
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
 </Style>
 
 <Style Selector="Border.workspace-tab.dragging">
-    <Setter Property="Background" Value="#1E3A5F"/>
-    <Setter Property="BorderBrush" Value="#60A5FA"/>
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
     <Setter Property="ZIndex" Value="2"/>
 </Style>
 
@@ -137,7 +140,7 @@
     <Setter Property="VerticalAlignment" Value="Center"/>
     <Setter Property="CornerRadius" Value="2"/>
     <Setter Property="RenderTransform" Value="none"/>
-    <Setter Property="Background" Value="#64748B"/>
+    <Setter Property="Background" Value="{DynamicResource TextSubtleBrush}"/>
 </Style>
 
 <Style Selector="ScrollViewer.tabs /template/ ScrollBar#PART_HorizontalScrollBar[IsExpanded=true] /template/ Grid#Root">
@@ -157,7 +160,7 @@
 <Style Selector="ScrollViewer.tabs /template/ ScrollBar#PART_HorizontalScrollBar[IsExpanded=true] /template/ Thumb">
     <Setter Property="Height" Value="3"/>
     <Setter Property="RenderTransform" Value="none"/>
-    <Setter Property="Background" Value="#94A3B8"/>
+    <Setter Property="Background" Value="{DynamicResource TextMutedBrush}"/>
 </Style>
 
 <Style Selector="Button.tab-close">
@@ -165,9 +168,9 @@
     <Setter Property="Height" Value="24"/>
     <Setter Property="MinWidth" Value="24"/>
     <Setter Property="Padding" Value="0"/>
-    <Setter Property="FontSize" Value="16"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
     <Setter Property="Background" Value="Transparent"/>
-    <Setter Property="Foreground" Value="#94A3B8"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
     <Setter Property="BorderThickness" Value="0"/>
     <Setter Property="CornerRadius" Value="12"/>
     <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -175,8 +178,8 @@
 </Style>
 
 <Style Selector="Button.tab-close:pointerover">
-    <Setter Property="Background" Value="#3F1D1D"/>
-    <Setter Property="Foreground" Value="#F87171"/>
+    <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}"/>
 </Style>
 
 <Style Selector="Button.tab-pin">
@@ -184,8 +187,8 @@
     <Setter Property="Height" Value="22"/>
     <Setter Property="MinWidth" Value="22"/>
     <Setter Property="Padding" Value="0"/>
-    <Setter Property="Background" Value="#334155"/>
-    <Setter Property="BorderBrush" Value="#94A3B8"/>
+    <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource TextMutedBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
     <Setter Property="CornerRadius" Value="6"/>
     <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -200,13 +203,13 @@
 </Style>
 
 <Style Selector="Button.tab-pin Shape">
-    <Setter Property="Stroke" Value="#F8FAFC"/>
+    <Setter Property="Stroke" Value="{DynamicResource TextPrimaryBrush}"/>
     <Setter Property="Fill" Value="Transparent"/>
 </Style>
 
 <Style Selector="Button.tab-pin:pointerover">
-    <Setter Property="Background" Value="#475569"/>
-    <Setter Property="BorderBrush" Value="#E2E8F0"/>
+    <Setter Property="Background" Value="{DynamicResource TextFaintBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource TextSecondaryBrush}"/>
 </Style>
 
 <Style Selector="Button.tab-pin Viewbox.pin-on">
@@ -214,8 +217,8 @@
 </Style>
 
 <Style Selector="Button.tab-pin.pinned">
-    <Setter Property="Background" Value="#2563EB"/>
-    <Setter Property="BorderBrush" Value="#93C5FD"/>
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentTextHoverBrush}"/>
 </Style>
 
 <Style Selector="Button.tab-pin.pinned Viewbox.pin-off">
@@ -227,79 +230,227 @@
 </Style>
 
 <Style Selector="Button.tab-pin.pinned Shape">
-    <Setter Property="Stroke" Value="#FFFFFF"/>
-    <Setter Property="Fill" Value="#FFFFFF"/>
+    <Setter Property="Stroke" Value="{DynamicResource TextOnAccentBrush}"/>
+    <Setter Property="Fill" Value="{DynamicResource TextOnAccentBrush}"/>
 </Style>
 
 <Style Selector="Button.tab-pin.pinned:pointerover">
-    <Setter Property="Background" Value="#1D4ED8"/>
-    <Setter Property="BorderBrush" Value="#FFFFFF"/>
+    <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource TextOnAccentBrush}"/>
 </Style>
 
 <Style Selector="Button.settings-back">
-    <Setter Property="Height" Value="36"/>
+    <Setter Property="Height" Value="{DynamicResource ControlHeightSm}"/>
     <Setter Property="MinWidth" Value="88"/>
     <Setter Property="Padding" Value="16,0"/>
-    <Setter Property="Background" Value="#172033"/>
-    <Setter Property="Foreground" Value="#E2E8F0"/>
-    <Setter Property="BorderBrush" Value="#334155"/>
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
     <Setter Property="CornerRadius" Value="8"/>
-    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
     <Setter Property="FontWeight" Value="SemiBold"/>
     <Setter Property="HorizontalContentAlignment" Value="Center"/>
     <Setter Property="VerticalContentAlignment" Value="Center"/>
 </Style>
 
 <Style Selector="Button.settings-back:pointerover">
-    <Setter Property="Background" Value="#1E2A3F"/>
-    <Setter Property="BorderBrush" Value="#3B82F6"/>
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.settings-back:disabled">
+    <Setter Property="Opacity" Value="0.5"/>
+</Style>
+
+<Style Selector="Button.settings-primary">
+    <Setter Property="Height" Value="{DynamicResource ControlHeightSm}"/>
+    <Setter Property="MinWidth" Value="88"/>
+    <Setter Property="Padding" Value="16,0"/>
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Button.settings-primary:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.settings-primary:disabled">
+    <Setter Property="Opacity" Value="0.5"/>
+</Style>
+
+<Style Selector="TextBlock.settings-section">
+    <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+    <Setter Property="Margin" Value="4,8,0,0"/>
+</Style>
+
+<Style Selector="Border.settings-card">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="16"/>
+    <Setter Property="Padding" Value="18"/>
+    <Setter Property="ClipToBounds" Value="False"/>
+</Style>
+
+<Style Selector="Border.settings-icon">
+    <Setter Property="Width" Value="36"/>
+    <Setter Property="Height" Value="36"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+</Style>
+
+<Style Selector="Button.appearance-choice">
+    <Setter Property="MinWidth" Value="0"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+    <Setter Property="ClipToBounds" Value="False"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.appearance-choice.theme-card">
+    <Setter Property="MinHeight" Value="128"/>
+</Style>
+
+<Style Selector="Button.appearance-choice.option-card">
+    <Setter Property="MinHeight" Value="76"/>
+</Style>
+
+<Style Selector="Button.appearance-choice:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.appearance-choice.on">
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+    <Setter Property="BorderThickness" Value="2"/>
+</Style>
+
+<Style Selector="Button.appearance-choice.on:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+</Style>
+
+<Style Selector="Button.appearance-choice TextBlock.choice-title">
+    <Setter Property="FontSize" Value="{DynamicResource Font15}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+</Style>
+
+<Style Selector="Button.appearance-choice TextBlock.choice-hint">
+    <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+</Style>
+
+<Style Selector="Button.appearance-choice Path.choice-icon">
+    <Setter Property="Stroke" Value="{DynamicResource TextSecondaryBrush}"/>
+</Style>
+
+<Style Selector="Button.appearance-choice.on Path.choice-icon">
+    <Setter Property="Stroke" Value="{DynamicResource AccentTextBrush}"/>
+</Style>
+
+<Style Selector="Button.appearance-choice Path.choice-fill">
+    <Setter Property="Fill" Value="{DynamicResource TextSecondaryBrush}"/>
+</Style>
+
+<Style Selector="Button.appearance-choice.on Path.choice-fill">
+    <Setter Property="Fill" Value="{DynamicResource AccentTextBrush}"/>
+</Style>
+
+<Style Selector="Button.appearance-choice TextBlock.aa">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="HorizontalAlignment" Value="Center"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Button.appearance-choice.on TextBlock.aa">
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+</Style>
+
+<Style Selector="Button.accent-swatch">
+    <Setter Property="Width" Value="36"/>
+    <Setter Property="Height" Value="36"/>
+    <Setter Property="MinWidth" Value="0"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource TextPrimaryBrush}"/>
+    <Setter Property="CornerRadius" Value="18"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.accent-swatch:pointerover">
+    <Setter Property="BorderThickness" Value="2"/>
+</Style>
+
+<Style Selector="Button.accent-swatch.on">
+    <Setter Property="BorderThickness" Value="3"/>
 </Style>
 
 <Style Selector="Menu.title-menu">
     <Setter Property="Background" Value="Transparent"/>
-    <Setter Property="Foreground" Value="#E2E8F0"/>
-    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
 </Style>
 
 <Style Selector="Menu.title-menu > MenuItem">
     <Setter Property="Background" Value="Transparent"/>
-    <Setter Property="Foreground" Value="#E2E8F0"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
     <Setter Property="Padding" Value="10,4"/>
     <Setter Property="MinHeight" Value="28"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
 </Style>
 
 <Style Selector="Menu.title-menu > MenuItem:pointerover">
-    <Setter Property="Background" Value="#172033"/>
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
 </Style>
 
 <Style Selector="Menu.title-menu MenuItem">
-    <Setter Property="Background" Value="#0F172A"/>
-    <Setter Property="Foreground" Value="#E2E8F0"/>
-    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
     <Setter Property="Padding" Value="12,8"/>
 </Style>
 
 <Style Selector="Menu.title-menu MenuItem:pointerover">
-    <Setter Property="Background" Value="#1E293B"/>
+    <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
 </Style>
 
 <Style Selector="Menu.title-menu MenuItem:disabled">
-    <Setter Property="Foreground" Value="#64748B"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}"/>
 </Style>
 
 <Style Selector="Button.new-tab">
 <Setter Property="Width" Value="36"/>
 <Setter Property="MinWidth" Value="36"/>
-<Setter Property="Height" Value="36"/>
+<Setter Property="Height" Value="{DynamicResource ControlHeightSm}"/>
 <Setter Property="Padding" Value="0"/>
 <Setter Property="CornerRadius" Value="18"/>
 <Setter Property="HorizontalContentAlignment" Value="Center"/>
 <Setter Property="VerticalContentAlignment" Value="Center"/>
-    <Setter Property="FontSize" Value="22"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font22}"/>
     <Setter Property="FontWeight" Value="Normal"/>
-    <Setter Property="Background" Value="#2563EB"/>
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
     <Setter Property="Foreground" Value="White"/>
     <Setter Property="BorderThickness" Value="0"/>
     <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -311,20 +462,20 @@
         <!-- ========================================================= -->
 
 <Style Selector="TextBox.work-title">
-    <Setter Property="Height" Value="52"/>
-    <Setter Property="FontSize" Value="16"/>
+    <Setter Property="Height" Value="{DynamicResource ControlHeightXl}"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
     <Setter Property="Padding" Value="16,0"/>
     <Setter Property="VerticalContentAlignment" Value="Center"/>
-    <Setter Property="Background" Value="#111827"/>
-    <Setter Property="Foreground" Value="#F8FAFC"/>
-    <Setter Property="BorderBrush" Value="#334155"/>
+    <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
     <Setter Property="CornerRadius" Value="10"/>
-    <Setter Property="PlaceholderForeground" Value="#64748B"/>
+    <Setter Property="PlaceholderForeground" Value="{DynamicResource TextSubtleBrush}"/>
 </Style>
 
 <Style Selector="TextBox.work-title:focus">
-    <Setter Property="BorderBrush" Value="#3B82F6"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
 </Style>
 
 <Style Selector="Button.recent">
@@ -332,20 +483,20 @@
     <Setter Property="HorizontalAlignment" Value="Stretch"/>
     <Setter Property="HorizontalContentAlignment" Value="Left"/>
     <Setter Property="VerticalContentAlignment" Value="Center"/>
-    <Setter Property="Background" Value="#111827"/>
-    <Setter Property="BorderBrush" Value="#263449"/>
+    <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
     <Setter Property="CornerRadius" Value="10"/>
     <Setter Property="Padding" Value="14,8"/>
 </Style>
 
 <Style Selector="Button.recent:pointerover">
-    <Setter Property="Background" Value="#1E2A3F"/>
-    <Setter Property="BorderBrush" Value="#3B82F6"/>
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
 </Style>
 
 <Style Selector="Button.recent:pressed">
-    <Setter Property="Background" Value="#172033"/>
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
 </Style>
 
 
@@ -358,12 +509,12 @@
             <Setter Property="Height" Value="84"/>
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="Background" Value="#172033"/>
-            <Setter Property="BorderBrush" Value="#263449"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
             <Setter Property="HorizontalContentAlignment"
                     Value="Center"/>
             <Setter Property="VerticalContentAlignment"
@@ -372,19 +523,19 @@
 
         <!-- Hover -->
         <Style Selector="Button.template:pointerover">
-            <Setter Property="Background" Value="#1E2A3F"/>
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
 
         <!-- Pressed -->
         <Style Selector="Button.template:pressed">
-            <Setter Property="Background" Value="#263A5A"/>
+            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
         </Style>
 
         <!-- Selected -->
         <Style Selector="Button.template.selected">
-            <Setter Property="Background" Value="#172F55"/>
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
             <Setter Property="BorderThickness" Value="2"/>
         </Style>
 
@@ -393,12 +544,12 @@
             <Setter Property="Height" Value="22"/>
             <Setter Property="Margin" Value="6,6,6,0"/>
             <Setter Property="Padding" Value="0"/>
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="ZIndex" Value="2"/>
@@ -411,12 +562,12 @@
         </Style>
 
         <Style Selector="Button.template-edit:pointerover">
-            <Setter Property="Background" Value="#263449"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSoftBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         </Style>
 
         <Style Selector="TextBlock.template-title">
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="TextAlignment" Value="Center"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
@@ -432,7 +583,7 @@
         <!-- ========================================================= -->
 
         <Style Selector="TextBlock.template-icon">
-            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font22}"/>
             <Setter Property="HorizontalAlignment"
                     Value="Center"/>
             <Setter Property="VerticalAlignment"
@@ -448,9 +599,9 @@
     <Setter Property="MinWidth" Value="150"/>
     <Setter Property="Height" Value="48"/>
     <Setter Property="Padding" Value="28,10"/>
-    <Setter Property="FontSize" Value="16"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
     <Setter Property="FontWeight" Value="SemiBold"/>
-    <Setter Property="Background" Value="#2563EB"/>
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
     <Setter Property="Foreground" Value="White"/>
     <Setter Property="BorderThickness" Value="0"/>
     <Setter Property="CornerRadius" Value="10"/>
@@ -463,32 +614,32 @@
 </Style>
 
         <Style Selector="Button.create:pointerover">
-            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
 
         <Style Selector="Button.create:pressed">
-            <Setter Property="Background" Value="#1D4ED8"/>
+            <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
         </Style>
 
         <Style Selector="Button.create.open">
-            <Setter Property="Background" Value="#172033"/>
-            <Setter Property="Foreground" Value="#CBD5E1"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBodyBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <Style Selector="Button.create.open:pointerover">
-            <Setter Property="Background" Value="#1E2A3F"/>
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
 
         <Style Selector="Button.create.open:pressed">
-            <Setter Property="Background" Value="#172033"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
         </Style>
 
         <Style Selector="Button.bell">
             <Setter Property="Width" Value="32"/>
-            <Setter Property="Height" Value="32"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeightXs}"/>
             <Setter Property="MinWidth" Value="32"/>
             <Setter Property="MinHeight" Value="32"/>
             <Setter Property="Padding" Value="0"/>
@@ -508,35 +659,35 @@
         </Style>
 
         <Style Selector="Button.bell:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#172033"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
         </Style>
 
         <Style Selector="Button.bell:focus /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#172033"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
         </Style>
 
         <Style Selector="Button.bell Path">
-            <Setter Property="Stroke" Value="#94A3B8"/>
+            <Setter Property="Stroke" Value="{DynamicResource TextMutedBrush}"/>
         </Style>
 
         <Style Selector="Button.bell.selected /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#172F55"/>
+            <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
         </Style>
 
         <Style Selector="Button.bell.selected Path">
-            <Setter Property="Stroke" Value="#60A5FA"/>
+            <Setter Property="Stroke" Value="{DynamicResource AccentTextBrush}"/>
         </Style>
 
         <Style Selector="Button.bell:pointerover Path">
-            <Setter Property="Stroke" Value="#F8FAFC"/>
+            <Setter Property="Stroke" Value="{DynamicResource TextPrimaryBrush}"/>
         </Style>
 
         <Style Selector="Button.bell.due Path">
-            <Setter Property="Stroke" Value="#FBBF24"/>
+            <Setter Property="Stroke" Value="{DynamicResource WarningTextBrush}"/>
         </Style>
 
         <Style Selector="FlyoutPresenter.notify-popup">
-            <Setter Property="Background" Value="#0F172A"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="8"/>
             <Setter Property="CornerRadius" Value="12"/>
@@ -552,7 +703,7 @@
         </Style>
 
         <Style Selector="Button.notify-row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
         </Style>
 
         <Style Selector="Button.notify-dismiss">
@@ -564,8 +715,8 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="CornerRadius" Value="6"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
@@ -574,14 +725,14 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="0"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style Selector="Button.notify-dismiss:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         </Style>
 
         <Style Selector="Button.notify-clear-all">
@@ -589,8 +740,8 @@
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="#60A5FA"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -599,25 +750,25 @@
         <Style Selector="Button.notify-clear-all /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="#60A5FA"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style Selector="Button.notify-clear-all:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Foreground" Value="#93C5FD"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
         </Style>
 
         <Style Selector="TextBlock.notify-title">
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
 
         <Style Selector="TextBlock.notify-meta">
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
@@ -633,9 +784,9 @@
 
     <Border x:Name="TitleChrome"
             Grid.Row="0"
-            Height="40"
-            Background="#0B1120"
-            BorderBrush="#263449"
+            Height="{DynamicResource ControlHeight}"
+            Background="{DynamicResource AppBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderSoftBrush}"
             BorderThickness="0,0,0,1"
             Padding="12,0">
         <Grid ColumnDefinitions="Auto,Auto,*">
@@ -647,7 +798,7 @@
                        Source="avares://Super Dev/Assets/app.ico"/>
                 <TextBlock x:Name="AppNameText"
                            Text="Super Dev"
-                           FontSize="14"
+                           FontSize="{DynamicResource Font14}"
                            FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
             </StackPanel>
@@ -661,7 +812,7 @@
                     Classes="bell"
                     ToolTip.Tip="Reminders"
                     Click="RemindersButton_Click">
-                <Panel Width="32" Height="32">
+                <Panel Width="32" Height="{DynamicResource ControlHeightXs}">
                     <Viewbox Width="16"
                              Height="16"
                              Stretch="Uniform"
@@ -691,9 +842,9 @@
                                   ColumnDefinitions="*,Auto"
                                   Margin="8,4,4,6">
                                 <TextBlock Text="Notifications"
-                                           FontSize="13"
+                                           FontSize="{DynamicResource Font13}"
                                            FontWeight="SemiBold"
-                                           Foreground="#F8FAFC"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center"/>
                                 <Button x:Name="ClearAllNotificationsButton"
                                         Grid.Column="1"
@@ -710,7 +861,7 @@
                         </DockPanel>
                     </Flyout>
                 </Button.Flyout>
-                <Panel Width="32" Height="32">
+                <Panel Width="32" Height="{DynamicResource ControlHeightXs}">
                     <Viewbox Width="16"
                              Height="16"
                              Stretch="Uniform"
@@ -728,7 +879,7 @@
                     <Ellipse x:Name="ReminderBadge"
                              Width="7"
                              Height="7"
-                             Fill="#F87171"
+                             Fill="{DynamicResource DangerTextBrush}"
                              HorizontalAlignment="Right"
                              VerticalAlignment="Top"
                              Margin="0,5,5,0"
@@ -752,6 +903,7 @@
                     <MenuItem Header="Save As…"/>
                 </MenuItem>
                 <MenuItem Header="Options">
+                    <MenuItem Header="Settings"/>
                     <MenuItem Header="Reminders"/>
                     <MenuItem x:Name="WindowAddCheckMenuItem"
                               Header="Add Check"
@@ -773,6 +925,7 @@
                               IsEnabled="False"/>
                 </MenuItem>
                 <MenuItem Header="Help">
+                    <MenuItem Header="Check for Updates…"/>
                     <MenuItem Header="Keyboard Shortcuts"/>
                 </MenuItem>
             </Menu>
@@ -782,9 +935,9 @@
     <!-- Tab bar -->
     <Border x:Name="TabBar"
         Grid.Row="1"
-        Background="#0B1120"
+        Background="{DynamicResource AppBackgroundBrush}"
         Padding="12,8"
-        BorderBrush="#263449"
+        BorderBrush="{DynamicResource BorderSoftBrush}"
         BorderThickness="0,0,0,1"
         IsVisible="False">
 
@@ -849,15 +1002,15 @@
                     Margin="0,20,0,45">
 
             <TextBlock Text="Super Dev"
-                       FontSize="38"
+                       FontSize="{DynamicResource Font38}"
                        FontWeight="Bold"
                        HorizontalAlignment="Center"
-                       Foreground="#F8FAFC"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
 
             <TextBlock Text="Developer Checklist Assistant"
-                       FontSize="17"
+                       FontSize="{DynamicResource Font17}"
                        HorizontalAlignment="Center"
-                       Foreground="#94A3B8"/>
+                       Foreground="{DynamicResource TextMutedBrush}"/>
 
         </StackPanel>
 
@@ -875,9 +1028,9 @@
                     IsVisible="False">
 
             <TextBlock Text="Recent checklists"
-                       FontSize="14"
+                       FontSize="{DynamicResource Font14}"
                        FontWeight="SemiBold"
-                       Foreground="#CBD5E1"/>
+                       Foreground="{DynamicResource TextBodyBrush}"/>
 
             <Grid x:Name="RecentItems"
                   ColumnDefinitions="*,*"
@@ -899,19 +1052,19 @@
                     Margin="0,0,0,35">
 
             <TextBlock Text="Work title"
-                       FontSize="14"
+                       FontSize="{DynamicResource Font14}"
                        FontWeight="SemiBold"
-                       Foreground="#CBD5E1"/>
+                       Foreground="{DynamicResource TextBodyBrush}"/>
 
             <TextBox x:Name="WorkTitleTextBox"
                      Classes="work-title"
                      Watermark="What are you working on?"
-                     WatermarkForeground="#64748B"/>
+                     WatermarkForeground="{DynamicResource TextSubtleBrush}"/>
 
             <TextBlock Text="Branch name"
-                       FontSize="14"
+                       FontSize="{DynamicResource Font14}"
                        FontWeight="SemiBold"
-                       Foreground="#CBD5E1"
+                       Foreground="{DynamicResource TextBodyBrush}"
                        Margin="0,8,0,0"/>
 
             <TextBox x:Name="BranchNameTextBox"
@@ -919,9 +1072,9 @@
                      PlaceholderText="feature/my-change"/>
 
             <TextBlock Text="Repository link"
-                       FontSize="14"
+                       FontSize="{DynamicResource Font14}"
                        FontWeight="SemiBold"
-                       Foreground="#CBD5E1"
+                       Foreground="{DynamicResource TextBodyBrush}"
                        Margin="0,8,0,0"/>
 
             <Grid ColumnDefinitions="*,Auto"
@@ -936,7 +1089,7 @@
                         Grid.Column="1"
                         Content="Open"
                         Classes="create open"
-                        Height="52"
+                        Height="{DynamicResource ControlHeightXl}"
                         MinWidth="88"
                         Padding="16,0"
                         IsEnabled="False"
@@ -945,9 +1098,9 @@
             </Grid>
 
             <TextBlock Text="PR link"
-                       FontSize="14"
+                       FontSize="{DynamicResource Font14}"
                        FontWeight="SemiBold"
-                       Foreground="#CBD5E1"
+                       Foreground="{DynamicResource TextBodyBrush}"
                        Margin="0,8,0,0"/>
 
             <Grid ColumnDefinitions="*,Auto"
@@ -962,7 +1115,7 @@
                         Grid.Column="1"
                         Content="Open"
                         Classes="create open"
-                        Height="52"
+                        Height="{DynamicResource ControlHeightXl}"
                         MinWidth="88"
                         Padding="16,0"
                         IsEnabled="False"
@@ -984,13 +1137,13 @@
                     Margin="0,0,0,20">
 
             <TextBlock Text="Choose a workflow"
-                       FontSize="14"
+                       FontSize="{DynamicResource Font14}"
                        FontWeight="SemiBold"
-                       Foreground="#CBD5E1"/>
+                       Foreground="{DynamicResource TextBodyBrush}"/>
 
             <TextBlock Text="Select the workflow that best matches your work"
-                       FontSize="13"
-                       Foreground="#64748B"/>
+                       FontSize="{DynamicResource Font13}"
+                       Foreground="{DynamicResource TextSubtleBrush}"/>
 
         </StackPanel>
 
@@ -1045,7 +1198,7 @@
             <Grid ColumnDefinitions="*,Auto"
                   ColumnSpacing="16">
                 <TextBlock Text="Reminders"
-                           FontSize="28"
+                           FontSize="{DynamicResource Font28}"
                            FontWeight="Bold"
                            VerticalAlignment="Center"/>
                 <Button Grid.Column="1"
@@ -1053,7 +1206,7 @@
                         ToolTip.Tip="Close"
                         VerticalAlignment="Center"
                         Click="CloseReminders_Click">
-                    <Panel Width="32" Height="32">
+                    <Panel Width="32" Height="{DynamicResource ControlHeightXs}">
                         <Viewbox Width="14"
                                  Height="14"
                                  Stretch="Uniform"
@@ -1071,13 +1224,13 @@
                 </Button>
             </Grid>
             <TextBlock Text="Checklist reminders and deadline notifications. Edit one to change when it fires, or remove it."
-                       FontSize="13"
-                       Foreground="#94A3B8"
+                       FontSize="{DynamicResource Font13}"
+                       Foreground="{DynamicResource TextMutedBrush}"
                        TextWrapping="Wrap"/>
             <TextBlock x:Name="RemindersEmpty"
                        Text="No reminders yet."
-                       FontSize="14"
-                       Foreground="#64748B"
+                       FontSize="{DynamicResource Font14}"
+                       Foreground="{DynamicResource TextSubtleBrush}"
                        IsVisible="False"/>
             <StackPanel x:Name="ReminderRows" Spacing="8"/>
         </StackPanel>
@@ -1088,17 +1241,300 @@
                   IsVisible="False"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="760"
+                    Margin="{DynamicResource PagePadding}"
+                    HorizontalAlignment="Center"
+                    Spacing="16">
+            <Grid ColumnDefinitions="Auto,*,Auto"
+                  ColumnSpacing="14">
+                <Border Grid.Column="0"
+                        Width="48"
+                        Height="48"
+                        CornerRadius="14"
+                        Background="{DynamicResource AccentBrush}">
+                    <Path Width="24"
+                          Height="24"
+                          Stretch="Uniform"
+                          Fill="White"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Data="M19.14,12.94c0.04-0.31,0.06-0.63,0.06-0.94c0-0.31-0.02-0.63-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.37,4.8,11.69,4.8,12s0.02,0.63,0.06,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                </Border>
+                <StackPanel Grid.Column="1"
+                            Spacing="2"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Settings"
+                               FontSize="{DynamicResource Font28}"
+                               FontWeight="Bold"/>
+                    <TextBlock Text="Appearance and updates"
+                               FontSize="{DynamicResource Font14}"
+                               Foreground="{DynamicResource TextMutedBrush}"/>
+                </StackPanel>
+                <Button Grid.Column="2"
+                        Content="Back"
+                        Classes="settings-back"
+                        VerticalAlignment="Center"
+                        Click="CloseSettings_Click"/>
+            </Grid>
+
+            <TextBlock Classes="settings-section" Text="Appearance"/>
+
+            <Border Classes="settings-card">
+                <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Classes="settings-icon">
+                            <Path Width="18"
+                                  Height="18"
+                                  Stretch="Uniform"
+                                  Stroke="{DynamicResource AccentTextBrush}"
+                                  StrokeThickness="1.6"
+                                  StrokeLineCap="Round"
+                                  Fill="Transparent"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Data="M12,7 A5,5 0 1 0 12,17 A5,5 0 1 0 12,7 M12,2 V4.5 M12,19.5 V22 M4.9,4.9 L6.7,6.7 M17.3,17.3 L19.1,19.1 M2,12 H4.5 M19.5,12 H22 M4.9,19.1 L6.7,17.3 M17.3,6.7 L19.1,4.9"/>
+                        </Border>
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Theme"
+                                       FontSize="{DynamicResource Font16}"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="Choose how Super Dev looks"
+                                       FontSize="{DynamicResource Font13}"
+                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                        <Button Grid.Column="0" Classes="appearance-choice theme-card" Tag="System" Click="Theme_Click">
+                            <Grid>
+                                <StackPanel Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,18">
+                                    <Path Classes="choice-icon" Width="26" Height="26" Stretch="Uniform" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Fill="Transparent" HorizontalAlignment="Center" Data="M3,5 H21 V15 H3 Z M8,19 H16 M12,15 V19"/>
+                                    <TextBlock Classes="choice-title" Text="System" HorizontalAlignment="Center"/>
+                                    <TextBlock Classes="choice-hint" Text="Follow system theme" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="1" Classes="appearance-choice theme-card" Tag="Light" Click="Theme_Click">
+                            <Grid>
+                                <StackPanel Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,18">
+                                    <Path Classes="choice-icon" Width="26" Height="26" Stretch="Uniform" StrokeThickness="1.6" StrokeLineCap="Round" Fill="Transparent" HorizontalAlignment="Center" Data="M12,7 A5,5 0 1 0 12,17 A5,5 0 1 0 12,7 M12,2 V4.5 M12,19.5 V22 M4.9,4.9 L6.7,6.7 M17.3,17.3 L19.1,19.1 M2,12 H4.5 M19.5,12 H22 M4.9,19.1 L6.7,17.3 M17.3,6.7 L19.1,4.9"/>
+                                    <TextBlock Classes="choice-title" Text="Light" HorizontalAlignment="Center"/>
+                                    <TextBlock Classes="choice-hint" Text="Always use light theme" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="2" Classes="appearance-choice theme-card" Tag="Dark" Click="Theme_Click">
+                            <Grid>
+                                <StackPanel Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,18">
+                                    <Path Classes="choice-icon choice-fill" Width="26" Height="26" Stretch="Uniform" HorizontalAlignment="Center" Data="M15.5,3 A8,8 0 1 0 15.5,21 A6.2,6.2 0 1 1 15.5,3 Z"/>
+                                    <TextBlock Classes="choice-title" Text="Dark" HorizontalAlignment="Center"/>
+                                    <TextBlock Classes="choice-hint" Text="Always use dark theme" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="settings-card">
+                <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Classes="settings-icon">
+                            <Grid Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Ellipse Stroke="{DynamicResource AccentTextBrush}" StrokeThickness="1.4"/>
+                                <Ellipse Width="3.5" Height="3.5" Fill="{DynamicResource AccentTextBrush}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                <Ellipse Width="3.5" Height="3.5" Fill="{DynamicResource AccentTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,3,0,0"/>
+                                <Ellipse Width="3.5" Height="3.5" Fill="{DynamicResource AccentTextBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                            </Grid>
+                        </Border>
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Accent color"
+                                       FontSize="{DynamicResource Font16}"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="Pick a color to match your style"
+                                       FontSize="{DynamicResource Font13}"
+                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel x:Name="AccentSwatches" Orientation="Horizontal" Spacing="14"/>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="settings-card">
+                <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Classes="settings-icon">
+                            <Path Width="18"
+                                  Height="18"
+                                  Stretch="Uniform"
+                                  Stroke="{DynamicResource AccentTextBrush}"
+                                  StrokeThickness="1.6"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Fill="Transparent"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Data="M4,9 V4 H9 M15,4 H20 V9 M20,15 V20 H15 M9,20 H4 V15"/>
+                        </Border>
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Density"
+                                       FontSize="{DynamicResource Font16}"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="Control the spacing and layout size"
+                                       FontSize="{DynamicResource Font13}"
+                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Button Grid.Column="0" Classes="appearance-choice option-card" Tag="Comfortable" Click="Density_Click">
+                            <Grid>
+                                <Grid Margin="14" ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalAlignment="Center">
+                                    <Path Grid.Column="0" Classes="choice-icon" Width="22" Height="22" Stretch="Uniform" StrokeThickness="1.7" StrokeLineCap="Round" Fill="Transparent" VerticalAlignment="Center" Data="M4,6 H7 M10,6 H20 M4,12 H7 M10,12 H20 M4,18 H7 M10,18 H20"/>
+                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Classes="choice-title" Text="Comfortable"/>
+                                        <TextBlock Classes="choice-hint" Text="More spacing for relaxed use"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="1" Classes="appearance-choice option-card" Tag="Compact" Click="Density_Click">
+                            <Grid>
+                                <Grid Margin="14" ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalAlignment="Center">
+                                    <Path Grid.Column="0" Classes="choice-icon" Width="22" Height="22" Stretch="Uniform" StrokeThickness="1.7" StrokeLineCap="Round" Fill="Transparent" VerticalAlignment="Center" Data="M4,4 H7 M10,4 H20 M4,9 H7 M10,9 H20 M4,14 H7 M10,14 H20 M4,19 H7 M10,19 H20"/>
+                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Classes="choice-title" Text="Compact"/>
+                                        <TextBlock Classes="choice-hint" Text="More content in less space"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Classes="settings-card">
+                <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Classes="settings-icon">
+                            <TextBlock Text="Aa"
+                                       FontSize="{DynamicResource Font15}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AccentTextBrush}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Font size"
+                                       FontSize="{DynamicResource Font16}"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="Adjust the text size across the app"
+                                       FontSize="{DynamicResource Font13}"
+                                       Foreground="{DynamicResource TextMutedBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                        <Button Grid.Column="0" Classes="appearance-choice option-card" Tag="Small" Click="FontSize_Click">
+                            <Grid>
+                                <Grid Margin="14" ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalAlignment="Center">
+                                    <TextBlock Grid.Column="0" Classes="aa" Text="Aa" FontSize="{DynamicResource Font14}" Width="28"/>
+                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Classes="choice-title" Text="Small"/>
+                                        <TextBlock Classes="choice-hint" Text="Smaller text"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="1" Classes="appearance-choice option-card" Tag="Medium" Click="FontSize_Click">
+                            <Grid>
+                                <Grid Margin="14" ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalAlignment="Center">
+                                    <TextBlock Grid.Column="0" Classes="aa" Text="Aa" FontSize="{DynamicResource Font20}" Width="32"/>
+                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Classes="choice-title" Text="Medium"/>
+                                        <TextBlock Classes="choice-hint" Text="Default size"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="2" Classes="appearance-choice option-card" Tag="Large" Click="FontSize_Click">
+                            <Grid>
+                                <Grid Margin="14" ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalAlignment="Center">
+                                    <TextBlock Grid.Column="0" Classes="aa" Text="Aa" FontSize="{DynamicResource Font24}" Width="36"/>
+                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                        <TextBlock Classes="choice-title" Text="Large"/>
+                                        <TextBlock Classes="choice-hint" Text="Larger text"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Classes="settings-section" Text="Updates"/>
+
+            <Border Classes="settings-card">
+                <StackPanel Spacing="16">
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="UpdateVersionText"
+                                   FontSize="{DynamicResource Font15}"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock x:Name="UpdateStatusText"
+                                   FontSize="{DynamicResource Font13}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button x:Name="CheckUpdatesButton"
+                                Content="Check for updates"
+                                Classes="settings-back"
+                                Click="CheckForUpdates_Click"/>
+                        <Button x:Name="InstallUpdateButton"
+                                Content="Install update"
+                                Classes="settings-primary"
+                                IsVisible="False"
+                                Click="InstallUpdate_Click"/>
+                    </StackPanel>
+                    <CheckBox x:Name="AutoCheckBox" VerticalAlignment="Top">
+                        <StackPanel Spacing="2" Margin="6,0,0,0">
+                            <TextBlock Text="Check for new versions automatically"
+                                       FontSize="{DynamicResource Font15}"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="Look for a newer release when Super Dev opens"
+                                       FontSize="{DynamicResource Font13}"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="AutoUpgradeBox" VerticalAlignment="Top">
+                        <StackPanel Spacing="2" Margin="6,0,0,0">
+                            <TextBlock Text="Install newer versions automatically"
+                                       FontSize="{DynamicResource Font15}"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="Download and install when a newer release is found"
+                                       FontSize="{DynamicResource Font13}"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </CheckBox>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+
+    <ScrollViewer x:Name="ShortcutsPanel"
+                  Grid.Row="2"
+                  IsVisible="False"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
         <StackPanel MaxWidth="720"
-                    Margin="24,28,24,40"
+                    Margin="{DynamicResource PagePadding}"
                     HorizontalAlignment="Center"
                     Spacing="18">
             <Grid ColumnDefinitions="*,Auto"
                   ColumnSpacing="16">
-                <StackPanel Spacing="6">
-                    <TextBlock Text="Keyboard Shortcuts"
-                               FontSize="28"
-                               FontWeight="Bold"/>
-                </StackPanel>
+                <TextBlock Text="Keyboard shortcuts"
+                           FontSize="{DynamicResource Font28}"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"/>
                 <Button Grid.Column="1"
                         Content="Back"
                         Classes="settings-back"
@@ -1106,8 +1542,8 @@
                         Click="CloseSettings_Click"/>
             </Grid>
             <TextBlock Text="Shortcuts depend on the focused control. Space and F2 stay with a text field while you are typing, and shortcuts do not run while a dialog is open. Highlighted keys are the ones used on this computer."
-                       FontSize="13"
-                       Foreground="#94A3B8"
+                       FontSize="{DynamicResource Font13}"
+                       Foreground="{DynamicResource TextMutedBrush}"
                        TextWrapping="Wrap"/>
             <StackPanel x:Name="ShortcutSections"
                         Spacing="18"/>
@@ -1122,14 +1558,14 @@
             VerticalAlignment="Bottom"
             Margin="24,0,24,28"
             Padding="14,8"
-            Background="#1E293B"
-            BorderBrush="#334155"
+            Background="{DynamicResource BorderSubtleBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
             CornerRadius="8"
             ZIndex="20">
         <TextBlock x:Name="ToastText"
-                   FontSize="13"
-                   Foreground="#E2E8F0"/>
+                   FontSize="{DynamicResource Font13}"
+                   Foreground="{DynamicResource TextSecondaryBrush}"/>
     </Border>
 </Grid>
 

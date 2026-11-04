@@ -7,46 +7,45 @@
         MinHeight="520"
         CanResize="True"
         Title="Edit template"
-        Icon="/Assets/app.ico"
-        Background="#0B1120"
+        Background="{DynamicResource AppBackgroundBrush}"
         WindowStartupLocation="CenterOwner">
 
     <Window.Styles>
         <Style Selector="TextBlock">
             <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         </Style>
 
         <Style Selector="TextBox.field">
-            <Setter Property="Height" Value="40"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
             <Setter Property="Padding" Value="10,0"/>
-            <Setter Property="Background" Value="#111827"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style Selector="TextBox.check-field">
-            <Setter Property="Height" Value="36"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeightSm}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
             <Setter Property="Padding" Value="8,0"/>
-            <Setter Property="Background" Value="#111827"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
 
         <Style Selector="ComboBox.field">
-            <Setter Property="Height" Value="36"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Background" Value="#111827"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeightSm}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
@@ -54,14 +53,14 @@
 
         <Style Selector="Button.icon-choice">
             <Setter Property="Width" Value="40"/>
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
             <Setter Property="Margin" Value="3"/>
             <Setter Property="Padding" Value="0"/>
-            <Setter Property="Background" Value="#111827"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font18}"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -73,21 +72,21 @@
         </Style>
 
         <Style Selector="Button.icon-choice:pointerover">
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
-            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
         </Style>
 
         <Style Selector="Button.icon-choice.on">
-            <Setter Property="BorderBrush" Value="#2563EB"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="Background" Value="#172F55"/>
+            <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
         </Style>
 
         <Style Selector="Button.form-button">
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
             <Setter Property="MinWidth" Value="96"/>
             <Setter Property="Padding" Value="16,0"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -101,55 +100,55 @@
         </Style>
 
         <Style Selector="Button.cancel">
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="Foreground" Value="#E2E8F0"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <Style Selector="Button.cancel:pointerover">
-            <Setter Property="Background" Value="#263449"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSoftBrush}"/>
         </Style>
 
         <Style Selector="Button.secondary">
-            <Setter Property="Background" Value="#172033"/>
-            <Setter Property="Foreground" Value="#E2E8F0"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <Style Selector="Button.secondary:pointerover">
-            <Setter Property="BorderBrush" Value="#3B82F6"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
 
         <Style Selector="Button.primary">
-            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
         <Style Selector="Button.primary:pointerover">
-            <Setter Property="Background" Value="#1D4ED8"/>
+            <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
         </Style>
 
         <Style Selector="Button.delete">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#F87171"/>
+            <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="MinWidth" Value="72"/>
             <Setter Property="Padding" Value="8,0"/>
         </Style>
 
         <Style Selector="Button.delete:pointerover">
-            <Setter Property="Background" Value="#3F1D1D"/>
+            <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}"/>
         </Style>
 
         <Style Selector="Button.add-check">
-            <Setter Property="Height" Value="36"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeightSm}"/>
             <Setter Property="Padding" Value="12,0"/>
-            <Setter Property="Background" Value="#172033"/>
-            <Setter Property="Foreground" Value="#93C5FD"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -160,21 +159,21 @@
 
         <Style Selector="Button.remove-check">
             <Setter Property="Width" Value="32"/>
-            <Setter Property="Height" Value="32"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeightXs}"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
 
         <Style Selector="Button.remove-check:pointerover">
-            <Setter Property="Background" Value="#3F1D1D"/>
-            <Setter Property="Foreground" Value="#F87171"/>
+            <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}"/>
         </Style>
 
         <Style Selector="Border.check-row">
@@ -186,8 +185,8 @@
         </Style>
 
         <Style Selector="Border.check-row.dragging">
-            <Setter Property="Background" Value="#172F55"/>
-            <Setter Property="BorderBrush" Value="#60A5FA"/>
+            <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
         </Style>
 
         <Style Selector="Border.check-grip">
@@ -198,8 +197,8 @@
         </Style>
 
         <Style Selector="TextBlock.check-grip-mark">
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="#64748B"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
@@ -208,8 +207,8 @@
     <Grid Margin="24" RowDefinitions="Auto,Auto,Auto,*,Auto">
         <StackPanel Grid.Row="0" Spacing="8">
             <TextBlock Text="Title"
-                       FontSize="13"
-                       Foreground="#94A3B8"/>
+                       FontSize="{DynamicResource Font13}"
+                       Foreground="{DynamicResource TextMutedBrush}"/>
             <TextBox x:Name="TitleBox"
                      Classes="field"
                      PlaceholderText="Template name"/>
@@ -217,10 +216,10 @@
 
         <StackPanel Grid.Row="1" Margin="0,18,0,0" Spacing="8">
             <TextBlock Text="Icon"
-                       FontSize="13"
-                       Foreground="#94A3B8"/>
-            <Border Background="#0F172A"
-                    BorderBrush="#334155"
+                       FontSize="{DynamicResource Font13}"
+                       Foreground="{DynamicResource TextMutedBrush}"/>
+            <Border Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1"
                     CornerRadius="12"
                     Padding="6">
@@ -237,12 +236,12 @@
                         Spacing="10"
                         VerticalAlignment="Center">
                 <TextBlock Text="Checks"
-                           FontSize="13"
-                           Foreground="#94A3B8"
+                           FontSize="{DynamicResource Font13}"
+                           Foreground="{DynamicResource TextMutedBrush}"
                            VerticalAlignment="Center"/>
                 <TextBlock Text="Drag to reorder"
-                           FontSize="12"
-                           Foreground="#64748B"
+                           FontSize="{DynamicResource Font12}"
+                           Foreground="{DynamicResource TextSubtleBrush}"
                            VerticalAlignment="Center"/>
             </StackPanel>
             <Button Grid.Column="1"
@@ -252,25 +251,11 @@
         </Grid>
 
         <Border Grid.Row="3"
-                Background="#0F172A"
-                BorderBrush="#334155"
+                Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="1"
                 CornerRadius="12"
                 Padding="10">
-            <Border.Resources>
-                <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#0F172A"/>
-                <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#334155"/>
-                <SolidColorBrush x:Key="ComboBoxItemForeground" Color="#E2E8F0"/>
-                <SolidColorBrush x:Key="ComboBoxItemBackground" Color="Transparent"/>
-                <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver" Color="#1E293B"/>
-                <SolidColorBrush x:Key="ComboBoxItemForegroundPointerOver" Color="#F8FAFC"/>
-                <SolidColorBrush x:Key="ComboBoxItemBackgroundPressed" Color="#172033"/>
-                <SolidColorBrush x:Key="ComboBoxItemForegroundPressed" Color="#F8FAFC"/>
-                <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="#1E3A8A"/>
-                <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="#FFFFFF"/>
-                <SolidColorBrush x:Key="ComboBoxItemBackgroundSelectedPointerOver" Color="#1D4ED8"/>
-                <SolidColorBrush x:Key="ComboBoxItemForegroundSelectedPointerOver" Color="#FFFFFF"/>
-            </Border.Resources>
             <ScrollViewer x:Name="ChecksScroll"
                           HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Auto">

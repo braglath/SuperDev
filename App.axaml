@@ -4,7 +4,7 @@
              xmlns:local="using:SuperDev"
              xmlns:controls="using:SuperDev.Controls"
              Name="Super Dev"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Light">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.DataTemplates>
@@ -12,27 +12,87 @@
     </Application.DataTemplates>
 
     <Application.Resources>
-        <SolidColorBrush x:Key="CalendarViewForeground" Color="#F8FAFC"/>
-        <SolidColorBrush x:Key="CalendarViewBackground" Color="#0F172A"/>
-        <SolidColorBrush x:Key="CalendarViewBorderBrush" Color="#0F172A"/>
-        <SolidColorBrush x:Key="CalendarViewCalendarItemForeground" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="SurfaceInsetBrush" Color="#F8FAFC"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#F1F5F9"/>
+        <SolidColorBrush x:Key="CardHoverBrush" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#CBD5E1"/>
+        <SolidColorBrush x:Key="BorderSoftBrush" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="BorderSubtleBrush" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#0F172A"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#1E293B"/>
+        <SolidColorBrush x:Key="TextBodyBrush" Color="#334155"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#64748B"/>
+        <SolidColorBrush x:Key="TextSubtleBrush" Color="#64748B"/>
+        <SolidColorBrush x:Key="TextFaintBrush" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="TextOnAccentBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#2563EB"/>
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#1D4ED8"/>
+        <SolidColorBrush x:Key="AccentPressedBrush" Color="#1E40AF"/>
+        <SolidColorBrush x:Key="AccentTextBrush" Color="#1D4ED8"/>
+        <SolidColorBrush x:Key="AccentTextHoverBrush" Color="#1E3A8A"/>
+        <SolidColorBrush x:Key="AccentSubtleBrush" Color="#DBEAFE"/>
+        <SolidColorBrush x:Key="AccentSubtleHoverBrush" Color="#BFDBFE"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+        <SolidColorBrush x:Key="DangerHoverBrush" Color="#B91C1C"/>
+        <SolidColorBrush x:Key="DangerTextBrush" Color="#B91C1C"/>
+        <SolidColorBrush x:Key="DangerTextHoverBrush" Color="#991B1B"/>
+        <SolidColorBrush x:Key="DangerSurfaceBrush" Color="#FEE2E2"/>
+        <SolidColorBrush x:Key="DangerSurfaceSoftBrush" Color="#FEE2E2"/>
+        <SolidColorBrush x:Key="WarningTextBrush" Color="#B45309"/>
+        <SolidColorBrush x:Key="WarningSurfaceBrush" Color="#FEF3C7"/>
+        <SolidColorBrush x:Key="SuccessTextBrush" Color="#15803D"/>
+        <SolidColorBrush x:Key="SuccessBorderBrush" Color="#86EFAC"/>
+        <SolidColorBrush x:Key="InfoTextBrush" Color="#0369A1"/>
+        <SolidColorBrush x:Key="InfoSurfaceBrush" Color="#E0F2FE"/>
+        <SolidColorBrush x:Key="ReviewTextBrush" Color="#6D28D9"/>
+        <SolidColorBrush x:Key="ReviewSurfaceBrush" Color="#EDE9FE"/>
+        <x:Double x:Key="Font11">11</x:Double>
+        <x:Double x:Key="Font12">12</x:Double>
+        <x:Double x:Key="Font13">13</x:Double>
+        <x:Double x:Key="Font14">14</x:Double>
+        <x:Double x:Key="Font15">15</x:Double>
+        <x:Double x:Key="Font16">16</x:Double>
+        <x:Double x:Key="Font17">17</x:Double>
+        <x:Double x:Key="Font18">18</x:Double>
+        <x:Double x:Key="Font20">20</x:Double>
+        <x:Double x:Key="Font22">22</x:Double>
+        <x:Double x:Key="Font24">24</x:Double>
+        <x:Double x:Key="Font28">28</x:Double>
+        <x:Double x:Key="Font38">38</x:Double>
+        <x:Double x:Key="Font92">92</x:Double>
+        <x:Double x:Key="ControlHeight">40</x:Double>
+        <x:Double x:Key="ControlHeightSm">36</x:Double>
+        <x:Double x:Key="ControlHeightLg">44</x:Double>
+        <x:Double x:Key="ControlHeightXl">52</x:Double>
+        <x:Double x:Key="ControlHeightXs">32</x:Double>
+        <x:Double x:Key="IconButtonSize">34</x:Double>
+        <x:Double x:Key="SectionSpacing">24</x:Double>
+        <Thickness x:Key="PageMargin">32</Thickness>
+        <Thickness x:Key="PagePadding">24,28,24,40</Thickness>
+        <Thickness x:Key="CardPadding">12</Thickness>
+        <SolidColorBrush x:Key="CalendarViewForeground" Color="#0F172A"/>
+        <SolidColorBrush x:Key="CalendarViewBackground" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="CalendarViewBorderBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="CalendarViewCalendarItemForeground" Color="#1E293B"/>
         <SolidColorBrush x:Key="CalendarViewCalendarItemRevealBackground" Color="Transparent"/>
         <SolidColorBrush x:Key="CalendarViewCalendarItemRevealBorderBrush" Color="Transparent"/>
-        <SolidColorBrush x:Key="CalendarViewHoverBorderBrush" Color="#334155"/>
-        <SolidColorBrush x:Key="CalendarViewPressedBorderBrush" Color="#3B82F6"/>
+        <SolidColorBrush x:Key="CalendarViewHoverBorderBrush" Color="#CBD5E1"/>
+        <SolidColorBrush x:Key="CalendarViewPressedBorderBrush" Color="#1D4ED8"/>
         <SolidColorBrush x:Key="CalendarViewSelectedBorderBrush" Color="#2563EB"/>
-        <SolidColorBrush x:Key="CalendarViewSelectedHoverBorderBrush" Color="#3B82F6"/>
-        <SolidColorBrush x:Key="CalendarViewSelectedPressedBorderBrush" Color="#1D4ED8"/>
+        <SolidColorBrush x:Key="CalendarViewSelectedHoverBorderBrush" Color="#1D4ED8"/>
+        <SolidColorBrush x:Key="CalendarViewSelectedPressedBorderBrush" Color="#1E40AF"/>
         <SolidColorBrush x:Key="CalendarViewTodayForeground" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="CalendarViewOutOfScopeBackground" Color="Transparent"/>
-        <SolidColorBrush x:Key="CalendarViewOutOfScopeForeground" Color="#475569"/>
-        <SolidColorBrush x:Key="CalendarViewBlackoutForeground" Color="#475569"/>
-        <SolidColorBrush x:Key="CalendarViewWeekDayForegroundDisabled" Color="#475569"/>
+        <SolidColorBrush x:Key="CalendarViewOutOfScopeForeground" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="CalendarViewBlackoutForeground" Color="#94A3B8"/>
+        <SolidColorBrush x:Key="CalendarViewWeekDayForegroundDisabled" Color="#94A3B8"/>
         <SolidColorBrush x:Key="CalendarViewNavigationButtonBackground" Color="Transparent"/>
         <SolidColorBrush x:Key="CalendarViewNavigationButtonBorderBrush" Color="Transparent"/>
-        <SolidColorBrush x:Key="CalendarViewNavigationButtonBorderBrushPointerOver" Color="#1E293B"/>
-        <SolidColorBrush x:Key="CalendarViewNavigationButtonForegroundPointerOver" Color="#F8FAFC"/>
-        <SolidColorBrush x:Key="CalendarViewNavigationButtonForegroundPressed" Color="#93C5FD"/>
+        <SolidColorBrush x:Key="CalendarViewNavigationButtonBorderBrushPointerOver" Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="CalendarViewNavigationButtonForegroundPointerOver" Color="#0F172A"/>
+        <SolidColorBrush x:Key="CalendarViewNavigationButtonForegroundPressed" Color="#1E3A8A"/>
         <x:Double x:Key="CalendarFontSize">13</x:Double>
         <x:Double x:Key="CalendarDayButtonFontSize">13</x:Double>
     </Application.Resources>
@@ -53,18 +113,22 @@
             <Setter Property="Width" Value="0"/>
         </Style>
 
+        <Style Selector="Window">
+            <Setter Property="Icon" Value="{DynamicResource AppWindowIcon}"/>
+        </Style>
+
         <Style Selector="FlyoutPresenter.app-popup">
-            <Setter Property="Background" Value="#0F172A"/>
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="12"/>
         </Style>
 
         <Style Selector="Calendar">
-            <Setter Property="Background" Value="#0F172A"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
-            <Setter Property="BorderBrush" Value="#0F172A"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
@@ -80,11 +144,11 @@
         </Style>
 
         <Style Selector="CalendarDayButton:pointerover /template/ Border#Root">
-            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
         </Style>
 
         <Style Selector="CalendarDayButton:pointerover /template/ Border#Border">
-            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
         </Style>
 
         <Style Selector="CalendarDayButton:today:not(:selected) /template/ Border#Root">
@@ -92,20 +156,20 @@
         </Style>
 
         <Style Selector="CalendarDayButton:today:not(:selected) /template/ Border#Border">
-            <Setter Property="BorderBrush" Value="#60A5FA"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
         </Style>
 
         <Style Selector="CalendarDayButton:today:not(:selected) /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Foreground" Value="#93C5FD"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
 
         <Style Selector="CalendarDayButton:selected /template/ Border#Root">
-            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
         </Style>
 
         <Style Selector="CalendarDayButton:selected /template/ Border#Border">
-            <Setter Property="BorderBrush" Value="#2563EB"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
         </Style>
 
         <Style Selector="CalendarDayButton:selected /template/ ContentPresenter#PART_ContentPresenter">
@@ -118,11 +182,11 @@
         </Style>
 
         <Style Selector="CalendarDayButton:inactive /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Foreground" Value="#475569"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFaintBrush}"/>
         </Style>
 
         <Style Selector="CalendarButton:selected /template/ Border#Root">
-            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
         </Style>
 
@@ -131,12 +195,12 @@
         </Style>
 
         <Style Selector="CalendarButton:pointerover /template/ Border#Root">
-            <Setter Property="Background" Value="#1E293B"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
             <Setter Property="CornerRadius" Value="8"/>
         </Style>
 
         <Style Selector="CalendarButton /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
         </Style>
 
         <Style Selector="Button.clear-text">
@@ -146,9 +210,9 @@
             <Setter Property="MinHeight" Value="0"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Margin" Value="4,0,0,0"/>
-            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -158,8 +222,8 @@
         </Style>
 
         <Style Selector="Button.clear-text:pointerover">
-            <Setter Property="Background" Value="#1E2A3F"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         </Style>
 
         <Style Selector="TextBox">

@@ -4,6 +4,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using SuperDev.Controls;
 using SuperDev.Models;
+using SuperDev.Services;
 
 namespace SuperDev.Views;
 
@@ -29,8 +30,8 @@ public partial class CheckDetailView : UserControl
       TitleText.Text = string.IsNullOrWhiteSpace(item.Title) ? "Untitled check" : item.Title;
       StatusText.Text = item.IsCompleted ? "Completed" : "Open";
       StatusText.Foreground = item.IsCompleted
-          ? SolidColorBrush.Parse("#4ADE80")
-          : SolidColorBrush.Parse("#E2E8F0");
+          ? AppearanceService.Brush("SuccessTextBrush")
+          : AppearanceService.Brush("TextSecondaryBrush");
       CategoryText.Text = string.IsNullOrWhiteSpace(item.Category) ? "General" : item.Category;
       PriorityText.Text = item.Priority.ToString();
       PriorityText.Foreground = PriorityAppearance.BrushFor(item.Priority);
@@ -61,8 +62,8 @@ public partial class CheckDetailView : UserControl
          SubtaskList.Children.Add(new TextBlock
          {
             Text = subtask.IsCompleted ? $"✓  {subtask.Title}" : $"○  {subtask.Title}",
-            FontSize = 14,
-            Foreground = SolidColorBrush.Parse(subtask.IsCompleted ? "#94A3B8" : "#E2E8F0"),
+            FontSize = AppearanceService.Font(14),
+            Foreground = AppearanceService.Brush(subtask.IsCompleted ? AppearanceService.TextMutedBrush : AppearanceService.TextSecondaryBrush),
             TextWrapping = TextWrapping.Wrap
          });
       }

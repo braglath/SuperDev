@@ -21,9 +21,24 @@ internal static class MacDockIcon
             using var stream = AssetLoader.Open(new Uri("avares://Super Dev/Assets/AppIcon.icns"));
             using var memory = new MemoryStream();
             stream.CopyTo(memory);
-            var bytes = memory.ToArray();
-            if (bytes.Length == 0)
-                return;
+            Show(memory.ToArray());
+        }
+        catch (Exception)
+        {
+            // A missing native image must not stop startup. The packaged
+            // bundle still shows Assets/AppIcon.icns.
+        }
+    }
+
+    public static void ApplyPng(byte[] png) => Show(png);
+
+    private static void Show(byte[] bytes)
+    {
+        if (!OperatingSystem.IsMacOS() || bytes.Length == 0)
+            return;
+
+        try
+        {
 
             var dataClass = objc_getClass("NSData");
             var imageClass = objc_getClass("NSImage");
@@ -60,8 +75,7 @@ internal static class MacDockIcon
         }
         catch (Exception)
         {
-            // A missing native image must not stop startup. The packaged
-            // bundle still shows Assets/AppIcon.icns.
+            // A missing native image must not stop startup.
         }
     }
 

@@ -7,44 +7,43 @@
         MinWidth="480"
         MinHeight="360"
         Title="Notes"
-        Icon="/Assets/app.ico"
-        Background="#0B1120"
+        Background="{DynamicResource AppBackgroundBrush}"
         WindowStartupLocation="CenterOwner">
 
     <Window.Styles>
 
         <Style Selector="TextBlock">
             <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         </Style>
 
         <Style Selector="TextBlock.dialog-title">
-            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font20}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
 
         <Style Selector="TextBlock.dialog-detail">
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
         </Style>
 
         <Style Selector="Button.dialog-button">
-            <Setter Property="Height" Value="42"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
             <Setter Property="MinWidth" Value="100"/>
             <Setter Property="Padding" Value="20,8"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
         <Style Selector="Button.dialog-button:pointerover">
-            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
 
     </Window.Styles>
@@ -61,8 +60,8 @@
                    Classes="dialog-detail"/>
 
         <Border Grid.Row="2"
-                Background="#111827"
-                BorderBrush="#1E293B"
+                Background="{DynamicResource SurfaceInsetBrush}"
+                BorderBrush="{DynamicResource BorderSubtleBrush}"
                 BorderThickness="1"
                 CornerRadius="12"
                 Padding="18">
@@ -71,9 +70,9 @@
                           VerticalScrollBarVisibility="Auto">
 
                 <controls:NoteText x:Name="NotesText"
-                                   FontSize="15"
+                                   FontSize="{DynamicResource Font15}"
                                    LineHeight="24"
-                                   Foreground="#CBD5E1"
+                                   Foreground="{DynamicResource TextBodyBrush}"
                                    TextWrapping="Wrap"/>
 
             </ScrollViewer>

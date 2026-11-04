@@ -7,18 +7,18 @@
 
         <Style Selector="TextBlock">
             <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         </Style>
 
         <Style Selector="TextBlock.detail-label">
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#64748B"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}"/>
         </Style>
 
         <Style Selector="TextBlock.detail-value">
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
 
@@ -27,7 +27,7 @@
             <Setter Property="Height" Value="28"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="CornerRadius" Value="6"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -35,14 +35,14 @@
         </Style>
 
         <Style Selector="Button.detail-close:pointerover">
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         </Style>
 
         <Style Selector="Button.detail-action">
             <Setter Property="Height" Value="38"/>
             <Setter Property="Padding" Value="12,0"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -55,35 +55,35 @@
         </Style>
 
         <Style Selector="Button.detail-edit">
-            <Setter Property="Background" Value="#1E293B"/>
-            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
         </Style>
 
         <Style Selector="Button.detail-edit:pointerover">
-            <Setter Property="Background" Value="#334155"/>
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
         </Style>
 
         <Style Selector="Button.detail-delete">
-            <Setter Property="Background" Value="#7F1D1D"/>
-            <Setter Property="Foreground" Value="#FECACA"/>
+            <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}"/>
         </Style>
 
         <Style Selector="Button.detail-delete:pointerover">
-            <Setter Property="Background" Value="#991B1B"/>
+            <Setter Property="Background" Value="{DynamicResource DangerHoverBrush}"/>
         </Style>
 
         <Style Selector="Button.detail-complete">
-            <Setter Property="Background" Value="#2563EB"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="Foreground" Value="White"/>
         </Style>
 
         <Style Selector="Button.detail-complete:pointerover">
-            <Setter Property="Background" Value="#3B82F6"/>
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
 
         <Style Selector="Button.detail-link">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#60A5FA"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="0,4"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
@@ -92,7 +92,7 @@
         </Style>
 
         <Style Selector="Button.detail-link:pointerover">
-            <Setter Property="Foreground" Value="#93C5FD"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
         </Style>
 
     </UserControl.Styles>
@@ -104,7 +104,7 @@
               ColumnSpacing="8">
 
             <TextBlock x:Name="TitleText"
-                       FontSize="18"
+                       FontSize="{DynamicResource Font18}"
                        FontWeight="SemiBold"
                        TextWrapping="Wrap"
                        VerticalAlignment="Center"/>
@@ -150,8 +150,8 @@
                     <TextBlock Text="Deadline" Classes="detail-label"/>
                     <TextBlock x:Name="DeadlineText" Classes="detail-value"/>
                     <TextBlock x:Name="NotifyText"
-                               FontSize="13"
-                               Foreground="#94A3B8"
+                               FontSize="{DynamicResource Font13}"
+                               Foreground="{DynamicResource TextMutedBrush}"
                                TextWrapping="Wrap"
                                IsVisible="False"/>
                 </StackPanel>
@@ -159,9 +159,9 @@
                 <StackPanel Spacing="4">
                     <TextBlock Text="Notes" Classes="detail-label"/>
                     <controls:NoteText x:Name="NotesText"
-                                       FontSize="14"
+                                       FontSize="{DynamicResource Font14}"
                                        LineHeight="22"
-                                       Foreground="#CBD5E1"
+                                       Foreground="{DynamicResource TextBodyBrush}"
                                        TextWrapping="Wrap"/>
                 </StackPanel>
 
