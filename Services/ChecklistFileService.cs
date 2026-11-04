@@ -237,6 +237,12 @@ public sealed class ChecklistFileService
                 subtask.Title = subtask.Title.Trim();
             }
 
+            item.Evidence ??= [];
+            item.Evidence.RemoveAll(file =>
+                file is null || string.IsNullOrWhiteSpace(file.Path));
+            foreach (var file in item.Evidence)
+                file.Path = file.Path.Trim();
+
             if (!item.CanComplete)
                 item.IsCompleted = false;
         }

@@ -1,0 +1,115 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SuperDev.Views.AiSetupWindow"
+        Width="560"
+        Height="460"
+        MinWidth="480"
+        MinHeight="420"
+        CanResize="False"
+        Title="Set up local AI"
+        Background="{DynamicResource AppBackgroundBrush}"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style Selector="Button.form-button">
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.cancel">
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Button.secondary">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button:disabled">
+            <Setter Property="Opacity" Value="0.55"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="28" RowDefinitions="Auto,*,Auto">
+        <StackPanel Spacing="8">
+            <TextBlock Text="Set up local AI"
+                       FontSize="{DynamicResource Font28}"
+                       FontWeight="Bold"/>
+            <TextBlock x:Name="IntroText"
+                       FontSize="{DynamicResource Font14}"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Text="AI runs locally on this computer. Nothing is sent to a cloud model."/>
+        </StackPanel>
+
+        <StackPanel x:Name="PromptPanel" Grid.Row="1" Spacing="12" Margin="0,20,0,0">
+            <TextBlock x:Name="ExplainText"
+                       FontSize="{DynamicResource Font14}"
+                       Foreground="{DynamicResource TextBodyBrush}"/>
+            <TextBlock x:Name="SizeText"
+                       FontSize="{DynamicResource Font14}"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Text=""/>
+        </StackPanel>
+
+        <StackPanel x:Name="ProgressPanel" Grid.Row="1" Spacing="12" Margin="0,20,0,0" IsVisible="False">
+            <TextBlock x:Name="StageText"
+                       FontSize="{DynamicResource Font16}"
+                       FontWeight="SemiBold"
+                       Text="Checking AI environment"/>
+            <ProgressBar x:Name="SetupProgress"
+                         Height="8"
+                         Minimum="0"
+                         Maximum="100"
+                         Foreground="{DynamicResource AccentBrush}"
+                         Background="{DynamicResource BorderSubtleBrush}"/>
+            <TextBlock x:Name="PercentText"
+                       FontSize="{DynamicResource Font14}"
+                       Foreground="{DynamicResource TextMutedBrush}"/>
+            <TextBlock x:Name="DetailText"
+                       FontSize="{DynamicResource Font14}"
+                       Foreground="{DynamicResource TextBodyBrush}"/>
+            <TextBlock x:Name="ErrorText"
+                       FontSize="{DynamicResource Font14}"
+                       Foreground="{DynamicResource DangerTextBrush}"
+                       IsVisible="False"/>
+        </StackPanel>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <Button x:Name="CloseButton"
+                    Classes="form-button cancel"
+                    Content="Cancel"
+                    HorizontalAlignment="Left"
+                    Click="Close_Click"/>
+            <Button x:Name="RetryButton"
+                    Grid.Column="1"
+                    Classes="form-button secondary"
+                    Content="Try again"
+                    IsVisible="False"
+                    Click="Retry_Click"/>
+            <Button x:Name="PrimaryButton"
+                    Grid.Column="2"
+                    Classes="form-button primary"
+                    Content="Download and Setup AI"
+                    Click="Primary_Click"/>
+        </Grid>
+    </Grid>
+</Window>

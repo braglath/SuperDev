@@ -71,9 +71,18 @@ public class ChecklistItem
 
    public List<ChecklistSubtask> Subtasks { get; set; } = [];
 
+   /// <summary>
+   /// Screenshots and videos chosen from a folder. Only the path is stored.
+   /// </summary>
+   public List<EvidenceFile> Evidence { get; set; } = [];
+
    [JsonIgnore]
    public bool HasNotes =>
        !string.IsNullOrWhiteSpace(Notes);
+
+   [JsonIgnore]
+   public bool HasEvidence =>
+       Evidence is { Count: > 0 };
 
    [JsonIgnore]
    public bool HasSubtasks =>

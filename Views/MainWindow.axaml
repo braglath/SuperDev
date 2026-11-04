@@ -1090,42 +1090,6 @@
                      Watermark="What are you working on?"
                      WatermarkForeground="{DynamicResource TextSubtleBrush}"/>
 
-            <TextBlock Text="Branch name"
-                       FontSize="{DynamicResource Font14}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextBodyBrush}"
-                       Margin="0,8,0,0"/>
-
-            <TextBox x:Name="BranchNameTextBox"
-                     Classes="work-title"
-                     PlaceholderText="feature/my-change"/>
-
-            <TextBlock Text="PR link"
-                       FontSize="{DynamicResource Font14}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextBodyBrush}"
-                       Margin="0,8,0,0"/>
-
-            <Grid ColumnDefinitions="*,Auto"
-                  ColumnSpacing="8">
-
-                <TextBox x:Name="PullRequestTextBox"
-                         Classes="work-title"
-                         PlaceholderText="https://github.com/.../pull/1"
-                         TextChanged="PullRequest_TextChanged"/>
-
-                <Button x:Name="OpenPullRequestButton"
-                        Grid.Column="1"
-                        Content="Open"
-                        Classes="create open"
-                        Height="{DynamicResource ControlHeightXl}"
-                        MinWidth="88"
-                        Padding="16,0"
-                        IsEnabled="False"
-                        Click="OpenPullRequest_Click"/>
-
-            </Grid>
-
         </StackPanel>
 
 
@@ -1176,6 +1140,12 @@
                         Classes="create open"
                         Content="Open Checklist"
                         Click="Open_Click"/>
+
+                <Button x:Name="GenerateWithAiButton"
+                        Classes="create open"
+                        Content="Generate with AI"
+                        ToolTip.Tip="Create a checklist with a local Ollama model"
+                        Click="GenerateWithAi_Click"/>
 
                 <Button x:Name="CreateButton"
                         Classes="create"

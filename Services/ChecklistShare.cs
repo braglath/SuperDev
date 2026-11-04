@@ -60,7 +60,7 @@ public static class ChecklistShare
             Detail("Branch", document.BranchName),
             Detail("Pull Request", document.PullRequestUrl),
             string.Empty,
-            Row("Check", "Status", "Category", "Priority", "Deadline", "Subtasks", "Notes")
+            Row("Check", "Status", "Category", "Priority", "Deadline", "Subtasks", "Notes", "Evidence")
         };
 
         foreach (var item in document.Items)
@@ -72,7 +72,8 @@ public static class ChecklistShare
                 item.Priority.ToString(),
                 DeadlineText(item.Deadline, item.DeadlineMinute, item.NotifyBeforeMinutes, item.DeadlineSilent),
                 SubtaskCell(item),
-                item.Notes));
+                item.Notes,
+                EvidenceCell(item)));
         }
 
         return string.Join(Environment.NewLine, rows) + Environment.NewLine;
@@ -95,10 +96,41 @@ public static class ChecklistShare
                 lines.Add("  " + noteLine);
         }
 
+        foreach (var line in EvidenceLines(item))
+            lines.Add("  " + line);
+
         foreach (var subtask in item.Subtasks)
         {
             var subtaskMark = subtask.IsCompleted ? "x" : " ";
             lines.Add($"  - [{subtaskMark}] {subtask.Title}");
+        }
+    }
+
+    private static string EvidenceCell(ChecklistItem item) =>
+        string.Join("\n", EvidencePaths(item));
+
+    private static IEnumerable<string> EvidenceLines(ChecklistItem item)
+    {
+        var paths = EvidencePaths(item).ToList();
+        if (paths.Count == 0)
+            yield break;
+
+        yield return "Evidence:";
+        foreach (var path in paths)
+            yield return path;
+    }
+
+    private static IEnumerable<string> EvidencePaths(ChecklistItem item)
+    {
+        foreach (var file in item.Evidence ?? [])
+        {
+            if (file is null || string.IsNullOrWhiteSpace(file.Path))
+                continue;
+
+            var path = file.Path.Trim();
+            yield return EvidenceKind.FileExists(path)
+                ? path
+                : "missing: " + path;
         }
     }
 

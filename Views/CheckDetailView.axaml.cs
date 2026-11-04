@@ -66,6 +66,8 @@ public partial class CheckDetailView : UserControl
       }
 
       NotesText.Source = string.IsNullOrWhiteSpace(item.Notes) ? "No notes" : item.Notes;
+      EvidenceSection.IsVisible = item.HasEvidence;
+      EvidenceList.Files = item.Evidence;
 
       SubtaskList.Children.Clear();
       var manuals = item.ManualSubtasks;

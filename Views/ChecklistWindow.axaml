@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:models="using:SuperDev.Models"
+        xmlns:controls="using:SuperDev.Controls"
         x:Class="SuperDev.Views.ChecklistWindow"
         Width="1100"
         Height="800"
@@ -270,6 +271,15 @@
                TextWrapping="Wrap"/>
 
 </ScrollViewer>
+
+<StackPanel Spacing="6"
+            Margin="0,4,0,0"
+            IsVisible="{Binding HasEvidence}">
+    <TextBlock Text="Evidence"
+               Classes="priority"/>
+    <controls:EvidenceGallery Files="{Binding Evidence}"
+                              Compact="True"/>
+</StackPanel>
 
 </StackPanel>
 

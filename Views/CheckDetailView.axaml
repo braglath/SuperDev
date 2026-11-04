@@ -192,6 +192,13 @@
                                        TextWrapping="Wrap"/>
                 </StackPanel>
 
+                <StackPanel x:Name="EvidenceSection"
+                            Spacing="6"
+                            IsVisible="False">
+                    <TextBlock Text="Evidence" Classes="detail-label"/>
+                    <controls:EvidenceGallery x:Name="EvidenceList"/>
+                </StackPanel>
+
                 <StackPanel x:Name="SubtaskSection"
                             Spacing="6"
                             IsVisible="False">

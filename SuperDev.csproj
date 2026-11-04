@@ -16,6 +16,9 @@
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
+    <Compile Remove="tests/**" />
+    <None Remove="tests/**" />
+    <AvaloniaResource Remove="tests/**" />
   </ItemGroup>
 
   <ItemGroup>

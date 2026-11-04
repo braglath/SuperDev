@@ -3,14 +3,18 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using SuperDev.Models;
+using SuperDev.Services;
+using SuperDev.Services.Ai;
 
 namespace SuperDev.Views;
 
@@ -25,6 +29,7 @@ public partial class AddCheckWindow : Window
    private bool _deadlineSilent;
    private readonly ObservableCollection<ChecklistSubtask> _links = [];
    private readonly ObservableCollection<ChecklistSubtask> _subtasks = [];
+   private readonly List<EvidenceFile> _evidence = [];
    private readonly List<SubtaskEditor> _subtaskEditors = [];
    private readonly HashSet<string> _takenTitles = new(StringComparer.OrdinalIgnoreCase);
    private Border? _subtaskDragRow;
@@ -34,8 +39,49 @@ public partial class AddCheckWindow : Window
    private int _subtaskPendingTarget = -1;
    private bool _subtaskMoveQueued;
    private bool _subtaskDeleteOpen;
+   private bool _linkRemoveOpen;
+   private bool _evidenceRemoveOpen;
+   private Func<Window, CancellationToken, Task<bool>>? _ensureAiReady;
+   private Func<CheckGenerationRequest, CancellationToken, Task<AiGenerationResult>>? _generateOneCheck;
+   private CancellationTokenSource? _generation;
+   private bool _generating;
+   private bool _closed;
+   private string _checklistTitle = string.Empty;
+   private WorkType _checklistWorkType = WorkType.Development;
 
    public Func<Window, Task<ChecklistSubtask?>>? RequestLink { get; set; }
+
+   public string ChecklistTitle
+   {
+      get => _checklistTitle;
+      set => _checklistTitle = value?.Trim() ?? string.Empty;
+   }
+
+   public WorkType ChecklistWorkType
+   {
+      get => _checklistWorkType;
+      set => _checklistWorkType = value;
+   }
+
+   public Func<Window, CancellationToken, Task<bool>>? EnsureAiReady
+   {
+      get => _ensureAiReady;
+      set
+      {
+         _ensureAiReady = value;
+         UpdateGenerateButton();
+      }
+   }
+
+   public Func<CheckGenerationRequest, CancellationToken, Task<AiGenerationResult>>? GenerateOneCheck
+   {
+      get => _generateOneCheck;
+      set
+      {
+         _generateOneCheck = value;
+         UpdateGenerateButton();
+      }
+   }
 
    public AddCheckWindow(IEnumerable<string>? takenTitles = null)
    {
@@ -49,6 +95,7 @@ public partial class AddCheckWindow : Window
       ApplyPriorityColor();
       LinkList.ItemsSource = _links;
       PrepareSubtaskEditor();
+      ConfigureEvidence();
    }
 
    protected override void OnOpened(EventArgs e)
@@ -57,6 +104,13 @@ public partial class AddCheckWindow : Window
 
       if (_editingItem is null)
          TitleTextBox.Focus();
+   }
+
+   protected override void OnClosed(EventArgs e)
+   {
+      _closed = true;
+      _generation?.Cancel();
+      base.OnClosed(e);
    }
 
    public AddCheckWindow(ChecklistItem item, IEnumerable<string>? takenTitles = null)
@@ -102,6 +156,19 @@ public partial class AddCheckWindow : Window
       LinkList.ItemsSource = _links;
       PrepareSubtaskEditor();
       ApplyDeadlineLink();
+      foreach (var file in item.Evidence ?? [])
+      {
+         var path = EvidenceKind.Normalize(file.Path);
+         if (path is null)
+            continue;
+
+         if (_evidence.Any(existing => string.Equals(existing.Path, path, StringComparison.OrdinalIgnoreCase)))
+            continue;
+
+         _evidence.Add(new EvidenceFile { Path = path });
+      }
+
+      ConfigureEvidence();
    }
 
    private void AddSubtask_Click(object? sender, RoutedEventArgs e) =>
@@ -439,9 +506,38 @@ public partial class AddCheckWindow : Window
       SubtaskList.Children.Insert(target, row);
    }
 
-   private void RemoveLink_Click(object? sender, RoutedEventArgs e)
+   private async void RemoveLink_Click(object? sender, RoutedEventArgs e)
    {
-      if (sender is Button { DataContext: ChecklistSubtask subtask })
+      if (_linkRemoveOpen)
+         return;
+
+      if (sender is not Button { DataContext: ChecklistSubtask subtask } ||
+          !_links.Contains(subtask))
+         return;
+
+      var title = subtask.Title.Trim();
+      var message = string.IsNullOrWhiteSpace(title)
+          ? "Are you sure you want to remove this linked checklist?"
+          : $"Are you sure you want to remove \"{title}\"?";
+
+      _linkRemoveOpen = true;
+      try
+      {
+         var confirm = new StyledDialog(
+             "Remove linked checklist?",
+             message,
+             "Remove",
+             "Cancel",
+             danger: true);
+         if (await confirm.ShowDialog<bool>(this) != true)
+            return;
+      }
+      finally
+      {
+         _linkRemoveOpen = false;
+      }
+
+      if (_links.Contains(subtask))
          _links.Remove(subtask);
    }
 
@@ -726,6 +822,300 @@ public partial class AddCheckWindow : Window
       }
    }
 
+   private void ConfigureEvidence()
+   {
+      EvidenceList.RemoveRequested += (_, file) => _ = ConfirmRemoveEvidenceAsync(file);
+      ShowEvidence();
+   }
+
+   private async Task ConfirmRemoveEvidenceAsync(EvidenceFile file)
+   {
+      if (_evidenceRemoveOpen || _closed)
+         return;
+
+      if (!_evidence.Any(existing =>
+              string.Equals(existing.Path, file.Path, StringComparison.OrdinalIgnoreCase)))
+         return;
+
+      var name = EvidenceKind.DisplayName(file.Path);
+      var message = string.IsNullOrWhiteSpace(name) || name == "Missing file"
+          ? "Are you sure you want to remove this evidence?"
+          : $"Are you sure you want to remove \"{name}\"?";
+
+      _evidenceRemoveOpen = true;
+      bool confirmed;
+      try
+      {
+         var confirm = new StyledDialog(
+             "Remove evidence?",
+             message,
+             "Remove",
+             "Cancel",
+             danger: true);
+         confirmed = await confirm.ShowDialog<bool>(this);
+      }
+      finally
+      {
+         _evidenceRemoveOpen = false;
+      }
+
+      if (!confirmed || _closed)
+         return;
+
+      var removed = _evidence.RemoveAll(existing =>
+          string.Equals(existing.Path, file.Path, StringComparison.OrdinalIgnoreCase));
+      if (removed > 0)
+         ShowEvidence();
+   }
+
+   private void ShowEvidence()
+   {
+      EvidenceList.Files = _evidence.ToArray();
+      EvidenceEmpty.IsVisible = _evidence.Count == 0;
+   }
+
+   private async void AddEvidence_Click(object? sender, RoutedEventArgs e)
+   {
+      var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+      {
+         Title = "Add evidence",
+         AllowMultiple = true,
+         FileTypeFilter =
+         [
+             new FilePickerFileType("Screenshots and videos")
+             {
+                 Patterns = EvidenceKind.AllPatterns()
+             },
+             new FilePickerFileType("Screenshots")
+             {
+                 Patterns = EvidenceKind.ImagePatterns()
+             },
+             new FilePickerFileType("Videos")
+             {
+                 Patterns = EvidenceKind.VideoPatterns()
+             }
+         ]
+      });
+
+      if (files.Count == 0)
+         return;
+
+      var added = false;
+      var skippedRemote = false;
+      foreach (var file in files)
+      {
+         var path = EvidenceKind.Normalize(LocalPath(file));
+         if (path is null)
+         {
+            skippedRemote = true;
+            continue;
+         }
+
+         if (!EvidenceKind.IsSupported(path))
+            continue;
+
+         if (_evidence.Any(existing => string.Equals(existing.Path, path, StringComparison.OrdinalIgnoreCase)))
+            continue;
+
+         _evidence.Add(new EvidenceFile { Path = path });
+         added = true;
+      }
+
+      if (added)
+         ShowEvidence();
+
+      if (!skippedRemote)
+         return;
+
+      var dialog = new StyledDialog(
+          "Choose a file on this computer",
+          "Super Dev can only remember a screenshot or video that is stored on this computer.");
+      await dialog.ShowDialog(this);
+   }
+
+   private static string? LocalPath(IStorageFile file)
+   {
+      var path = file.TryGetLocalPath();
+      if (!string.IsNullOrWhiteSpace(path))
+         return path;
+
+      if (file.Path.IsAbsoluteUri && file.Path.IsFile)
+         return file.Path.LocalPath;
+
+      return null;
+   }
+
+   private void UpdateGenerateButton()
+   {
+      if (GenerateAiButton is null)
+         return;
+
+      GenerateAiButton.IsVisible = _ensureAiReady is not null && _generateOneCheck is not null;
+   }
+
+   private const string DuplicateTitleMessage = "A check with this title already exists.";
+
+   private const string CheckTitleRequiredMessage = "Enter a check, then click Generate with AI.";
+
+   private async void GenerateAi_Click(object? sender, RoutedEventArgs e)
+   {
+      if (_ensureAiReady is null || _generateOneCheck is null)
+         return;
+
+      if (_generating)
+      {
+         _generation?.Cancel();
+         return;
+      }
+
+      if (string.IsNullOrWhiteSpace(TitleTextBox.Text))
+      {
+         ShowTitleMessage(CheckTitleRequiredMessage);
+         return;
+      }
+
+      _generation?.Cancel();
+      _generation?.Dispose();
+      _generation = new CancellationTokenSource();
+      var token = _generation.Token;
+      _generating = true;
+      GenerateAiButton.Content = "Stop";
+      ToolTip.SetTip(GenerateAiButton, "Stop generation");
+      ShowGenerateStatus("Checking the local model…", error: false);
+      try
+      {
+         var ready = await _ensureAiReady(this, token);
+         if (_closed || token.IsCancellationRequested || !ready)
+         {
+            if (!_closed)
+               ShowGenerateStatus(string.Empty, error: false);
+            return;
+         }
+
+         ShowGenerateStatus("Generating this check…", error: false);
+         var result = await _generateOneCheck(BuildCheckRequest(), token);
+         if (_closed || token.IsCancellationRequested || result.Failure?.Kind == AiFailureKind.Cancelled)
+         {
+            if (!_closed)
+               ShowGenerateStatus(string.Empty, error: false);
+            return;
+         }
+
+         if (result.Failure is not null || result.Check is null)
+         {
+            ShowGenerateStatus(
+                result.Failure?.Message ?? AiMessages.For(AiFailureKind.InvalidChecklist, AIModelManager.DefaultModel),
+                error: true);
+            return;
+         }
+
+         ShowGenerateStatus(string.Empty, error: false);
+         var preview = new GeneratedCheckWindow(result.Check, result.Notice, result.NoticeIsAdjustment);
+         var choice = await preview.ShowDialog<GeneratedCheckChoice?>(this);
+         if (_closed || choice is null)
+            return;
+
+         ApplyGenerated(choice);
+      }
+      catch (OperationCanceledException)
+      {
+         if (!_closed)
+            ShowGenerateStatus(string.Empty, error: false);
+      }
+      catch (Exception)
+      {
+         if (!_closed)
+            ShowGenerateStatus(AiMessages.For(AiFailureKind.Unexpected, AIModelManager.DefaultModel), error: true);
+      }
+      finally
+      {
+         _generating = false;
+         if (!_closed)
+         {
+            GenerateAiButton.Content = "Generate with AI";
+            ToolTip.SetTip(GenerateAiButton, "Draft this check with the local model");
+         }
+      }
+   }
+
+   private CheckGenerationRequest BuildCheckRequest() => new()
+   {
+      ChecklistTitle = _checklistTitle,
+      WorkType = _checklistWorkType,
+      DraftTitle = TitleTextBox.Text,
+      DraftNotes = NotesTextBox.Text,
+      DraftCategory = (CategoryComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString(),
+      ExistingTitles = _takenTitles.ToList()
+   };
+
+   private void ApplyGenerated(GeneratedCheckChoice choice)
+   {
+      if (choice.UseTitle && !string.IsNullOrWhiteSpace(choice.Title))
+      {
+         var title = choice.Title.Trim();
+         TitleTextBox.Text = title;
+         TitleError.IsVisible = _takenTitles.Contains(title);
+      }
+
+      if (choice.UseCategory && !string.IsNullOrWhiteSpace(choice.Category))
+         SelectComboBoxItem(CategoryComboBox, choice.Category);
+
+      if (choice.UsePriority)
+      {
+         PriorityComboBox.SelectedIndex = (int)choice.Priority;
+         ApplyPriorityColor();
+      }
+
+      if (choice.UseNotes && !string.IsNullOrWhiteSpace(choice.Notes))
+         NotesTextBox.Text = choice.Notes.Trim();
+
+      var addedSubtask = false;
+      foreach (var subtaskTitle in choice.Subtasks)
+      {
+         var title = subtaskTitle.Trim();
+         if (title.Length == 0 || HasSubtask(title))
+            continue;
+
+         var subtask = new ChecklistSubtask { Title = title };
+         _subtasks.Add(subtask);
+         AddSubtaskRow(subtask);
+         addedSubtask = true;
+      }
+
+      if (choice.UseTitle && !string.IsNullOrWhiteSpace(choice.Title))
+      {
+         FormScroll.Offset = new Vector(0, 0);
+         TitleTextBox.Focus();
+      }
+      else if (addedSubtask)
+      {
+         Dispatcher.UIThread.Post(FormScroll.ScrollToEnd, DispatcherPriority.Loaded);
+      }
+   }
+
+   private bool HasSubtask(string title) =>
+       _subtaskEditors.Any(editor =>
+           string.Equals(editor.Subtask.Title, title, StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(editor.Title.Text?.Trim(), title, StringComparison.OrdinalIgnoreCase));
+
+   private void ShowTitleMessage(string message)
+   {
+      TitleError.Text = message;
+      TitleError.IsVisible = true;
+      FormScroll.Offset = new Vector(0, 0);
+      TitleTextBox.Focus();
+   }
+
+   private void ShowGenerateStatus(string message, bool error)
+   {
+      if (_closed)
+         return;
+
+      GenerateStatus.Text = message;
+      GenerateStatus.IsVisible = message.Length > 0;
+      GenerateStatus.Foreground = AppearanceService.Brush(error ? "DangerTextBrush" : "TextMutedBrush");
+   }
+
    private void Cancel_Click(
        object? sender,
        RoutedEventArgs e)
@@ -744,8 +1134,7 @@ public partial class AddCheckWindow : Window
 
       if (_takenTitles.Contains(title))
       {
-         TitleError.IsVisible = true;
-         TitleTextBox.Focus();
+         ShowTitleMessage(DuplicateTitleMessage);
          return;
       }
 
@@ -790,6 +1179,9 @@ public partial class AddCheckWindow : Window
          NotifyBeforeMinutes = _deadline is null ? null : _notifyBeforeMinutes,
          DeadlineSilent = _deadline is not null && _deadlineSilent,
          Subtasks = subtasks,
+         Evidence = _evidence
+             .Select(file => new EvidenceFile { Path = file.Path })
+             .ToList(),
          IsCompleted = completed
       };
 

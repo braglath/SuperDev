@@ -434,7 +434,7 @@
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
 
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
           RowSpacing="18"
           Margin="0,0,16,0">
 
@@ -607,6 +607,29 @@
 
             <StackPanel Grid.Row="4"
                         Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Evidence"
+                               Classes="field-label"
+                               VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Content="Add from folder"
+                            Classes="expand-notes"
+                            Click="AddEvidence_Click"/>
+                </Grid>
+                <TextBlock Text="Screenshots and videos stay in the folder you pick. Super Dev remembers the path."
+                           FontSize="{DynamicResource Font12}"
+                           Foreground="{DynamicResource TextSubtleBrush}"
+                           TextWrapping="Wrap"/>
+                <TextBlock x:Name="EvidenceEmpty"
+                           Text="No evidence yet."
+                           FontSize="{DynamicResource Font13}"
+                           Foreground="{DynamicResource TextMutedBrush}"/>
+                <controls:EvidenceGallery x:Name="EvidenceList"
+                                          AllowRemove="True"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="5"
+                        Spacing="8">
                 <TextBlock Text="Linked checklists"
                            Classes="field-label"/>
                 <Button Content="Link checklist"
@@ -631,13 +654,16 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <Grid ColumnDefinitions="*,Auto">
+                <Grid ColumnDefinitions="*,Auto"
+                      ColumnSpacing="12">
                     <TextBlock Text="Subtasks"
                                Classes="field-label"
                                VerticalAlignment="Center"/>
-                    <TextBlock Text="Drag the handle to reorder"
+                    <TextBlock Grid.Column="1"
+                               Text="Drag the handle to reorder"
                                FontSize="{DynamicResource Font12}"
                                Foreground="{DynamicResource TextSubtleBrush}"
+                               HorizontalAlignment="Right"
                                VerticalAlignment="Center"/>
                 </Grid>
                 <Grid ColumnDefinitions="*,Auto"
@@ -684,20 +710,42 @@
 
 
     <!-- Fixed buttons -->
-    <StackPanel Grid.Row="1"
-                Orientation="Horizontal"
-                HorizontalAlignment="Right"
-                Spacing="10">
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="6"
+                    VerticalAlignment="Center"
+                    Margin="0,0,12,0">
+            <Button x:Name="GenerateAiButton"
+                    Content="Generate with AI"
+                    Classes="form-button cancel"
+                    MinWidth="0"
+                    Padding="14,8"
+                    HorizontalAlignment="Left"
+                    IsVisible="False"
+                    ToolTip.Tip="Draft this check with the local model"
+                    Click="GenerateAi_Click"/>
+            <TextBlock x:Name="GenerateStatus"
+                       FontSize="{DynamicResource Font12}"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       TextWrapping="Wrap"
+                       IsVisible="False"/>
+        </StackPanel>
 
-        <Button Content="Cancel"
-                Classes="form-button cancel"
-                Click="Cancel_Click"/>
+        <StackPanel Grid.Column="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10">
 
-        <Button Content="Save"
-                Classes="form-button save"
-                Click="Save_Click"/>
+            <Button Content="Cancel"
+                    Classes="form-button cancel"
+                    Click="Cancel_Click"/>
 
-    </StackPanel>
+            <Button x:Name="SaveButton"
+                    Content="Save"
+                    Classes="form-button save"
+                    Click="Save_Click"/>
+
+        </StackPanel>
+    </Grid>
 
 </Grid>
 

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -123,6 +124,10 @@ public partial class ChecklistView : UserControl
    public event EventHandler<string>? CopiedFromOpenRequested;
 
    public Func<Window, Task<ChecklistSubtask?>>? RequestLink { get; set; }
+
+   public Func<Window, CancellationToken, Task<bool>>? EnsureAiReady { get; set; }
+
+   public Func<CheckGenerationRequest, CancellationToken, Task<AiGenerationResult>>? GenerateOneCheck { get; set; }
 
    public void SetDocumentCompleted(bool completed)
    {
@@ -1789,6 +1794,7 @@ public partial class ChecklistView : UserControl
           Category = item.Category,
           Priority = item.Priority,
           Notes = item.Notes,
+          Evidence = CopyEvidence(item.Evidence),
           Deadline = item.Deadline,
           DeadlineMinute = item.DeadlineMinute,
           NotifyBeforeMinutes = item.NotifyBeforeMinutes,
@@ -1798,6 +1804,12 @@ public partial class ChecklistView : UserControl
           CopiedFrom = copiedFrom,
           CopiedFromPath = copiedFromPath
        };
+
+   private static List<EvidenceFile> CopyEvidence(IEnumerable<EvidenceFile>? files) =>
+       (files ?? [])
+           .Where(file => file is not null && !string.IsNullOrWhiteSpace(file.Path))
+           .Select(file => new EvidenceFile { Path = file.Path.Trim() })
+           .ToList();
 
    private static List<ChecklistSubtask> CopySubtasks(IEnumerable<ChecklistSubtask>? subtasks) =>
        (subtasks ?? [])
@@ -2132,6 +2144,10 @@ public partial class ChecklistView : UserControl
              entry.item.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
              entry.item.Category.Contains(search, StringComparison.OrdinalIgnoreCase) ||
              entry.item.Notes.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+             (entry.item.Evidence ?? []).Any(file =>
+                 file is not null &&
+                 (EvidenceKind.DisplayName(file.Path).Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                  file.Path.Contains(search, StringComparison.OrdinalIgnoreCase))) ||
              (entry.item.Subtasks ?? []).Any(subtask =>
                  subtask.Title.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
              (entry.item.Deadline is { } deadline &&
@@ -2414,6 +2430,14 @@ public partial class ChecklistView : UserControl
            .Select(item => item.Title)
            .ToList();
 
+   private void PrepareCheckDialog(AddCheckWindow dialog)
+   {
+      dialog.ChecklistTitle = WorkTitle;
+      dialog.ChecklistWorkType = _workType;
+      dialog.EnsureAiReady = EnsureAiReady;
+      dialog.GenerateOneCheck = GenerateOneCheck;
+   }
+
    private async Task AddCheckAsync()
    {
       var owner = GetOwnerWindow();
@@ -2421,6 +2445,7 @@ public partial class ChecklistView : UserControl
          return;
 
       var dialog = new AddCheckWindow(TakenTitles());
+      PrepareCheckDialog(dialog);
       dialog.RequestLink = RequestLink;
       var result = await dialog.ShowDialog<ChecklistItem?>(owner);
 
@@ -2472,6 +2497,7 @@ public partial class ChecklistView : UserControl
       try
       {
          var dialog = new AddCheckWindow(item, TakenTitles(item));
+         PrepareCheckDialog(dialog);
          dialog.RequestLink = RequestLink;
          var result = await dialog.ShowDialog<ChecklistItem?>(owner);
          if (result is null)
@@ -2481,6 +2507,7 @@ public partial class ChecklistView : UserControl
          item.Category = result.Category;
          item.Priority = result.Priority;
          item.Notes = result.Notes;
+         item.Evidence = result.Evidence ?? [];
          item.Deadline = result.Deadline;
          item.DeadlineMinute = result.Deadline is null ? null : result.DeadlineMinute;
          item.NotifyBeforeMinutes = result.Deadline is null ? null : result.NotifyBeforeMinutes;

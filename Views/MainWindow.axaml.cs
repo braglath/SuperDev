@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -19,12 +20,17 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using SuperDev.Models;
 using SuperDev.Services;
+using SuperDev.Services.Ai;
 
 namespace SuperDev.Views;
 
 public partial class MainWindow : Window
 {
     private readonly ChecklistTemplateService _checklistService = new();
+    private readonly OllamaService _localAi = OllamaService.CreateLocal();
+    private readonly AIModelManager _aiModels;
+    private readonly AISetupManager _aiSetup;
+    private bool _aiSetupBusy;
     private readonly ChecklistFileService _fileService = new();
     private readonly RecentChecklistService _recentChecklists = new();
     private readonly List<ChecklistTab> _tabs = new();
@@ -75,6 +81,8 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        _aiModels = new AIModelManager(_localAi);
+        _aiSetup = AISetupManager.Create(_localAi);
         InitializeComponent();
         BindChecklistMenuItems();
         ConfigureTitleChrome();
@@ -132,6 +140,7 @@ public partial class MainWindow : Window
                 ReminderSchedule.Remove(tab.Document.Id);
         }
 
+        _localAi.Dispose();
         base.OnClosed(e);
     }
 
@@ -447,17 +456,6 @@ public partial class MainWindow : Window
         WorkType = WorkType.Blank
     };
 
-    private void PullRequest_TextChanged(object? sender, TextChangedEventArgs e)
-    {
-        OpenPullRequestButton.IsEnabled = ExternalLink.CanOpen(PullRequestTextBox.Text);
-    }
-
-    private async void OpenPullRequest_Click(object? sender, RoutedEventArgs e)
-    {
-        if (!ExternalLink.TryOpen(PullRequestTextBox.Text))
-            await ShowMessage("That PR link could not be opened.");
-    }
-
     private async void Create_Click(
         object? sender,
         RoutedEventArgs e)
@@ -490,8 +488,6 @@ public partial class MainWindow : Window
             FormatVersion = ChecklistDocument.CurrentFormatVersion,
             Id = Guid.NewGuid(),
             Title = workTitle,
-            BranchName = BranchNameTextBox.Text?.Trim() ?? string.Empty,
-            PullRequestUrl = PullRequestTextBox.Text?.Trim() ?? string.Empty,
             WorkType = template.WorkType,
             TemplateName = template.Title,
             CreatedOn = now,
@@ -502,6 +498,69 @@ public partial class MainWindow : Window
 
         OpenDocumentTab(document, filePath: null, isDirty: true);
         ClearCreateForm();
+    }
+
+    private async void GenerateWithAi_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_aiSetupBusy)
+            return;
+
+        if (!await EnsureLocalAiAsync(this))
+            return;
+
+        var dialog = new GenerateChecklistWindow(_localAi, _aiModels);
+        var draft = await dialog.ShowDialog<AiChecklistDraft?>(this);
+        if (draft is null || draft.Items.Count == 0 || string.IsNullOrWhiteSpace(draft.Title))
+            return;
+
+        var now = DateTime.UtcNow;
+        var document = new ChecklistDocument
+        {
+            FormatVersion = ChecklistDocument.CurrentFormatVersion,
+            Id = Guid.NewGuid(),
+            Title = draft.Title.Trim(),
+            WorkType = draft.WorkType,
+            TemplateName = draft.TemplateName,
+            CreatedOn = now,
+            UpdatedOn = now,
+            IsCompleted = false,
+            Items = draft.Items
+        };
+
+        OpenDocumentTab(document, filePath: null, isDirty: true);
+    }
+
+    private async Task<bool> EnsureLocalAiAsync(Window owner, CancellationToken cancellationToken = default)
+    {
+        if (_aiSetupBusy)
+            return false;
+
+        _aiSetupBusy = true;
+        try
+        {
+            AIReadiness readiness;
+            try
+            {
+                readiness = await _aiSetup.CheckAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+                return false;
+
+            if (readiness.IsReady)
+                return true;
+
+            var setup = new AiSetupWindow(_aiSetup, readiness.Need);
+            return await setup.ShowDialog<bool>(owner) == true;
+        }
+        finally
+        {
+            _aiSetupBusy = false;
+        }
     }
 
     private async Task<bool> CreateDailyTrackerAsync()
@@ -578,8 +637,6 @@ public partial class MainWindow : Window
     private void ClearCreateForm()
     {
         WorkTitleTextBox.Text = string.Empty;
-        BranchNameTextBox.Text = string.Empty;
-        PullRequestTextBox.Text = string.Empty;
         _selectedTemplateId = null;
         ClearTemplateSelection();
     }
@@ -603,6 +660,8 @@ public partial class MainWindow : Window
             document.ReminderEveryMinutes,
             document.ReminderSilent,
             document.Items);
+        view.EnsureAiReady = EnsureLocalAiAsync;
+        view.GenerateOneCheck = (request, token) => _localAi.GenerateCheckAsync(request, token);
 
         // Title sizes the tab. It ellipsizes at the width left inside the tab max
         // (190) after horizontal padding (16), the pin button (18), the gaps (12),
@@ -2574,6 +2633,9 @@ public partial class MainWindow : Window
             Category = item.Category,
             Priority = item.Priority,
             Notes = item.Notes,
+            Evidence = (item.Evidence ?? [])
+                .Select(file => new EvidenceFile { Path = file.Path })
+                .ToList(),
             Deadline = item.Deadline,
             DeadlineMinute = item.DeadlineMinute,
             NotifyBeforeMinutes = item.NotifyBeforeMinutes,

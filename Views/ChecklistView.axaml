@@ -1409,6 +1409,14 @@
 
 </StackPanel>
 
+<StackPanel Spacing="6"
+            IsVisible="{Binding HasEvidence}">
+    <TextBlock Text="Evidence"
+               Classes="priority"/>
+    <controls:EvidenceGallery Files="{Binding Evidence}"
+                              Compact="True"/>
+</StackPanel>
+
 <ItemsControl ItemsSource="{Binding LinkedSubtasks}"
               Margin="0,8,0,0"
               IsVisible="{Binding HasLinks}">

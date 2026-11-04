@@ -1,0 +1,301 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SuperDev.Views.GenerateChecklistWindow"
+        Width="960"
+        Height="820"
+        MinWidth="640"
+        MinHeight="520"
+        CanResize="True"
+        Title="Generate with AI"
+        Background="{DynamicResource AppBackgroundBrush}"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style Selector="TextBox.field">
+            <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+
+        <Style Selector="TextBox.field:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+        <Style Selector="ComboBox.field">
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <Style Selector="Button.form-button">
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.form-button /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.cancel">
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.cancel:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BorderSoftBrush}"/>
+        </Style>
+
+        <Style Selector="Button.secondary">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.secondary:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
+        </Style>
+
+        <Style Selector="Button.primary:disabled, Button.secondary:disabled, Button.cancel:disabled">
+            <Setter Property="Opacity" Value="0.55"/>
+        </Style>
+
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+
+        <Style Selector="TextBlock.label">
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBodyBrush}"/>
+        </Style>
+
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style Selector="Border.section-card">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="18,16"/>
+        </Style>
+
+        <Style Selector="Border.item-card">
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14,12"/>
+        </Style>
+
+        <Style Selector="TextBox.section-name">
+            <Setter Property="MinHeight" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="24" RowDefinitions="Auto,*,Auto" RowSpacing="16">
+        <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Generate with AI"
+                           FontSize="{DynamicResource Font28}"
+                           FontWeight="Bold"/>
+                <TextBlock Classes="hint"
+                           Text="Local Ollama only. Nothing is saved until you create the checklist."/>
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="16">
+                <Border Classes="card">
+                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto">
+                        <Ellipse x:Name="StatusDot"
+                                 Width="10"
+                                 Height="10"
+                                 Margin="0,4,10,0"
+                                 VerticalAlignment="Top"
+                                 Fill="{DynamicResource TextSubtleBrush}"/>
+                        <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock x:Name="StatusConnection"
+                                       Text="Checking Ollama…"
+                                       FontSize="{DynamicResource Font14}"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock x:Name="StatusModel"
+                                       Classes="hint"
+                                       Text="Model: qwen3.5:0.8b"/>
+                            <TextBlock x:Name="StatusModelState"
+                                       Classes="hint"
+                                       Text="Not checked"/>
+                        </StackPanel>
+                        <Button x:Name="CheckAgainButton"
+                                Grid.Column="2"
+                                Classes="form-button secondary"
+                                Content="Check again"
+                                VerticalAlignment="Center"
+                                Click="CheckAgain_Click"/>
+                        <TextBlock x:Name="StatusGuidance"
+                                   Grid.Row="1"
+                                   Grid.Column="1"
+                                   Grid.ColumnSpan="2"
+                                   Margin="0,10,0,0"
+                                   Classes="hint"
+                                   Text=""/>
+                    </Grid>
+                </Border>
+
+                <Border Classes="card">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Checklist setup"
+                                   FontSize="{DynamicResource Font16}"
+                                   FontWeight="SemiBold"/>
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="12">
+                            <StackPanel Spacing="6">
+                                <TextBlock Classes="label" Text="Platform"/>
+                                <ComboBox x:Name="PlatformBox" Classes="field"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="6">
+                                <TextBlock Classes="label" Text="Framework"/>
+                                <ComboBox x:Name="FrameworkBox" Classes="field"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="6">
+                                <TextBlock Classes="label" Text="Work type"/>
+                                <ComboBox x:Name="WorkBox" Classes="field"/>
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Spacing="6">
+                            <TextBlock Classes="label" Text="Task description"/>
+                            <TextBox x:Name="DescriptionBox"
+                                     Classes="field"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     MinHeight="96"
+                                     PlaceholderText="Optional. Describe the bug, feature, or change."/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel x:Name="PreviewPanel" Spacing="18" IsVisible="False">
+                    <TextBlock Text="Preview"
+                               FontSize="{DynamicResource Font16}"
+                               FontWeight="SemiBold"/>
+                    <TextBlock x:Name="PreviewNotice"
+                               Classes="hint"
+                               TextWrapping="Wrap"
+                               IsVisible="False"/>
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="label" Text="Title"/>
+                        <TextBox x:Name="TitleBox" Classes="field" PlaceholderText="Checklist title"/>
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="label" Text="Summary"/>
+                        <TextBox x:Name="SummaryBox"
+                                 Classes="field"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 MinHeight="72"
+                                 PlaceholderText="Short summary"/>
+                    </StackPanel>
+                    <StackPanel x:Name="PreviewSections" Spacing="18"/>
+                    <Button Classes="form-button secondary"
+                            Content="Add section"
+                            HorizontalAlignment="Left"
+                            Click="AddSection_Click"/>
+                </StackPanel>
+
+                <TextBlock x:Name="EmptyPreview"
+                           Classes="hint"
+                           Text="Generate a checklist to preview and edit it. Manual templates on the home screen stay available if Ollama is not running."/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" RowDefinitions="Auto,Auto">
+            <StackPanel Spacing="8">
+                <ProgressBar x:Name="GenerationProgress"
+                             Height="4"
+                             IsIndeterminate="True"
+                             IsVisible="False"
+                             Foreground="{DynamicResource AccentBrush}"
+                             Background="{DynamicResource BorderSubtleBrush}"/>
+                <TextBlock x:Name="GenerationStatus"
+                           Classes="hint"
+                           Text=""
+                           IsVisible="False"/>
+            </StackPanel>
+            <Grid Grid.Row="1" Margin="0,12,0,0" ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
+                <Button Classes="form-button cancel"
+                        Content="Back"
+                        Click="Back_Click"/>
+                <Button x:Name="CancelButton"
+                        Grid.Column="2"
+                        Classes="form-button secondary"
+                        Content="Cancel"
+                        IsVisible="False"
+                        Click="CancelGeneration_Click"/>
+                <Button x:Name="GenerateButton"
+                        Grid.Column="3"
+                        Classes="form-button secondary"
+                        Content="Generate Checklist"
+                        IsEnabled="False"
+                        Click="Generate_Click"/>
+                <Button x:Name="CreateButton"
+                        Grid.Column="4"
+                        Classes="form-button primary"
+                        Content="Create Checklist"
+                        IsEnabled="False"
+                        Click="Create_Click"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
