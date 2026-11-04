@@ -21,6 +21,13 @@
                                     Click="SaveMenu_Click"/>
                     <NativeMenuItem Header="Save As…"
                                     Click="SaveAsMenu_Click"/>
+                    <NativeMenuItemSeparator/>
+                    <NativeMenuItem Header="Export as CSV…"
+                                    IsEnabled="False"
+                                    Click="ExportCsvMenu_Click"/>
+                    <NativeMenuItem Header="Copy as Text"
+                                    IsEnabled="False"
+                                    Click="CopyTextMenu_Click"/>
                 </NativeMenu>
             </NativeMenuItem>
             <NativeMenuItem Header="Options">
@@ -499,6 +506,21 @@
     <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
 </Style>
 
+<Style Selector="Button.recent.open">
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+    <Setter Property="BorderThickness" Value="2"/>
+</Style>
+
+<Style Selector="Button.recent.open:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.recent.open:pressed">
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+</Style>
+
 
         <!-- ========================================================= -->
         <!-- TEMPLATE CARD                                              -->
@@ -901,6 +923,13 @@
                     <MenuItem x:Name="WindowSaveMenuItem"
                               Header="Save"/>
                     <MenuItem Header="Save As…"/>
+                    <Separator/>
+                    <MenuItem x:Name="WindowExportCsvMenuItem"
+                              Header="Export as CSV…"
+                              IsEnabled="False"/>
+                    <MenuItem x:Name="WindowCopyTextMenuItem"
+                              Header="Copy as Text"
+                              IsEnabled="False"/>
                 </MenuItem>
                 <MenuItem Header="Options">
                     <MenuItem Header="Settings"/>
@@ -1034,7 +1063,7 @@
 
             <Grid x:Name="RecentItems"
                   ColumnDefinitions="*,*"
-                  RowDefinitions="Auto,Auto"
+                  RowDefinitions="Auto,Auto,Auto"
                   ColumnSpacing="12"
                   RowSpacing="8"/>
 
@@ -1070,32 +1099,6 @@
             <TextBox x:Name="BranchNameTextBox"
                      Classes="work-title"
                      PlaceholderText="feature/my-change"/>
-
-            <TextBlock Text="Repository link"
-                       FontSize="{DynamicResource Font14}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextBodyBrush}"
-                       Margin="0,8,0,0"/>
-
-            <Grid ColumnDefinitions="*,Auto"
-                  ColumnSpacing="8">
-
-                <TextBox x:Name="RepositoryTextBox"
-                         Classes="work-title"
-                         PlaceholderText="https://github.com/org/repo"
-                         TextChanged="Repository_TextChanged"/>
-
-                <Button x:Name="OpenRepositoryButton"
-                        Grid.Column="1"
-                        Content="Open"
-                        Classes="create open"
-                        Height="{DynamicResource ControlHeightXl}"
-                        MinWidth="88"
-                        Padding="16,0"
-                        IsEnabled="False"
-                        Click="OpenRepository_Click"/>
-
-            </Grid>
 
             <TextBlock Text="PR link"
                        FontSize="{DynamicResource Font14}"

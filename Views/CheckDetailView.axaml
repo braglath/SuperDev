@@ -119,7 +119,8 @@
                        TextWrapping="Wrap"
                        VerticalAlignment="Center"/>
 
-            <Button Grid.Column="1"
+            <Button x:Name="CloseButton"
+                    Grid.Column="1"
                     Classes="detail-close"
                     ToolTip.Tip="Close"
                     Click="Close_Click"

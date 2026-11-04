@@ -5,7 +5,7 @@
         Width="480"
         SizeToContent="Height"
         CanResize="False"
-        Title="Repository, branch, and PR"
+        Title="Branch and PR"
         Background="{DynamicResource AppBackgroundBrush}"
         WindowStartupLocation="CenterOwner">
 
@@ -83,15 +83,6 @@
             <TextBox x:Name="BranchBox"
                      Classes="field"
                      PlaceholderText="feature/my-change"
-                     controls:TextBoxClearButton.WhenFocused="True"/>
-        </StackPanel>
-
-        <StackPanel Spacing="6">
-            <TextBlock Text="Repository"
-                       Classes="field-label"/>
-            <TextBox x:Name="RepositoryBox"
-                     Classes="field"
-                     PlaceholderText="https://github.com/org/repo"
                      controls:TextBoxClearButton.WhenFocused="True"/>
         </StackPanel>
 

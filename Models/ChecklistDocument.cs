@@ -16,8 +16,6 @@ public sealed class ChecklistDocument
 
     public string BranchName { get; set; } = string.Empty;
 
-    public string RepositoryUrl { get; set; } = string.Empty;
-
     public string PullRequestUrl { get; set; } = string.Empty;
 
     public WorkType WorkType { get; set; }

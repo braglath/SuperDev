@@ -22,6 +22,12 @@ public partial class CheckDetailView : UserControl
 
    public event EventHandler<string>? CopiedFromRequested;
 
+   public bool ShowCloseButton
+   {
+      get => CloseButton.IsVisible;
+      set => CloseButton.IsVisible = value;
+   }
+
    public CheckDetailView()
    {
       InitializeComponent();

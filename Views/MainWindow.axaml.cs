@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -12,6 +13,7 @@ using Avalonia.Layout;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -49,6 +51,8 @@ public partial class MainWindow : Window
     private string? _lastShortcutId;
     private long _lastShortcutAt;
     private NativeMenuItem? _saveMenuItem;
+    private NativeMenuItem? _exportCsvMenuItem;
+    private NativeMenuItem? _copyTextMenuItem;
     private NativeMenuItem? _addCheckMenuItem;
     private NativeMenuItem? _saveTemplateMenuItem;
     private NativeMenuItem? _rearrangeMenuItem;
@@ -155,6 +159,12 @@ public partial class MainWindow : Window
                     case "Save":
                         _saveMenuItem = item;
                         ApplyMenuGesture(item, AppShortcuts.Save);
+                        break;
+                    case "Export as CSV…":
+                        _exportCsvMenuItem = item;
+                        break;
+                    case "Copy as Text":
+                        _copyTextMenuItem = item;
                         break;
                     case "Settings":
                         ApplyMenuGesture(item, AppShortcuts.Settings);
@@ -437,17 +447,6 @@ public partial class MainWindow : Window
         WorkType = WorkType.Blank
     };
 
-    private void Repository_TextChanged(object? sender, TextChangedEventArgs e)
-    {
-        OpenRepositoryButton.IsEnabled = ExternalLink.CanOpen(RepositoryTextBox.Text);
-    }
-
-    private async void OpenRepository_Click(object? sender, RoutedEventArgs e)
-    {
-        if (!ExternalLink.TryOpen(RepositoryTextBox.Text))
-            await ShowMessage("That repository link could not be opened.");
-    }
-
     private void PullRequest_TextChanged(object? sender, TextChangedEventArgs e)
     {
         OpenPullRequestButton.IsEnabled = ExternalLink.CanOpen(PullRequestTextBox.Text);
@@ -492,7 +491,6 @@ public partial class MainWindow : Window
             Id = Guid.NewGuid(),
             Title = workTitle,
             BranchName = BranchNameTextBox.Text?.Trim() ?? string.Empty,
-            RepositoryUrl = RepositoryTextBox.Text?.Trim() ?? string.Empty,
             PullRequestUrl = PullRequestTextBox.Text?.Trim() ?? string.Empty,
             WorkType = template.WorkType,
             TemplateName = template.Title,
@@ -581,7 +579,6 @@ public partial class MainWindow : Window
     {
         WorkTitleTextBox.Text = string.Empty;
         BranchNameTextBox.Text = string.Empty;
-        RepositoryTextBox.Text = string.Empty;
         PullRequestTextBox.Text = string.Empty;
         _selectedTemplateId = null;
         ClearTemplateSelection();
@@ -597,7 +594,6 @@ public partial class MainWindow : Window
             document.TemplateName,
             document.Title,
             document.BranchName ?? string.Empty,
-            document.RepositoryUrl ?? string.Empty,
             document.PullRequestUrl ?? string.Empty,
             document.Deadline,
             document.DeadlineMinute,
@@ -700,6 +696,8 @@ public partial class MainWindow : Window
         view.SaveRequested += (_, _) => _ = RunFileOperation(() => SaveAsync(tab));
         view.SaveAsTemplateRequested += (_, _) => _ = SaveTabAsTemplateAsync(tab);
         view.CopyRequested += (_, _) => _ = RunFileOperation(() => CopyChecklistAsync(tab));
+        view.ExportCsvRequested += (_, _) => _ = RunFileOperation(() => ExportCsvAsync(tab));
+        view.CopyTextRequested += (_, _) => _ = CopyChecklistTextAsync(tab);
         view.SubtasksRequired += (_, message) => ShowToast(message);
         view.LinkedSubtaskOpenRequested += (_, subtask) => _ = OpenLinkedSubtaskAsync(subtask);
         view.CopiedFromOpenRequested += (_, path) => _ = RunFileOperation(() => OpenCopiedFromAsync(path));
@@ -1261,6 +1259,8 @@ public partial class MainWindow : Window
 
         var hasItems = enabled && ActiveTab()?.View.Items.Count > 0;
         var canRearrange = editable && ActiveTab()?.View.Items.Count > 1;
+        SetItemActionVisible(_exportCsvMenuItem, WindowExportCsvMenuItem, enabled);
+        SetItemActionVisible(_copyTextMenuItem, WindowCopyTextMenuItem, enabled);
         SetItemActionVisible(_copyToMenuItem, WindowCopyMenuItem, editable && hasItems);
         SetItemActionVisible(_deleteChecksMenuItem, WindowDeleteMenuItem, editable && hasItems);
         SetItemActionVisible(_saveTemplateMenuItem, WindowSaveTemplateMenuItem, editable);
@@ -1364,6 +1364,12 @@ public partial class MainWindow : Window
                 break;
             case "Save As…":
                 InvokeShortcut(AppShortcuts.SaveAs);
+                break;
+            case "Export as CSV…":
+                ExportCsvMenu_Click(this, EventArgs.Empty);
+                break;
+            case "Copy as Text":
+                CopyTextMenu_Click(this, EventArgs.Empty);
                 break;
             case "Reminders":
                 ShowReminders();
@@ -2073,6 +2079,18 @@ public partial class MainWindow : Window
     private void SaveAsMenu_Click(object? sender, EventArgs e) =>
         InvokeShortcut(AppShortcuts.SaveAs);
 
+    private void ExportCsvMenu_Click(object? sender, EventArgs e)
+    {
+        if (ActiveTab() is { } tab)
+            _ = RunFileOperation(() => ExportCsvAsync(tab));
+    }
+
+    private void CopyTextMenu_Click(object? sender, EventArgs e)
+    {
+        if (ActiveTab() is { } tab)
+            _ = CopyChecklistTextAsync(tab);
+    }
+
     private void SettingsMenu_Click(object? sender, EventArgs e) =>
         InvokeShortcut(AppShortcuts.Settings);
 
@@ -2255,6 +2273,73 @@ public partial class MainWindow : Window
         return await WriteDocumentAsync(tab, path);
     }
 
+    private async Task ExportCsvAsync(ChecklistTab tab)
+    {
+        CopyViewOntoDocument(tab);
+        var path = await PickCsvPathAsync(tab.Document.Title);
+        if (path is null)
+            return;
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                path,
+                ChecklistShare.ToCsv(tab.Document, ChecklistFileName(tab)),
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            await ShowMessage("The checklist could not be exported.");
+            return;
+        }
+
+        ShowToast($"Exported \"{tab.Document.Title}\".");
+    }
+
+    private async Task CopyChecklistTextAsync(ChecklistTab tab)
+    {
+        CopyViewOntoDocument(tab);
+        if (Clipboard is null)
+        {
+            await ShowMessage("The clipboard isn't available.");
+            return;
+        }
+
+        await Clipboard.SetTextAsync(ChecklistShare.ToPlainText(tab.Document));
+        ShowToast($"Copied \"{tab.Document.Title}\" as text.");
+    }
+
+    private async Task<string?> PickCsvPathAsync(string title)
+    {
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Export checklist",
+            SuggestedFileName = SuggestedCsvName(title),
+            DefaultExtension = "csv",
+            ShowOverwritePrompt = true,
+            FileTypeChoices =
+            [
+                new FilePickerFileType("CSV")
+                {
+                    Patterns = ["*.csv"],
+                    MimeTypes = ["text/csv"]
+                }
+            ]
+        });
+
+        if (file is null)
+            return null;
+
+        var path = LocalPath(file);
+        if (path is null)
+        {
+            await ShowMessage("That location can't be used. Choose a file on this computer.");
+            return null;
+        }
+
+        return EnsureCsvExtension(Path.GetFullPath(path));
+    }
+
     private Task<string?> PickSavePathAsync(ChecklistTab tab) =>
         PickSavePathAsync(SuggestedFileName(tab.Document.Title));
 
@@ -2412,7 +2497,6 @@ public partial class MainWindow : Window
             Id = Guid.NewGuid(),
             Title = source.View.WorkTitle,
             BranchName = source.View.BranchName,
-            RepositoryUrl = source.View.RepositoryUrl,
             PullRequestUrl = source.View.PullRequestUrl,
             Deadline = source.View.Deadline,
             DeadlineMinute = source.View.DeadlineMinute,
@@ -2609,12 +2693,13 @@ public partial class MainWindow : Window
                     ? "File missing"
                     : SavedChecklistDetail(entry);
 
+            var isOpen = openTab is not null;
             var titleText = new TextBlock
             {
                 Text = title,
                 FontSize = AppearanceService.Font(14),
                 FontWeight = FontWeight.SemiBold,
-                Foreground = AppearanceService.Brush("TextPrimaryBrush"),
+                Foreground = AppearanceService.Brush(isOpen ? AppearanceService.AccentTextBrush : "TextPrimaryBrush"),
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 TextAlignment = TextAlignment.Left,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch
@@ -2668,6 +2753,8 @@ public partial class MainWindow : Window
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Stretch
             };
+            if (isOpen)
+                button.Classes.Add("open");
             ToolTip.SetTip(button, entry.Path);
             button.Click += Recent_Click;
 
@@ -2710,7 +2797,6 @@ public partial class MainWindow : Window
         tab.View.CommitDetails();
         tab.Document.Title = tab.View.WorkTitle;
         tab.Document.BranchName = tab.View.BranchName;
-        tab.Document.RepositoryUrl = tab.View.RepositoryUrl;
         tab.Document.PullRequestUrl = tab.View.PullRequestUrl;
         tab.Document.Deadline = tab.View.Deadline;
         tab.Document.DeadlineMinute = tab.View.DeadlineMinute;
@@ -2730,7 +2816,6 @@ public partial class MainWindow : Window
         tab.IsDirty = true;
         tab.Document.Title = tab.View.WorkTitle;
         tab.Document.BranchName = tab.View.BranchName;
-        tab.Document.RepositoryUrl = tab.View.RepositoryUrl;
         tab.Document.PullRequestUrl = tab.View.PullRequestUrl;
         tab.Document.Deadline = tab.View.Deadline;
         tab.Document.DeadlineMinute = tab.View.DeadlineMinute;
@@ -3558,18 +3643,27 @@ public partial class MainWindow : Window
         return null;
     }
 
-    private static string SuggestedFileName(string title)
+    private static string SuggestedFileName(string title) =>
+        SanitizeFileStem(title) + ".superdev.json";
+
+    private static string SuggestedCsvName(string title) =>
+        SanitizeFileStem(title) + ".csv";
+
+    private static string ChecklistFileName(ChecklistTab tab) =>
+        string.IsNullOrWhiteSpace(tab.FilePath) ? string.Empty : Path.GetFileName(tab.FilePath);
+
+    private static string SanitizeFileStem(string title)
     {
         var invalid = Path.GetInvalidFileNameChars();
         var cleaned = new string(title.Trim()
             .Select(ch => invalid.Contains(ch) ? '_' : ch)
             .ToArray()).Trim();
 
-        if (cleaned.Length == 0)
-            cleaned = "Checklist";
-
-        return cleaned + ".superdev.json";
+        return cleaned.Length == 0 ? "Checklist" : cleaned;
     }
+
+    private static string EnsureCsvExtension(string path) =>
+        path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase) ? path : path + ".csv";
 
     private static string EnsureChecklistExtension(string path)
     {

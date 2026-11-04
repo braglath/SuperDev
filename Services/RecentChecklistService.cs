@@ -10,7 +10,7 @@ namespace SuperDev.Services;
 
 public sealed class RecentChecklistService
 {
-    public const int MaxEntries = 4;
+    public const int MaxEntries = 6;
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {

@@ -818,6 +818,28 @@
                             Spacing="8"
                             VerticalAlignment="Center">
 
+                <Button x:Name="ExportButton"
+                        Content="Export"
+                        Classes="action secondary"
+                        ToolTip.Tip="Export this checklist as a CSV file, or copy it as text">
+                    <Button.Flyout>
+                        <Flyout Placement="BottomEdgeAlignedRight"
+                                FlyoutPresenterClasses="app-popup">
+                            <StackPanel Spacing="8"
+                                        MinWidth="188">
+                                <Button Content="Export as CSV…"
+                                        Classes="action secondary"
+                                        HorizontalAlignment="Stretch"
+                                        Click="ExportCsv_Click"/>
+                                <Button Content="Copy as text"
+                                        Classes="action secondary"
+                                        HorizontalAlignment="Stretch"
+                                        Click="CopyText_Click"/>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+
                 <StackPanel Classes="progress-block"
                             Width="220"
                             Spacing="8"
@@ -1081,7 +1103,7 @@
             </StackPanel>
 
             <Button x:Name="AddDetailsButton"
-                    Content="Add repository, branch, and PR"
+                    Content="Add branch and PR"
                     Classes="notes-link"
                     Margin="0,10,0,0"
                     HorizontalAlignment="Left"
@@ -1106,20 +1128,6 @@
                                    Classes="work-value"
                                    Margin="6,0,0,0"
                                    VerticalAlignment="Center"/>
-                    </Grid>
-                    <Grid x:Name="RepositoryLine"
-                          ColumnDefinitions="Auto,*"
-                          IsVisible="False">
-                        <TextBlock Text="Repository -"
-                                   Classes="page-subtitle"
-                                   VerticalAlignment="Center"/>
-                        <Button x:Name="RepositoryLink"
-                                Grid.Column="1"
-                                Classes="work-link"
-                                Margin="6,0,0,0"
-                                Click="OpenRepository_Click">
-                            <TextBlock x:Name="RepositoryLinkText"/>
-                        </Button>
                     </Grid>
                     <Grid x:Name="PullRequestLine"
                           ColumnDefinitions="Auto,*"

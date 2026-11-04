@@ -5,17 +5,16 @@ using Avalonia.Interactivity;
 
 namespace SuperDev.Views;
 
-public sealed record WorkLinks(string Branch, string Repository, string PullRequest);
+public sealed record WorkLinks(string Branch, string PullRequest);
 
 public partial class WorkLinksWindow : Window
 {
    private bool _closed;
 
-   public WorkLinksWindow(string branch, string repository, string pullRequest)
+   public WorkLinksWindow(string branch, string pullRequest)
    {
       InitializeComponent();
       BranchBox.Text = branch;
-      RepositoryBox.Text = repository;
       PullRequestBox.Text = pullRequest;
    }
 
@@ -58,7 +57,6 @@ public partial class WorkLinksWindow : Window
       _closed = true;
       Close(new WorkLinks(
           BranchBox.Text?.Trim() ?? string.Empty,
-          RepositoryBox.Text?.Trim() ?? string.Empty,
           PullRequestBox.Text?.Trim() ?? string.Empty));
    }
 

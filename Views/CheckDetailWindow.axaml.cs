@@ -7,6 +7,7 @@ public partial class CheckDetailWindow : Window
    public CheckDetailWindow()
    {
       InitializeComponent();
+      Detail.ShowCloseButton = false;
       Detail.CloseRequested += (_, _) => Close();
    }
 }

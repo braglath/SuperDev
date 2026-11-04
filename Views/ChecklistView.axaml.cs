@@ -78,8 +78,6 @@ public partial class ChecklistView : UserControl
 
    public string BranchName { get; private set; }
 
-   public string RepositoryUrl { get; private set; }
-
    public string PullRequestUrl { get; private set; }
 
    public DateOnly? Deadline { get; private set; }
@@ -113,6 +111,10 @@ public partial class ChecklistView : UserControl
    public event EventHandler? SaveAsTemplateRequested;
 
    public event EventHandler? CopyRequested;
+
+   public event EventHandler? ExportCsvRequested;
+
+   public event EventHandler? CopyTextRequested;
 
    public event EventHandler<string>? SubtasksRequired;
 
@@ -182,7 +184,6 @@ public partial class ChecklistView : UserControl
        string? templateName,
        string workTitle,
        string branchName,
-       string repositoryUrl,
        string pullRequestUrl,
        DateOnly? deadline,
        int? deadlineMinute,
@@ -208,7 +209,6 @@ public partial class ChecklistView : UserControl
       _templateName = string.IsNullOrWhiteSpace(templateName) ? null : templateName.Trim();
       WorkTitle = workTitle;
       BranchName = branchName;
-      RepositoryUrl = repositoryUrl;
       PullRequestUrl = pullRequestUrl;
       Deadline = deadline;
       DeadlineMinute = deadline is null ? null : deadlineMinute;
@@ -1739,6 +1739,18 @@ public partial class ChecklistView : UserControl
       CopyRequested?.Invoke(this, EventArgs.Empty);
    }
 
+   private void ExportCsv_Click(object? sender, RoutedEventArgs e)
+   {
+      ExportButton.Flyout?.Hide();
+      ExportCsvRequested?.Invoke(this, EventArgs.Empty);
+   }
+
+   private void CopyText_Click(object? sender, RoutedEventArgs e)
+   {
+      ExportButton.Flyout?.Hide();
+      CopyTextRequested?.Invoke(this, EventArgs.Empty);
+   }
+
    public int RemoveItems(IReadOnlyList<ChecklistItem> items)
    {
       var removed = 0;
@@ -1904,16 +1916,14 @@ public partial class ChecklistView : UserControl
       _linksOpen = true;
       try
       {
-         var dialog = new WorkLinksWindow(BranchName, RepositoryUrl, PullRequestUrl);
+         var dialog = new WorkLinksWindow(BranchName, PullRequestUrl);
          var result = await dialog.ShowDialog<WorkLinks?>(owner);
          if (result is null)
             return;
 
          var changed = result.Branch != BranchName ||
-                       result.Repository != RepositoryUrl ||
                        result.PullRequest != PullRequestUrl;
          BranchName = result.Branch;
-         RepositoryUrl = result.Repository;
          PullRequestUrl = result.PullRequest;
          ApplyWorkLinks();
          if (changed)
@@ -1928,36 +1938,18 @@ public partial class ChecklistView : UserControl
    private void ApplyWorkLinks()
    {
       var hasBranch = !string.IsNullOrWhiteSpace(BranchName);
-      var hasRepository = !string.IsNullOrWhiteSpace(RepositoryUrl);
       var hasPullRequest = !string.IsNullOrWhiteSpace(PullRequestUrl);
 
       BranchLine.IsVisible = hasBranch;
       BranchValue.Text = BranchName;
 
-      RepositoryLine.IsVisible = hasRepository;
-      RepositoryLinkText.Text = RepositoryUrl;
-      ToolTip.SetTip(RepositoryLink, RepositoryUrl);
-
       PullRequestLine.IsVisible = hasPullRequest;
       PullRequestLinkText.Text = PullRequestUrl;
       ToolTip.SetTip(PullRequestLink, PullRequestUrl);
 
-      var hasDetails = hasBranch || hasRepository || hasPullRequest;
+      var hasDetails = hasBranch || hasPullRequest;
       DetailsPanel.IsVisible = hasDetails;
       AddDetailsButton.IsVisible = !hasDetails;
-   }
-
-   private async void OpenRepository_Click(object? sender, RoutedEventArgs e)
-   {
-      if (ExternalLink.TryOpen(RepositoryUrl))
-         return;
-
-      var owner = GetOwnerWindow();
-      if (owner is null)
-         return;
-
-      var dialog = new StyledDialog("Super Dev", "That repository link could not be opened.");
-      await dialog.ShowDialog(owner);
    }
 
    private async void OpenPullRequest_Click(object? sender, RoutedEventArgs e)
@@ -2100,10 +2092,6 @@ public partial class ChecklistView : UserControl
       chip.Classes.Add(PriorityAppearance.ClassName(item.Priority));
    }
 
-   /// <summary>
-   /// Shows or hides the template line, repository, branch, and PR fields.
-   /// The title and progress stay visible. A later interface-density setting can call this.
-   /// </summary>
    /// <summary>
    /// Shows or hides search, status, priority, and sort.
    /// A later interface-density setting can call this.
