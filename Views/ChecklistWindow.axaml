@@ -261,6 +261,10 @@
     <TextBlock Text="{Binding Priority}"
                Classes="priority"/>
 
+    <TextBlock Text="{Binding ItemType}"
+               Classes="priority"
+               IsVisible="{Binding HasItemType}"/>
+
 <ScrollViewer MaxHeight="90"
               VerticalScrollBarVisibility="Auto"
               HorizontalScrollBarVisibility="Disabled"
@@ -271,6 +275,35 @@
                TextWrapping="Wrap"/>
 
 </ScrollViewer>
+
+<StackPanel Spacing="2"
+            IsVisible="{Binding HasAcceptance}">
+    <TextBlock Text="Acceptance"
+               Classes="priority"/>
+    <ScrollViewer MaxHeight="90"
+                  VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <TextBlock Text="{Binding Acceptance}"
+                   Classes="check-notes"
+                   TextWrapping="Wrap"/>
+    </ScrollViewer>
+</StackPanel>
+
+<ItemsControl ItemsSource="{Binding References}"
+              IsVisible="{Binding HasReferences}">
+    <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="models:CheckReference">
+            <StackPanel Spacing="2" Margin="0,4,0,0">
+                <TextBlock Text="{Binding Label}"
+                           Classes="priority"/>
+                <TextBlock Text="{Binding Text}"
+                           Classes="check-notes"
+                           TextWrapping="Wrap"
+                           MaxHeight="72"/>
+            </StackPanel>
+        </DataTemplate>
+    </ItemsControl.ItemTemplate>
+</ItemsControl>
 
 <StackPanel Spacing="6"
             Margin="0,4,0,0"

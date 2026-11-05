@@ -93,6 +93,9 @@ public class PromptBuilderTests
             WorkType = WorkType.Bug,
             DraftTitle = "Reproduce the crash",
             DraftNotes = "It happens after rotate",
+            DraftAcceptance = "The crash happens on rotate",
+            DraftItemType = "Investigation",
+            DraftPullRequestLinks = "https://example.com/pull/4",
             DraftCategory = "Understand",
             ExistingTitles = ["Open the ticket", "Open the ticket"]
         });
@@ -106,6 +109,10 @@ public class PromptBuilderTests
         Assert.Contains("Bug Fix", prompt.User, StringComparison.Ordinal);
         Assert.Contains("Reproduce the crash", prompt.User, StringComparison.Ordinal);
         Assert.Contains("It happens after rotate", prompt.User, StringComparison.Ordinal);
+        Assert.Contains("The crash happens on rotate", prompt.User, StringComparison.Ordinal);
+        Assert.Contains("Draft type: Investigation", prompt.User, StringComparison.Ordinal);
+        Assert.Contains("https://example.com/pull/4", prompt.User, StringComparison.Ordinal);
+        Assert.Contains("Do not invent a report", prompt.System, StringComparison.Ordinal);
         Assert.Contains("Understand", prompt.User, StringComparison.Ordinal);
         Assert.Equal(1, CountOf(prompt.User, "Open the ticket"));
     }
@@ -125,6 +132,10 @@ public class PromptBuilderTests
         Assert.DoesNotContain("SECRET-TAIL", prompt.System, StringComparison.Ordinal);
         Assert.Contains("Feature", prompt.User, StringComparison.Ordinal);
         Assert.Contains("None yet.", prompt.User, StringComparison.Ordinal);
+        Assert.Contains("Draft acceptance: None.", prompt.User, StringComparison.Ordinal);
+        Assert.Contains("Draft type: None.", prompt.User, StringComparison.Ordinal);
+        Assert.Contains("Draft test reports: None.", prompt.User, StringComparison.Ordinal);
+        Assert.Contains("Draft PR links: None.", prompt.User, StringComparison.Ordinal);
         Assert.Contains("none", prompt.User, StringComparison.Ordinal);
     }
 

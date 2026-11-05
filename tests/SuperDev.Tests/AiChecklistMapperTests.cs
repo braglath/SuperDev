@@ -28,9 +28,11 @@ public class AiChecklistMapperTests
                         {
                             Title = "Reproduce the issue",
                             Description = "Reproduce the issue consistently on the target device.",
-                            Type = "Required",
+                            Type = "Investigation",
                             Priority = "High",
-                            AcceptanceCriteria = "The issue can be reproduced consistently."
+                            AcceptanceCriteria = "The issue can be reproduced consistently.",
+                            Logs = "crash after rotate",
+                            PullRequestLinks = "https://example.com/pull/4"
                         },
                         new GeneratedCheckItem
                         {
@@ -50,9 +52,16 @@ public class AiChecklistMapperTests
         Assert.Equal("AI · .NET MAUI · Bug Fix", AiChecklistMapper.TemplateName(request));
         Assert.Equal("Investigation", items[0].Category);
         Assert.Equal(ChecklistPriority.Critical, items[0].Priority);
-        Assert.Contains("Acceptance: The issue can be reproduced consistently.", items[0].Notes, StringComparison.Ordinal);
+        Assert.Equal("Reproduce the issue consistently on the target device.", items[0].Notes);
+        Assert.Equal("The issue can be reproduced consistently.", items[0].Acceptance);
+        Assert.Equal("Investigation", items[0].ItemType);
+        Assert.Equal("crash after rotate", items[0].Logs);
+        Assert.Equal("https://example.com/pull/4", items[0].PullRequestLinks);
+        Assert.Null(items[0].TestReports);
         Assert.Equal(ChecklistPriority.Required, items[1].Priority);
         Assert.Equal("Look at the nearest flow.", items[1].Notes);
+        Assert.Null(items[1].Acceptance);
+        Assert.Null(items[1].ItemType);
     }
 
     [Fact]

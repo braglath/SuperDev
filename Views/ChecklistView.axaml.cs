@@ -63,6 +63,8 @@ public partial class ChecklistView : UserControl
    private CheckDetailWindow? _detailPopup;
    private ChecklistReviewWindow? _reviewWindow;
    private ChecklistReviewResult? _reviewResult;
+   private TaskExplainWindow? _explainWindow;
+   private bool _explainOpening;
    private Window? _hostWindow;
    private bool _detailOnSide;
    private bool _switchingDetail;
@@ -116,6 +118,8 @@ public partial class ChecklistView : UserControl
 
    public event EventHandler? CopyRequested;
 
+   public event EventHandler? ExportJsonRequested;
+
    public event EventHandler? ExportCsvRequested;
 
    public event EventHandler? CopyTextRequested;
@@ -133,6 +137,8 @@ public partial class ChecklistView : UserControl
    public Func<CheckGenerationRequest, CancellationToken, Task<AiGenerationResult>>? GenerateOneCheck { get; set; }
 
    public Func<ChecklistReviewRequest, CancellationToken, Task<ChecklistReviewOutcome>>? ReviewChecklist { get; set; }
+
+   public Func<TaskExplainRequest, CancellationToken, Task<TaskExplainOutcome>>? ExplainTask { get; set; }
 
    public string? TaskDescription { get; private set; }
 
@@ -200,7 +206,10 @@ public partial class ChecklistView : UserControl
    }
 
    public bool HasIncompleteRequiredChecks() =>
-       _checklist.Any(item =>
+       IncompleteRequiredCount() > 0;
+
+   private int IncompleteRequiredCount() =>
+       _checklist.Count(item =>
            !item.IsCompleted &&
            (item.Priority == ChecklistPriority.Critical ||
             item.Priority == ChecklistPriority.Required));
@@ -223,6 +232,7 @@ public partial class ChecklistView : UserControl
       InitializeComponent();
       SizeChanged += (_, _) => SyncDetailLayout();
       SideDetail.CloseRequested += (_, _) => CloseDetails();
+      SideDetail.ExplainRequested += (_, _) => ExplainOpenDetail();
       SideDetail.EditRequested += (_, _) => EditOpenDetail();
       SideDetail.DeleteRequested += (_, _) => DeleteOpenDetail();
       SideDetail.CompleteRequested += (_, _) => CompleteOpenDetail();
@@ -1257,10 +1267,14 @@ public partial class ChecklistView : UserControl
 
    private void NotifySubtasksRequired(ChecklistItem item)
    {
-      var manualOpen = item.Subtasks.Any(subtask => !subtask.IsLink && !subtask.IsCompleted);
+      var manualOpen = item.Subtasks.Any(subtask => subtask.IsManual && !subtask.IsCompleted);
+      var openLinks = item.Subtasks.Count(subtask =>
+          subtask.IsLink && !subtask.LinkOptional && !subtask.IsCompleted);
       var message = manualOpen
           ? "Complete the subtasks first to mark this as complete."
-          : "Complete the linked checklist first to mark this as complete.";
+          : openLinks == 1
+              ? "Complete the required linked checklist first to mark this as complete."
+              : "Complete the required linked checklists first to mark this as complete.";
       SubtasksRequired?.Invoke(this, message);
    }
 
@@ -1293,6 +1307,17 @@ public partial class ChecklistView : UserControl
          button.Classes.Add("done");
       else
          button.Classes.Remove("done");
+
+      if (subtask.LinkOptional)
+         button.Classes.Add("optional");
+      else
+         button.Classes.Remove("optional");
+
+      ToolTip.SetTip(
+          button,
+          subtask.LinkOptional
+              ? "Open checklist. Optional — this check can be completed without it."
+              : "Open checklist. Required — complete this checklist before the check.");
    }
 
    public void ApplyLinkedCompletion(Guid documentId, string? filePath, bool completed, string title)
@@ -1572,6 +1597,7 @@ public partial class ChecklistView : UserControl
             return;
 
          var popup = new CheckDetailWindow();
+         popup.Detail.ExplainRequested += (_, _) => ExplainOpenDetail();
          popup.Detail.EditRequested += (_, _) => EditOpenDetail();
          popup.Detail.DeleteRequested += (_, _) => DeleteOpenDetail();
          popup.Detail.CompleteRequested += (_, _) => CompleteOpenDetail();
@@ -1765,6 +1791,12 @@ public partial class ChecklistView : UserControl
       CopyRequested?.Invoke(this, EventArgs.Empty);
    }
 
+   private void ExportJson_Click(object? sender, RoutedEventArgs e)
+   {
+      ExportButton.Flyout?.Hide();
+      ExportJsonRequested?.Invoke(this, EventArgs.Empty);
+   }
+
    private void ExportCsv_Click(object? sender, RoutedEventArgs e)
    {
       ExportButton.Flyout?.Hide();
@@ -1815,6 +1847,13 @@ public partial class ChecklistView : UserControl
           Category = item.Category,
           Priority = item.Priority,
           Notes = item.Notes,
+          Acceptance = item.Acceptance,
+          ItemType = item.ItemType,
+          TestReports = item.TestReports,
+          Logs = item.Logs,
+          CodeReferences = item.CodeReferences,
+          ApiResponses = item.ApiResponses,
+          PullRequestLinks = item.PullRequestLinks,
           Evidence = CopyEvidence(item.Evidence),
           Deadline = item.Deadline,
           DeadlineMinute = item.DeadlineMinute,
@@ -1840,7 +1879,8 @@ public partial class ChecklistView : UserControl
               Title = subtask.Title,
               IsCompleted = subtask.IsCompleted,
               LinkedDocumentId = subtask.LinkedDocumentId,
-              LinkedFilePath = subtask.LinkedFilePath
+              LinkedFilePath = subtask.LinkedFilePath,
+              LinkOptional = subtask.LinkOptional
            })
            .ToList();
 
@@ -1894,6 +1934,7 @@ public partial class ChecklistView : UserControl
          _hostWindow.PropertyChanged -= HostWindow_PropertyChanged;
       _hostWindow = null;
       _reviewWindow?.Close();
+      _explainWindow?.Close();
       base.OnDetachedFromVisualTree(e);
    }
 
@@ -2133,7 +2174,11 @@ public partial class ChecklistView : UserControl
    public void SetFilterSectionVisible(bool visible)
    {
       _filtersVisible = visible;
-      FilterToggleButton.Content = visible ? "Hide filters" : "Show filters";
+      ToolTip.SetTip(FilterToggleButton, visible ? "Hide filters" : "Show filters");
+      if (visible)
+         FilterToggleButton.Classes.Add("selected");
+      else
+         FilterToggleButton.Classes.Remove("selected");
       UpdateItemActions();
 
       if (_viewReady)
@@ -2166,6 +2211,9 @@ public partial class ChecklistView : UserControl
              entry.item.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
              entry.item.Category.Contains(search, StringComparison.OrdinalIgnoreCase) ||
              entry.item.Notes.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+             (entry.item.Acceptance?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+             (entry.item.ItemType?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+             entry.item.MatchesReference(search) ||
              (entry.item.Evidence ?? []).Any(file =>
                  file is not null &&
                  (EvidenceKind.DisplayName(file.Path).Contains(search, StringComparison.OrdinalIgnoreCase) ||
@@ -2278,8 +2326,16 @@ public partial class ChecklistView : UserControl
    private void ApplyCompletedChrome()
    {
       var locked = _documentCompleted;
+      var incompleteRequired = IncompleteRequiredCount();
       CompleteButton.Content = locked ? "Reopen" : "✓  Complete";
       CompleteButton.IsVisible = _checklist.Count > 0 || locked;
+      CompleteButton.IsEnabled = locked || incompleteRequired == 0;
+      var completeTip = locked || incompleteRequired == 0
+          ? null
+          : incompleteRequired == 1
+              ? "1 Critical or Required check is still open."
+              : $"{incompleteRequired} Critical or Required checks are still open.";
+      ToolTip.SetTip(CompleteButton, completeTip);
       AddCheckButton.IsEnabled = !locked;
       SaveAsTemplateButton.IsEnabled = !locked;
       CopyButton.IsEnabled = !locked && _checklist.Count > 0;
@@ -2438,6 +2494,89 @@ public partial class ChecklistView : UserControl
 
    private void ReviewWithAi_Click(object? sender, RoutedEventArgs e) =>
        OpenReview();
+
+   private void ExplainCheck_Click(object? sender, RoutedEventArgs e)
+   {
+      if (sender is Button { Tag: ChecklistItem item })
+         OpenExplain(item);
+   }
+
+   private void ExplainOpenDetail()
+   {
+      if (_detailItem is not null)
+         OpenExplain(_detailItem);
+   }
+
+   private void OpenExplain(ChecklistItem item)
+   {
+      var owner = DialogOwner();
+      if (owner is null || EnsureAiReady is null || ExplainTask is null)
+         return;
+
+      if (_explainWindow is not null)
+      {
+         _explainWindow.Explain(CreateExplainSession(item));
+         _explainWindow.Activate();
+         return;
+      }
+
+      _ = OpenExplainAsync(owner, item);
+   }
+
+   private async Task OpenExplainAsync(Window owner, ChecklistItem item)
+   {
+      if (_explainOpening || EnsureAiReady is null || ExplainTask is null)
+         return;
+
+      _explainOpening = true;
+      try
+      {
+         if (!await EnsureAiReady(owner, CancellationToken.None))
+            return;
+
+         if (_explainWindow is not null)
+         {
+            _explainWindow.Explain(CreateExplainSession(item));
+            _explainWindow.Activate();
+            return;
+         }
+
+         var window = new TaskExplainWindow(CreateExplainSession(item));
+         _explainWindow = window;
+         window.Closed += (_, _) =>
+         {
+            if (ReferenceEquals(_explainWindow, window))
+               _explainWindow = null;
+         };
+         window.Show(owner);
+      }
+      finally
+      {
+         _explainOpening = false;
+      }
+   }
+
+   private TaskExplainSession CreateExplainSession(ChecklistItem item)
+   {
+      var explain = ExplainTask ?? throw new InvalidOperationException("Local AI is not available for this checklist.");
+      var id = item.Id;
+      return new TaskExplainSession
+      {
+         ItemId = id,
+         Capture = () =>
+         {
+            var current = _checklist.FirstOrDefault(entry => entry.Id == id) ?? item;
+            return TaskExplainMapper.Create(
+                WorkTitle,
+                _workType,
+                TaskDescription,
+                AiPlatform,
+                AiFramework,
+                current);
+         },
+         Explain = (request, token) => explain(request, token)
+      };
+   }
 
    private void OpenReview()
    {
@@ -2611,6 +2750,38 @@ public partial class ChecklistView : UserControl
       await dialog.ShowDialog(owner);
    }
 
+   private async void ViewAcceptance_Click(object? sender, RoutedEventArgs e)
+   {
+      if (sender is not Button button ||
+          button.Tag is not ChecklistItem item ||
+          !item.HasAcceptance)
+         return;
+
+      var owner = GetOwnerWindow();
+      if (owner is null)
+         return;
+
+      var detail = string.IsNullOrWhiteSpace(item.Detail) ? "Acceptance" : "Acceptance · " + item.Detail;
+      var dialog = new NotesWindow(item.Title, detail, item.Acceptance!);
+      await dialog.ShowDialog(owner);
+   }
+
+   private async void ViewReference_Click(object? sender, RoutedEventArgs e)
+   {
+      if (sender is not Button button || button.Tag is not CheckReference reference)
+         return;
+
+      var owner = GetOwnerWindow();
+      if (owner is null)
+         return;
+
+      var detail = string.IsNullOrWhiteSpace(reference.Detail)
+          ? reference.Label
+          : reference.Label + " · " + reference.Detail;
+      var dialog = new NotesWindow(reference.Title, detail, reference.Text);
+      await dialog.ShowDialog(owner);
+   }
+
    private void EditCheck_Click(object? sender, RoutedEventArgs e)
    {
       if (sender is not Button button ||
@@ -2647,6 +2818,9 @@ public partial class ChecklistView : UserControl
          item.Category = result.Category;
          item.Priority = result.Priority;
          item.Notes = result.Notes;
+         item.Acceptance = result.Acceptance;
+         item.ItemType = result.ItemType;
+         item.CopyReferencesFrom(result);
          item.Evidence = result.Evidence ?? [];
          item.Deadline = result.Deadline;
          item.DeadlineMinute = result.Deadline is null ? null : result.DeadlineMinute;
@@ -2716,7 +2890,7 @@ public partial class ChecklistView : UserControl
          return;
 
       var checks = _checklist.ToList();
-      var picker = new DeleteChecksWindow(checks.Select(CopyItemLabel).ToList());
+      var picker = new DeleteChecksWindow(checks);
       var indexes = await picker.ShowDialog<List<int>?>(owner);
       if (indexes is null || indexes.Count == 0)
          return;
@@ -2746,11 +2920,6 @@ public partial class ChecklistView : UserControl
       RemoveItems(selected);
    }
 
-   private static string CopyItemLabel(ChecklistItem item) =>
-       string.IsNullOrWhiteSpace(item.Detail)
-           ? item.Title
-           : $"{item.Title} — {item.Detail}";
-
    private async void Complete_Click(object? sender, RoutedEventArgs e)
    {
       if (_documentCompleted)
@@ -2765,10 +2934,7 @@ public partial class ChecklistView : UserControl
       if (owner is null)
          return;
 
-      var incompleteRequired = _checklist.Count(item =>
-          !item.IsCompleted &&
-          (item.Priority == ChecklistPriority.Critical ||
-           item.Priority == ChecklistPriority.Required));
+      var incompleteRequired = IncompleteRequiredCount();
 
       if (incompleteRequired > 0)
       {

@@ -12,7 +12,8 @@ public enum ReviewCategory
     Testing,
     Security,
     Performance,
-    Priority
+    Priority,
+    Risk
 }
 
 public enum ReviewSeverity
@@ -55,6 +56,16 @@ public sealed class ChecklistReviewItem
     /// Item type when the checklist stored one. Manual checks leave this empty.
     /// </summary>
     public string? ItemType { get; init; }
+
+    public string TestReports { get; init; } = string.Empty;
+
+    public string Logs { get; init; } = string.Empty;
+
+    public string CodeReferences { get; init; } = string.Empty;
+
+    public string ApiResponses { get; init; } = string.Empty;
+
+    public string PullRequestLinks { get; init; } = string.Empty;
 
     public bool IsCompleted { get; init; }
 }
@@ -110,6 +121,10 @@ public sealed class ReviewUndo
 
     public string Notes { get; init; } = string.Empty;
 
+    public string Acceptance { get; init; } = string.Empty;
+
+    public string ItemType { get; init; } = string.Empty;
+
     public ChecklistPriority Priority { get; init; }
 }
 
@@ -159,6 +174,16 @@ public sealed class ChecklistReviewFinding
 public sealed class ChecklistReviewResult
 {
     public string ChecklistTitle { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Overall checklist quality from 0 to 100. Higher means the checks are specific, distinct, and cover the task.
+    /// </summary>
+    public int QualityScore { get; set; }
+
+    /// <summary>
+    /// One sentence on missing checks, duplicates, vague checks, risks, and validation.
+    /// </summary>
+    public string Summary { get; set; } = string.Empty;
 
     public List<ChecklistReviewFinding> Findings { get; set; } = [];
 

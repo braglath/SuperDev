@@ -324,13 +324,14 @@ public class ChecklistReviewTests
             Finding("Testing", "High", "Missing regression", "AddItem", suggested: Addition()),
             Finding("Security", "High", "Token stored in logs", "Observation"),
             Finding("Performance", "Medium", "Layout pass on rotate", "Observation"),
-            Finding("Priority", "Low", "Retest is required for a bug fix", "PriorityAdjustment", related: "\"i2\"", suggested: "{\"priority\":\"Critical\"}"));
+            Finding("Priority", "Low", "Retest is required for a bug fix", "PriorityAdjustment", related: "\"i2\"", suggested: "{\"priority\":\"Critical\"}"),
+            Finding("Risk", "High", "No failure path for rotation", "Observation"));
 
         var inspection = _validator.Read(json, request);
 
         Assert.True(inspection.IsValid);
         var findings = inspection.Review!.Findings;
-        Assert.Equal(7, findings.Count);
+        Assert.Equal(8, findings.Count);
         foreach (var category in Enum.GetValues<ReviewCategory>())
             Assert.Contains(findings, finding => finding.Category == category);
         foreach (var recommendation in Enum.GetValues<ReviewRecommendationType>())
@@ -418,6 +419,88 @@ public class ChecklistReviewTests
         foreach (var recommendation in Enum.GetNames<ReviewRecommendationType>())
             Assert.Contains(recommendation, schema, StringComparison.Ordinal);
         Assert.Contains("\"maxItems\": 10", schema, StringComparison.Ordinal);
+        Assert.Contains("qualityScore", schema, StringComparison.Ordinal);
+        Assert.Contains("summary", schema, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Reads_the_quality_score_and_summary()
+    {
+        var (request, _, _) = Sample();
+        const string json = """
+            {
+              "qualityScore": 72,
+              "summary": "Rotation is covered, but the login retest is vague and has no failure check.",
+              "findings": [
+                {
+                  "category": "Potential risks",
+                  "severity": "High",
+                  "title": "No failure path for rotation",
+                  "explanation": "The checks never say what happens when rotation fails.",
+                  "whyItMatters": "A broken rotate can ship.",
+                  "suggestedAction": "Add a check for the rotation failure path.",
+                  "recommendationType": "AddItem",
+                  "suggestedItem": {
+                    "title": "Confirm the login screen recovers after a failed rotation",
+                    "section": "Testing",
+                    "priority": "Required",
+                    "type": "Verification"
+                  }
+                }
+              ]
+            }
+            """;
+
+        var inspection = _validator.Read(json, request);
+
+        Assert.True(inspection.IsValid);
+        Assert.Equal(72, inspection.Review!.QualityScore);
+        Assert.Contains("login retest is vague", inspection.Review.Summary, StringComparison.Ordinal);
+        Assert.Equal(ReviewCategory.Risk, Assert.Single(inspection.Review.Findings).Category);
+    }
+
+    [Fact]
+    public void Clamps_the_quality_score_and_derives_one_when_it_is_missing()
+    {
+        var (request, _, _) = Sample();
+        var high = _validator.Read("""{"qualityScore":140,"summary":"Too high.","findings":[]}""", request);
+        var missing = _validator.Read(
+            Review(Finding(
+                "Clarity",
+                "Critical",
+                "Reproduce is vague",
+                "ImproveItem",
+                related: "\"i1\"",
+                suggested: "{\"description\":\"Name the screen and the crash.\"}")),
+            request);
+        var unreadable = _validator.Read("""{"qualityScore":"high","findings":[]}""", request);
+
+        Assert.Equal(100, high.Review!.QualityScore);
+        Assert.Equal("Too high.", high.Review.Summary);
+        Assert.Equal(75, missing.Review!.QualityScore);
+        Assert.Equal("", missing.Review.Summary);
+        Assert.Equal(100, unreadable.Review!.QualityScore);
+    }
+
+    [Fact]
+    public void Prompt_asks_for_gaps_and_a_quality_score()
+    {
+        var prompt = _prompts.Build(ChecklistReviewMapper.CreateRequest(
+            "Rotate crash",
+            WorkType.Bug,
+            null,
+            null,
+            null,
+            null,
+            []));
+
+        Assert.Contains("qualityScore", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("Missing checks", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("Duplicate checks", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("Vague or incomplete", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("Potential risks", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("Additional validation", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("qualityScore", prompt.User, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -462,6 +545,38 @@ public class ChecklistReviewTests
     }
 
     [Fact]
+    public void Review_reads_acceptance_and_type_stored_on_the_check()
+    {
+        var request = ChecklistReviewMapper.CreateRequest(
+            "Login",
+            WorkType.Feature,
+            null,
+            null,
+            null,
+            null,
+            [
+                new ChecklistItem
+                {
+                    Title = "Save the draft",
+                    Category = "Development",
+                    Notes = "Write the file.",
+                    Acceptance = "The file reopens with the same text.",
+                    ItemType = "Implementation",
+                    PullRequestLinks = "https://example.com/pull/4"
+                }
+            ]);
+
+        Assert.Equal("Write the file.", request.Items[0].Description);
+        Assert.Equal("The file reopens with the same text.", request.Items[0].AcceptanceCriteria);
+        Assert.Equal("Implementation", request.Items[0].ItemType);
+
+        var prompt = _prompts.Build(request);
+        Assert.Contains("The file reopens with the same text.", prompt.User, StringComparison.Ordinal);
+        Assert.Contains("type Implementation", prompt.User, StringComparison.Ordinal);
+        Assert.Contains("https://example.com/pull/4", prompt.User, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Manual_checklist_does_not_invent_a_framework()
     {
         var request = ChecklistReviewMapper.CreateRequest(
@@ -501,6 +616,9 @@ public class ChecklistReviewTests
         Assert.Equal(ChecklistPriority.Required, items[2].Priority);
         Assert.False(items[2].IsCompleted);
         Assert.Contains("Rotate after login.", items[2].Notes, StringComparison.Ordinal);
+        Assert.Equal("Login still works after rotation.", items[2].Acceptance);
+        Assert.Equal("Verification", items[2].ItemType);
+        Assert.DoesNotContain("Acceptance:", items[2].Notes, StringComparison.Ordinal);
         Assert.True(finding.Applied);
         Assert.Equal(first.Id, items[0].Id);
         Assert.False(items[0].IsCompleted);
@@ -532,7 +650,8 @@ public class ChecklistReviewTests
         Assert.Equal("Development", items[0].Category);
         Assert.Equal(ChecklistPriority.Required, items[0].Priority);
         Assert.Contains("Rotate the login screen.", items[0].Notes, StringComparison.Ordinal);
-        Assert.Contains("The crash happens on rotate.", items[0].Notes, StringComparison.Ordinal);
+        Assert.DoesNotContain("Acceptance:", items[0].Notes, StringComparison.Ordinal);
+        Assert.Equal("The crash happens on rotate.", items[0].Acceptance);
         Assert.Same(evidence, items[0].Evidence);
         Assert.Same(subtasks, items[0].Subtasks);
         Assert.True(items[0].Subtasks[0].IsCompleted);
@@ -732,6 +851,53 @@ public class ChecklistReviewTests
             Assert.Equal("Android", request.Platform);
             Assert.Equal(".NET MAUI", request.Framework);
             Assert.Equal("Crash when rotating the screen", request.TaskDescription);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Opening_a_checklist_splits_acceptance_out_of_older_notes()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "superdev-acceptance-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, "checks.superdev.json");
+        try
+        {
+            var document = new ChecklistDocument
+            {
+                Id = Guid.NewGuid(),
+                Title = "Rotate crash",
+                WorkType = WorkType.Bug,
+                CreatedOn = DateTime.UtcNow,
+                UpdatedOn = DateTime.UtcNow,
+                Items =
+                [
+                    new ChecklistItem
+                    {
+                        Title = "Reproduce",
+                        Notes = "Rotate the screen.\n\nAcceptance: The crash happens on rotate."
+                    },
+                    new ChecklistItem
+                    {
+                        Title = "Retest",
+                        Notes = "Keep this.",
+                        Acceptance = "Already stored.",
+                        ItemType = "Verification"
+                    }
+                ]
+            };
+            var files = new ChecklistFileService();
+            await files.SaveAsync(path, document, replaceDifferentDocument: false);
+            var loaded = await files.LoadAsync(path);
+
+            Assert.Equal("Rotate the screen.", loaded.Items[0].Notes);
+            Assert.Equal("The crash happens on rotate.", loaded.Items[0].Acceptance);
+            Assert.Equal("Keep this.", loaded.Items[1].Notes);
+            Assert.Equal("Already stored.", loaded.Items[1].Acceptance);
+            Assert.Equal("Verification", loaded.Items[1].ItemType);
         }
         finally
         {

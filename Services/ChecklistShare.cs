@@ -60,7 +60,7 @@ public static class ChecklistShare
             Detail("Branch", document.BranchName),
             Detail("Pull Request", document.PullRequestUrl),
             string.Empty,
-            Row("Check", "Status", "Category", "Priority", "Deadline", "Subtasks", "Notes", "Evidence")
+            Row("Check", "Status", "Category", "Priority", "Type", "Deadline", "Subtasks", "Notes", "Acceptance", "Test reports", "Logs", "Code references", "API responses", "PR links", "Evidence")
         };
 
         foreach (var item in document.Items)
@@ -70,9 +70,16 @@ public static class ChecklistShare
                 item.IsCompleted ? "Completed" : "Open",
                 item.Category,
                 item.Priority.ToString(),
+                item.ItemType ?? string.Empty,
                 DeadlineText(item.Deadline, item.DeadlineMinute, item.NotifyBeforeMinutes, item.DeadlineSilent),
                 SubtaskCell(item),
                 item.Notes,
+                item.Acceptance ?? string.Empty,
+                item.TestReports ?? string.Empty,
+                item.Logs ?? string.Empty,
+                item.CodeReferences ?? string.Empty,
+                item.ApiResponses ?? string.Empty,
+                item.PullRequestLinks ?? string.Empty,
                 EvidenceCell(item)));
         }
 
@@ -89,6 +96,9 @@ public static class ChecklistShare
         if (deadline.Length > 0)
             lines.Add($"  Deadline: {deadline}");
 
+        if (item.HasItemType)
+            lines.Add("  Type: " + item.ItemType);
+
         if (!string.IsNullOrWhiteSpace(item.Notes))
         {
             lines.Add("  Notes:");
@@ -96,14 +106,25 @@ public static class ChecklistShare
                 lines.Add("  " + noteLine);
         }
 
+        if (item.HasAcceptance)
+        {
+            lines.Add("  Acceptance:");
+            foreach (var line in item.Acceptance!.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
+                lines.Add("  " + line);
+        }
+
+        foreach (var reference in item.References)
+        {
+            lines.Add("  " + reference.Label + ":");
+            foreach (var line in reference.Text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n'))
+                lines.Add("  " + line);
+        }
+
         foreach (var line in EvidenceLines(item))
             lines.Add("  " + line);
 
         foreach (var subtask in item.Subtasks)
-        {
-            var subtaskMark = subtask.IsCompleted ? "x" : " ";
-            lines.Add($"  - [{subtaskMark}] {subtask.Title}");
-        }
+            lines.Add("  - " + SubtaskLine(subtask));
     }
 
     private static string EvidenceCell(ChecklistItem item) =>
@@ -139,11 +160,16 @@ public static class ChecklistShare
         if (item.Subtasks.Count == 0)
             return string.Empty;
 
-        return string.Join("\n", item.Subtasks.Select(subtask =>
-        {
-            var mark = subtask.IsCompleted ? "x" : " ";
-            return $"[{mark}] {subtask.Title}";
-        }));
+        return string.Join("\n", item.Subtasks.Select(SubtaskLine));
+    }
+
+    private static string SubtaskLine(ChecklistSubtask subtask)
+    {
+        var mark = subtask.IsCompleted ? "x" : " ";
+        var kind = !subtask.IsLink
+            ? string.Empty
+            : subtask.LinkOptional ? " (optional link)" : " (required link)";
+        return $"[{mark}] {subtask.Title}{kind}";
     }
 
     private static string? Progress(ChecklistDocument document)

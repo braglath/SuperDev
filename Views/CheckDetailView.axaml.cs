@@ -12,6 +12,8 @@ public partial class CheckDetailView : UserControl
 {
    public event EventHandler? CloseRequested;
 
+   public event EventHandler? ExplainRequested;
+
    public event EventHandler? EditRequested;
 
    public event EventHandler? DeleteRequested;
@@ -71,7 +73,15 @@ public partial class CheckDetailView : UserControl
          NotifyText.IsVisible = false;
       }
 
-      NotesText.Source = string.IsNullOrWhiteSpace(item.Notes) ? "No notes" : item.Notes;
+      TypeSection.IsVisible = item.HasItemType;
+      TypeText.Text = item.ItemType ?? string.Empty;
+      NotesSection.IsVisible = item.HasNotes;
+      if (item.HasNotes)
+         NotesText.Source = item.Notes;
+      AcceptanceSection.IsVisible = item.HasAcceptance;
+      if (item.HasAcceptance)
+         AcceptanceText.Source = item.Acceptance;
+      ShowReferences(item);
       EvidenceSection.IsVisible = item.HasEvidence;
       EvidenceList.Files = item.Evidence;
 
@@ -101,7 +111,7 @@ public partial class CheckDetailView : UserControl
          var button = new Button
          {
             Classes = { "detail-link" },
-            Content = link.IsCompleted ? $"✓  {link.Title}" : link.Title,
+            Content = link.LinkLabel,
             Tag = link
          };
          button.Click += Link_Click;
@@ -115,8 +125,39 @@ public partial class CheckDetailView : UserControl
       CompleteButton.Content = item.IsCompleted ? "Mark as open" : "Mark as completed";
    }
 
+   private void ShowReferences(ChecklistItem item)
+   {
+      ReferenceList.Children.Clear();
+      foreach (var reference in item.References)
+      {
+         ReferenceList.Children.Add(new StackPanel
+         {
+            Spacing = 4,
+            Children =
+            {
+               new TextBlock
+               {
+                  Text = reference.Label,
+                  Classes = { "detail-label" }
+               },
+               new NoteText
+               {
+                  Source = reference.Text,
+                  FontSize = AppearanceService.Font(14),
+                  LineHeight = 22,
+                  Foreground = AppearanceService.Brush(AppearanceService.TextBodyBrush),
+                  TextWrapping = TextWrapping.Wrap
+               }
+            }
+         });
+      }
+   }
+
    private void Close_Click(object? sender, RoutedEventArgs e) =>
        CloseRequested?.Invoke(this, EventArgs.Empty);
+
+   private void Explain_Click(object? sender, RoutedEventArgs e) =>
+       ExplainRequested?.Invoke(this, EventArgs.Empty);
 
    private void Edit_Click(object? sender, RoutedEventArgs e) =>
        EditRequested?.Invoke(this, EventArgs.Empty);

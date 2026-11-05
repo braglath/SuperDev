@@ -24,6 +24,7 @@ public partial class AddCheckWindow : Window
    private readonly ChecklistItem? _editingItem;
    private double _compactHeight;
    private bool _notesExpanded;
+   private bool _acceptanceExpanded;
    private DateOnly? _deadline;
    private int? _deadlineMinute;
    private int? _notifyBeforeMinutes;
@@ -93,6 +94,7 @@ public partial class AddCheckWindow : Window
 
       CategoryComboBox.SelectedIndex = 0;
       PriorityComboBox.SelectedIndex = 1;
+      TypeComboBox.SelectedIndex = 0;
       ApplyPriorityColor();
       LinkList.ItemsSource = _links;
       PrepareSubtaskEditor();
@@ -134,6 +136,15 @@ public partial class AddCheckWindow : Window
       ApplyPriorityColor();
 
       NotesTextBox.Text = item.Notes;
+      AcceptanceTextBox.Text = item.Acceptance ?? string.Empty;
+      TestReportsTextBox.Text = item.TestReports ?? string.Empty;
+      LogsTextBox.Text = item.Logs ?? string.Empty;
+      CodeReferencesTextBox.Text = item.CodeReferences ?? string.Empty;
+      ApiResponsesTextBox.Text = item.ApiResponses ?? string.Empty;
+      PullRequestLinksTextBox.Text = item.PullRequestLinks ?? string.Empty;
+      TypeComboBox.SelectedIndex = 0;
+      if (item.ItemType is not null)
+         SelectComboBoxItem(TypeComboBox, item.ItemType);
       _deadline = item.Deadline;
       _deadlineMinute = item.Deadline is null ? null : item.DeadlineMinute;
       _notifyBeforeMinutes = item.Deadline is null ? null : item.NotifyBeforeMinutes;
@@ -146,7 +157,8 @@ public partial class AddCheckWindow : Window
             Title = subtask.Title,
             IsCompleted = subtask.IsCompleted,
             LinkedDocumentId = subtask.LinkedDocumentId,
-            LinkedFilePath = subtask.LinkedFilePath
+            LinkedFilePath = subtask.LinkedFilePath,
+            LinkOptional = subtask.LinkOptional
          };
          if (copy.IsLink)
             _links.Add(copy);
@@ -542,6 +554,35 @@ public partial class AddCheckWindow : Window
          _links.Remove(subtask);
    }
 
+   private void LinkRequirement_Loaded(object? sender, RoutedEventArgs e)
+   {
+      if (sender is Button button && button.DataContext is ChecklistSubtask subtask)
+         ShowLinkRequirement(button, subtask);
+   }
+
+   private void LinkRequirement_Click(object? sender, RoutedEventArgs e)
+   {
+      if (sender is not Button button || button.DataContext is not ChecklistSubtask subtask)
+         return;
+
+      subtask.LinkOptional = !subtask.LinkOptional;
+      ShowLinkRequirement(button, subtask);
+   }
+
+   private static void ShowLinkRequirement(Button button, ChecklistSubtask subtask)
+   {
+      button.Content = subtask.LinkOptional ? "Optional" : "Required";
+      ToolTip.SetTip(
+          button,
+          subtask.LinkOptional
+              ? "This check can be completed without this checklist."
+              : "This checklist must be completed before the check can be completed.");
+      if (subtask.LinkOptional)
+         button.Classes.Remove("on");
+      else
+         button.Classes.Add("on");
+   }
+
    private async void LinkChecklist_Click(object? sender, RoutedEventArgs e)
    {
       if (RequestLink is null)
@@ -740,6 +781,16 @@ public partial class AddCheckWindow : Window
          DeadlineButton.Classes.Remove("late");
    }
 
+   private static void ApplyReference(bool use, string value, TextBox box)
+   {
+      if (use && !string.IsNullOrWhiteSpace(value))
+         box.Text = value.Trim();
+   }
+
+   private string? SelectedItemType() =>
+       ChecklistVocabulary.CanonicalItemType(
+           (TypeComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString());
+
    private void SelectComboBoxItem(
        ComboBox comboBox,
        string value)
@@ -770,6 +821,23 @@ public partial class AddCheckWindow : Window
       ExpandNotesButton.Content = "Collapse";
       _notesExpanded = true;
       NotesTextBox.Focus();
+   }
+
+   private void ToggleAcceptance_Click(object? sender, RoutedEventArgs e)
+   {
+      if (_acceptanceExpanded)
+      {
+         SetHeightWithinScreen(_compactHeight);
+         ExpandAcceptanceButton.Content = "Expand";
+         _acceptanceExpanded = false;
+         return;
+      }
+
+      _compactHeight = Height;
+      SetHeightWithinScreen(Math.Max(Height + 220, 760));
+      ExpandAcceptanceButton.Content = "Collapse";
+      _acceptanceExpanded = true;
+      AcceptanceTextBox.Focus();
    }
 
    private void SetHeightWithinScreen(double height)
@@ -1045,6 +1113,13 @@ public partial class AddCheckWindow : Window
       WorkType = _checklistWorkType,
       DraftTitle = TitleTextBox.Text,
       DraftNotes = NotesTextBox.Text,
+      DraftAcceptance = AcceptanceTextBox.Text,
+      DraftItemType = SelectedItemType(),
+      DraftTestReports = TestReportsTextBox.Text,
+      DraftLogs = LogsTextBox.Text,
+      DraftCodeReferences = CodeReferencesTextBox.Text,
+      DraftApiResponses = ApiResponsesTextBox.Text,
+      DraftPullRequestLinks = PullRequestLinksTextBox.Text,
       DraftCategory = (CategoryComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString(),
       ExistingTitles = _takenTitles.ToList()
    };
@@ -1069,6 +1144,18 @@ public partial class AddCheckWindow : Window
 
       if (choice.UseNotes && !string.IsNullOrWhiteSpace(choice.Notes))
          NotesTextBox.Text = choice.Notes.Trim();
+
+      if (choice.UseAcceptance && !string.IsNullOrWhiteSpace(choice.Acceptance))
+         AcceptanceTextBox.Text = choice.Acceptance.Trim();
+
+      if (choice.UseType && !string.IsNullOrWhiteSpace(choice.ItemType))
+         SelectComboBoxItem(TypeComboBox, choice.ItemType);
+
+      ApplyReference(choice.UseTestReports, choice.TestReports, TestReportsTextBox);
+      ApplyReference(choice.UseLogs, choice.Logs, LogsTextBox);
+      ApplyReference(choice.UseCodeReferences, choice.CodeReferences, CodeReferencesTextBox);
+      ApplyReference(choice.UseApiResponses, choice.ApiResponses, ApiResponsesTextBox);
+      ApplyReference(choice.UsePullRequestLinks, choice.PullRequestLinks, PullRequestLinksTextBox);
 
       var addedSubtask = false;
       foreach (var subtaskTitle in choice.Subtasks)
@@ -1148,6 +1235,7 @@ public partial class AddCheckWindow : Window
           (ChecklistPriority)PriorityComboBox.SelectedIndex;
 
       var notes = NotesTextBox.Text?.Trim() ?? string.Empty;
+      var acceptance = AcceptanceTextBox.Text?.Trim() ?? string.Empty;
 
       foreach (var editor in _subtaskEditors)
          CommitSubtaskTitle(editor, restoreEmpty: true);
@@ -1161,11 +1249,12 @@ public partial class AddCheckWindow : Window
              Title = subtask.Title.Trim(),
              IsCompleted = subtask.IsCompleted,
              LinkedDocumentId = subtask.LinkedDocumentId,
-             LinkedFilePath = subtask.LinkedFilePath
+             LinkedFilePath = subtask.LinkedFilePath,
+             LinkOptional = subtask.LinkOptional
           })
           .ToList();
       var completed = _editingItem?.IsCompleted ?? false;
-      if (subtasks.Any(subtask => !subtask.IsCompleted))
+      if (subtasks.Any(subtask => !subtask.IsCompleted && subtask.BlocksParentCompletion))
          completed = false;
 
       var item = new ChecklistItem
@@ -1175,6 +1264,13 @@ public partial class AddCheckWindow : Window
          Category = category,
          Priority = priority,
          Notes = notes,
+         Acceptance = acceptance,
+         ItemType = SelectedItemType(),
+         TestReports = TestReportsTextBox.Text,
+         Logs = LogsTextBox.Text,
+         CodeReferences = CodeReferencesTextBox.Text,
+         ApiResponses = ApiResponsesTextBox.Text,
+         PullRequestLinks = PullRequestLinksTextBox.Text,
          Deadline = _deadline,
          DeadlineMinute = _deadline is null ? null : _deadlineMinute,
          NotifyBeforeMinutes = _deadline is null ? null : _notifyBeforeMinutes,

@@ -31,6 +31,8 @@ public sealed class ChecklistReviewValidator
         {
           "type": "object",
           "properties": {
+            "qualityScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "summary": { "type": "string" },
             "findings": {
               "type": "array",
               "maxItems": 10,
@@ -40,7 +42,7 @@ public sealed class ChecklistReviewValidator
                   "id": { "type": "string" },
                   "category": {
                     "type": "string",
-                    "enum": ["Completeness", "Duplicates", "Clarity", "Testing", "Security", "Performance", "Priority"]
+                    "enum": ["Completeness", "Duplicates", "Clarity", "Testing", "Security", "Performance", "Priority", "Risk"]
                   },
                   "severity": {
                     "type": "string",
@@ -75,7 +77,7 @@ public sealed class ChecklistReviewValidator
               }
             }
           },
-          "required": ["findings"]
+          "required": ["findings", "qualityScore", "summary"]
         }
         """);
 
@@ -114,11 +116,28 @@ public sealed class ChecklistReviewValidator
             if (findings.ValueKind != JsonValueKind.Array)
                 return Fail(AiFailureKind.InvalidChecklist);
 
-            return Finish(findings, request);
+            return Finish(root, findings, request);
         }
     }
 
-    private static ChecklistReviewInspection Finish(JsonElement findings, ChecklistReviewRequest request)
+    public static int DeriveQualityScore(IReadOnlyList<ChecklistReviewFinding> findings)
+    {
+        var score = 100;
+        foreach (var finding in findings)
+        {
+            score -= finding.Severity switch
+            {
+                ReviewSeverity.Critical => 25,
+                ReviewSeverity.High => 15,
+                ReviewSeverity.Medium => 8,
+                _ => 3
+            };
+        }
+
+        return Math.Max(0, score);
+    }
+
+    private static ChecklistReviewInspection Finish(JsonElement root, JsonElement findings, ChecklistReviewRequest request)
     {
         var kept = new List<ChecklistReviewFinding>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -180,16 +199,38 @@ public sealed class ChecklistReviewValidator
         if (invalid > 0)
             Warn(warnings, IncompleteWarning);
 
+        var summary = Limit(AiChecklistJson.FirstString(root, "summary", "qualitySummary", "quality_summary"), 280);
+        var score = TryScore(root, out var provided) ? provided : DeriveQualityScore(kept);
+
         return new ChecklistReviewInspection
         {
             IsValid = true,
             Review = new ChecklistReviewResult
             {
                 ChecklistTitle = request.Title ?? string.Empty,
+                QualityScore = score,
+                Summary = summary,
                 Findings = kept
             },
             Warnings = warnings
         };
+    }
+
+    private static bool TryScore(JsonElement root, out int score)
+    {
+        score = 0;
+        var raw = AiChecklistJson.FirstString(root, "qualityScore", "quality_score", "score");
+        if (raw.Length == 0)
+            return false;
+
+        var number = raw.Trim().TrimEnd('%');
+        if (!double.TryParse(number, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value)
+            || double.IsNaN(value)
+            || double.IsInfinity(value))
+            return false;
+
+        score = (int)Math.Clamp(Math.Round(value), 0, 100);
+        return true;
     }
 
     private enum RejectReason
@@ -753,20 +794,33 @@ public sealed class ChecklistReviewValidator
 
     private static bool TryCategory(string raw, out ReviewCategory category)
     {
-        switch (raw.Trim().ToLowerInvariant())
+        var key = raw.Trim()
+            .Replace("_", "", StringComparison.Ordinal)
+            .Replace("-", "", StringComparison.Ordinal)
+            .Replace(" ", "", StringComparison.Ordinal)
+            .ToLowerInvariant();
+        switch (key)
         {
             case "completeness":
+            case "missing":
+            case "missingcheck":
+            case "missingchecks":
                 category = ReviewCategory.Completeness;
                 return true;
             case "duplicates":
             case "duplicate":
+            case "duplicatechecks":
                 category = ReviewCategory.Duplicates;
                 return true;
             case "clarity":
+            case "vague":
+            case "incomplete":
                 category = ReviewCategory.Clarity;
                 return true;
             case "testing":
             case "test":
+            case "validation":
+            case "additionalvalidation":
                 category = ReviewCategory.Testing;
                 return true;
             case "security":
@@ -777,6 +831,12 @@ public sealed class ChecklistReviewValidator
                 return true;
             case "priority":
                 category = ReviewCategory.Priority;
+                return true;
+            case "risk":
+            case "risks":
+            case "potentialrisk":
+            case "potentialrisks":
+                category = ReviewCategory.Risk;
                 return true;
             default:
                 category = default;

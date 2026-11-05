@@ -5,7 +5,12 @@ using SuperDev.Models;
 
 namespace SuperDev.Services.Ai;
 
-public readonly record struct ReviewItemProjection(string Title, string Category, string Notes);
+public readonly record struct ReviewItemProjection(
+    string Title,
+    string Category,
+    string Notes,
+    string Acceptance,
+    string ItemType);
 
 public static class ChecklistReviewMapper
 {
@@ -23,7 +28,7 @@ public static class ChecklistReviewMapper
         for (var index = 0; index < source.Count; index++)
         {
             var item = source[index];
-            var (description, acceptance) = SplitNotes(item.Notes);
+            var (description, acceptance) = ReadDetails(item);
             reviewItems.Add(new ChecklistReviewItem
             {
                 Id = item.Id,
@@ -33,7 +38,12 @@ public static class ChecklistReviewMapper
                 Description = description,
                 AcceptanceCriteria = acceptance,
                 Priority = item.Priority.ToString(),
-                ItemType = null,
+                ItemType = item.ItemType,
+                TestReports = item.TestReports ?? string.Empty,
+                Logs = item.Logs ?? string.Empty,
+                CodeReferences = item.CodeReferences ?? string.Empty,
+                ApiResponses = item.ApiResponses ?? string.Empty,
+                PullRequestLinks = item.PullRequestLinks ?? string.Empty,
                 IsCompleted = item.IsCompleted
             });
         }
@@ -89,6 +99,32 @@ public static class ChecklistReviewMapper
             AcceptanceCriteria = acceptance ?? string.Empty
         });
 
+    /// <summary>
+    /// Moves an older "Acceptance:" note into <see cref="ChecklistItem.Acceptance"/>.
+    /// A check that already has acceptance is left as it was saved.
+    /// </summary>
+    public static void SeparateLegacyAcceptance(ChecklistItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (item.HasAcceptance)
+            return;
+
+        var (description, acceptance) = SplitNotes(item.Notes);
+        if (acceptance.Length == 0)
+            return;
+
+        item.Notes = description;
+        item.Acceptance = acceptance;
+    }
+
+    public static (string Description, string Acceptance) ReadDetails(ChecklistItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        var (description, embedded) = SplitNotes(item.Notes);
+        var acceptance = item.HasAcceptance ? item.Acceptance!.Trim() : embedded;
+        return (description, acceptance);
+    }
+
     public static bool TryPriority(string? raw, out ChecklistPriority priority)
     {
         if (!ChecklistValidator.TryNormalizePriority(raw, out var name))
@@ -110,9 +146,10 @@ public static class ChecklistReviewMapper
     public static ReviewItemProjection ProjectImprovement(ChecklistItem current, SuggestedChecklistItem? suggested)
     {
         ArgumentNullException.ThrowIfNull(current);
-        var (description, acceptance) = SplitNotes(current.Notes);
+        var (description, acceptance) = ReadDetails(current);
         var title = current.Title ?? string.Empty;
         var category = current.Category ?? string.Empty;
+        var itemType = current.ItemType ?? string.Empty;
         if (suggested is not null)
         {
             if (!string.IsNullOrWhiteSpace(suggested.Title))
@@ -122,9 +159,11 @@ public static class ChecklistReviewMapper
             description = MergeDescription(description, suggested);
             if (!string.IsNullOrWhiteSpace(suggested.AcceptanceCriteria))
                 acceptance = suggested.AcceptanceCriteria.Trim();
+            if (ChecklistVocabulary.CanonicalItemType(suggested.Type) is { } type)
+                itemType = type;
         }
 
-        return new ReviewItemProjection(title, category, ComposeNotes(description, acceptance));
+        return new ReviewItemProjection(title, category, description, acceptance, itemType);
     }
 
     public static string MergeDescription(string? current, SuggestedChecklistItem? suggested)
@@ -167,11 +206,12 @@ public static class ChecklistReviewMapper
             return "Change the priority of \"" + current.Title + "\"?\n\nCurrent: " + current.Priority + "\nSuggested: " + suggested;
         }
 
+        var currentView = ProjectImprovement(current, null);
         var projected = ProjectImprovement(current, finding.SuggestedItem);
         return "Replace \"" + current.Title + "\"?\n\nCurrent\n"
-            + FormatItem(current.Title, current.Category, current.Priority, current.Notes)
+            + FormatItem(currentView, current.Priority)
             + "\n\nProposed\n"
-            + FormatItem(projected.Title, projected.Category, current.Priority, projected.Notes);
+            + FormatItem(projected, current.Priority);
     }
 
     public static ChecklistItem ToNewItem(SuggestedChecklistItem suggested, string? category)
@@ -187,16 +227,26 @@ public static class ChecklistReviewMapper
             Title = suggested.Title.Trim(),
             Category = string.IsNullOrWhiteSpace(category) ? string.Empty : category.Trim(),
             Priority = priority,
-            Notes = ComposeNotes(suggested.Description, suggested.AcceptanceCriteria),
+            Notes = suggested.Description?.Trim() ?? string.Empty,
+            Acceptance = suggested.AcceptanceCriteria,
+            ItemType = suggested.Type,
             IsCompleted = false
         };
     }
 
-    private static string FormatItem(string? title, string? category, ChecklistPriority priority, string? notes)
+    private static string FormatItem(ReviewItemProjection item, ChecklistPriority priority)
     {
-        var section = string.IsNullOrWhiteSpace(category) ? "(no section)" : category.Trim();
-        var body = string.IsNullOrWhiteSpace(notes) ? "No notes." : Clip(notes.Trim(), 240);
-        return Clip(title?.Trim() ?? string.Empty, 120) + "\nSection: " + section + "\nPriority: " + priority + "\nNotes: " + body;
+        var section = string.IsNullOrWhiteSpace(item.Category) ? "(no section)" : item.Category.Trim();
+        var body = string.IsNullOrWhiteSpace(item.Notes) ? "No notes." : Clip(item.Notes.Trim(), 240);
+        var text = Clip(item.Title?.Trim() ?? string.Empty, 120)
+            + "\nSection: " + section
+            + "\nPriority: " + priority
+            + "\nNotes: " + body;
+        if (!string.IsNullOrWhiteSpace(item.Acceptance))
+            text += "\nAcceptance: " + Clip(item.Acceptance.Trim(), 180);
+        if (!string.IsNullOrWhiteSpace(item.ItemType))
+            text += "\nType: " + item.ItemType.Trim();
+        return text;
     }
 
     private static string Clip(string value, int max)

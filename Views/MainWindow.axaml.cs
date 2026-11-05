@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     private readonly ChecklistTemplateService _checklistService = new();
     private readonly OllamaService _localAi = OllamaService.CreateLocal();
     private readonly ChecklistReviewService _reviews;
+    private readonly TaskExplainService _explanations;
     private readonly AIModelManager _aiModels;
     private readonly AISetupManager _aiSetup;
     private bool _aiSetupBusy;
@@ -58,6 +59,7 @@ public partial class MainWindow : Window
     private string? _lastShortcutId;
     private long _lastShortcutAt;
     private NativeMenuItem? _saveMenuItem;
+    private NativeMenuItem? _exportJsonMenuItem;
     private NativeMenuItem? _exportCsvMenuItem;
     private NativeMenuItem? _copyTextMenuItem;
     private NativeMenuItem? _addCheckMenuItem;
@@ -83,6 +85,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         _reviews = new ChecklistReviewService(_localAi);
+        _explanations = new TaskExplainService(_localAi);
         _aiModels = new AIModelManager(_localAi);
         _aiSetup = AISetupManager.Create(_localAi);
         InitializeComponent();
@@ -170,6 +173,9 @@ public partial class MainWindow : Window
                     case "Save":
                         _saveMenuItem = item;
                         ApplyMenuGesture(item, AppShortcuts.Save);
+                        break;
+                    case "Export as JSON…":
+                        _exportJsonMenuItem = item;
                         break;
                     case "Export as CSV…":
                         _exportCsvMenuItem = item;
@@ -669,6 +675,7 @@ public partial class MainWindow : Window
         view.EnsureAiReady = EnsureLocalAiAsync;
         view.GenerateOneCheck = (request, token) => _localAi.GenerateCheckAsync(request, token);
         view.ReviewChecklist = (request, token) => _reviews.ReviewAsync(request, token);
+        view.ExplainTask = (request, token) => _explanations.ExplainAsync(request, token);
 
         // Title sizes the tab. It ellipsizes at the width left inside the tab max
         // (190) after horizontal padding (16), the pin button (18), the gaps (12),
@@ -762,6 +769,7 @@ public partial class MainWindow : Window
         view.SaveRequested += (_, _) => _ = RunFileOperation(() => SaveAsync(tab));
         view.SaveAsTemplateRequested += (_, _) => _ = SaveTabAsTemplateAsync(tab);
         view.CopyRequested += (_, _) => _ = RunFileOperation(() => CopyChecklistAsync(tab));
+        view.ExportJsonRequested += (_, _) => _ = RunFileOperation(() => SaveAsAsync(tab));
         view.ExportCsvRequested += (_, _) => _ = RunFileOperation(() => ExportCsvAsync(tab));
         view.CopyTextRequested += (_, _) => _ = CopyChecklistTextAsync(tab);
         view.SubtasksRequired += (_, message) => ShowToast(message);
@@ -1325,6 +1333,7 @@ public partial class MainWindow : Window
 
         var hasItems = enabled && ActiveTab()?.View.Items.Count > 0;
         var canRearrange = editable && ActiveTab()?.View.Items.Count > 1;
+        SetItemActionVisible(_exportJsonMenuItem, WindowExportJsonMenuItem, enabled);
         SetItemActionVisible(_exportCsvMenuItem, WindowExportCsvMenuItem, enabled);
         SetItemActionVisible(_copyTextMenuItem, WindowCopyTextMenuItem, enabled);
         SetItemActionVisible(_copyToMenuItem, WindowCopyMenuItem, editable && hasItems);
@@ -1430,6 +1439,9 @@ public partial class MainWindow : Window
                 break;
             case "Save As…":
                 InvokeShortcut(AppShortcuts.SaveAs);
+                break;
+            case "Export as JSON…":
+                ExportJsonMenu_Click(this, EventArgs.Empty);
                 break;
             case "Export as CSV…":
                 ExportCsvMenu_Click(this, EventArgs.Empty);
@@ -2145,6 +2157,12 @@ public partial class MainWindow : Window
     private void SaveAsMenu_Click(object? sender, EventArgs e) =>
         InvokeShortcut(AppShortcuts.SaveAs);
 
+    private void ExportJsonMenu_Click(object? sender, EventArgs e)
+    {
+        if (ActiveTab() is { } tab)
+            _ = RunFileOperation(() => SaveAsAsync(tab));
+    }
+
     private void ExportCsvMenu_Click(object? sender, EventArgs e)
     {
         if (ActiveTab() is { } tab)
@@ -2499,7 +2517,7 @@ public partial class MainWindow : Window
         var checks = source.View.Items.ToList();
         var destinations = _tabs.Where(tab => tab != source).ToList();
         var dialog = new CopyChecklistWindow(
-            checks.Select(CopyItemLabel).ToList(),
+            checks,
             destinations.Select(CopyTargetLabel).ToList());
         var choice = await dialog.ShowDialog<CopyChecklistChoice?>(this);
         if (choice is null)
@@ -2605,11 +2623,6 @@ public partial class MainWindow : Window
         await ShowMessage($"Saved a copy of \"{copy.Title}\".");
     }
 
-    private static string CopyItemLabel(ChecklistItem item) =>
-        string.IsNullOrWhiteSpace(item.Detail)
-            ? item.Title
-            : $"{item.Title} — {item.Detail}";
-
     private static string CopyTargetLabel(ChecklistTab tab)
     {
         if (string.IsNullOrWhiteSpace(tab.FilePath))
@@ -2643,6 +2656,13 @@ public partial class MainWindow : Window
             Category = item.Category,
             Priority = item.Priority,
             Notes = item.Notes,
+            Acceptance = item.Acceptance,
+            ItemType = item.ItemType,
+            TestReports = item.TestReports,
+            Logs = item.Logs,
+            CodeReferences = item.CodeReferences,
+            ApiResponses = item.ApiResponses,
+            PullRequestLinks = item.PullRequestLinks,
             Evidence = (item.Evidence ?? [])
                 .Select(file => new EvidenceFile { Path = file.Path })
                 .ToList(),
@@ -2657,7 +2677,8 @@ public partial class MainWindow : Window
                     Title = subtask.Title,
                     IsCompleted = subtask.IsCompleted,
                     LinkedDocumentId = subtask.LinkedDocumentId,
-                    LinkedFilePath = subtask.LinkedFilePath
+                    LinkedFilePath = subtask.LinkedFilePath,
+                    LinkOptional = subtask.LinkOptional
                 })
                 .ToList(),
             IsCompleted = item.IsCompleted,

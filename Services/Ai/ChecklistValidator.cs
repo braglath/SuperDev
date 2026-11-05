@@ -14,6 +14,7 @@ public sealed class ChecklistValidator
     public const int MaxSummaryLength = 320;
     public const int MaxDescriptionLength = 220;
     public const int MaxAcceptanceLength = 180;
+    public const int MaxReferenceLength = 500;
 
     private static readonly Regex ThinkBlock = new(
         @"<think\b[^>]*>.*?</think>",
@@ -86,7 +87,12 @@ public sealed class ChecklistValidator
                     Description = item.Description,
                     Type = item.Type,
                     Priority = item.Priority,
-                    AcceptanceCriteria = item.AcceptanceCriteria
+                    AcceptanceCriteria = item.AcceptanceCriteria,
+                    TestReports = item.TestReports,
+                    Logs = item.Logs,
+                    CodeReferences = item.CodeReferences,
+                    ApiResponses = item.ApiResponses,
+                    PullRequestLinks = item.PullRequestLinks
                 })
             })
         };
@@ -140,6 +146,11 @@ public sealed class ChecklistValidator
                 item.Priority = NormalizePriority(item.Priority, ref itemAdjusted, ref itemFilled);
                 item.Description = Limit(item.Description, MaxDescriptionLength, fromModel, ref shortened);
                 item.AcceptanceCriteria = Limit(item.AcceptanceCriteria, MaxAcceptanceLength, fromModel, ref shortened);
+                item.TestReports = Limit(item.TestReports, MaxReferenceLength, fromModel, ref shortened);
+                item.Logs = Limit(item.Logs, MaxReferenceLength, fromModel, ref shortened);
+                item.CodeReferences = Limit(item.CodeReferences, MaxReferenceLength, fromModel, ref shortened);
+                item.ApiResponses = Limit(item.ApiResponses, MaxReferenceLength, fromModel, ref shortened);
+                item.PullRequestLinks = Limit(item.PullRequestLinks, MaxReferenceLength, fromModel, ref shortened);
                 if (shortened > 0)
                     itemAdjusted = true;
 
@@ -222,9 +233,15 @@ public sealed class ChecklistValidator
         else if (priorityFilled)
             filled++;
 
+        check.Type = NormalizeCheckType(check.Type, ref adjusted);
         var shortened = 0;
         check.Description = Limit(check.Description, MaxDescriptionLength, fromModel, ref shortened);
         check.AcceptanceCriteria = Limit(check.AcceptanceCriteria, MaxAcceptanceLength, fromModel, ref shortened);
+        check.TestReports = Limit(check.TestReports, MaxReferenceLength, fromModel, ref shortened);
+        check.Logs = Limit(check.Logs, MaxReferenceLength, fromModel, ref shortened);
+        check.CodeReferences = Limit(check.CodeReferences, MaxReferenceLength, fromModel, ref shortened);
+        check.ApiResponses = Limit(check.ApiResponses, MaxReferenceLength, fromModel, ref shortened);
+        check.PullRequestLinks = Limit(check.PullRequestLinks, MaxReferenceLength, fromModel, ref shortened);
         if (shortened > 0)
             adjusted++;
 
@@ -284,6 +301,24 @@ public sealed class ChecklistValidator
         }
 
         return kept;
+    }
+
+    private static string NormalizeCheckType(string? raw, ref int adjusted)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return string.Empty;
+
+        var canonical = ChecklistVocabulary.CanonicalItemType(raw);
+        if (canonical is null)
+        {
+            adjusted++;
+            return string.Empty;
+        }
+
+        if (!canonical.Equals(raw.Trim(), StringComparison.Ordinal))
+            adjusted++;
+
+        return canonical;
     }
 
     private static string NormalizeType(string? raw, string? sectionName, ref bool adjusted, ref bool filled)
@@ -533,7 +568,13 @@ public sealed class ChecklistValidator
                     Category = section.Name,
                     Priority = item.Priority,
                     Description = item.Description,
-                    AcceptanceCriteria = item.AcceptanceCriteria
+                    AcceptanceCriteria = item.AcceptanceCriteria,
+                    Type = item.Type,
+                    TestReports = item.TestReports,
+                    Logs = item.Logs,
+                    CodeReferences = item.CodeReferences,
+                    ApiResponses = item.ApiResponses,
+                    PullRequestLinks = item.PullRequestLinks
                 };
                 return true;
             }

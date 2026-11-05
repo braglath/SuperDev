@@ -84,7 +84,7 @@
         <TextBlock Text="Link checklist"
                    Classes="dialog-title"/>
         <TextBlock Grid.Row="1"
-                   Text="Choose an open checklist, or a saved file. This check can be completed only after that checklist is completed."
+                   Text="Choose an open checklist, or a saved file. Mark the link required or optional after it is added. Only a required link has to be completed first."
                    Classes="dialog-message"/>
         <ScrollViewer Grid.Row="2"
                       HorizontalScrollBarVisibility="Disabled">

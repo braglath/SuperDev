@@ -23,6 +23,9 @@
                     <NativeMenuItem Header="Save As…"
                                     Click="SaveAsMenu_Click"/>
                     <NativeMenuItemSeparator/>
+                    <NativeMenuItem Header="Export as JSON…"
+                                    IsEnabled="False"
+                                    Click="ExportJsonMenu_Click"/>
                     <NativeMenuItem Header="Export as CSV…"
                                     IsEnabled="False"
                                     Click="ExportCsvMenu_Click"/>
@@ -816,9 +819,22 @@
             <StackPanel Orientation="Horizontal"
                         Spacing="8"
                         VerticalAlignment="Center">
-                <Image Width="18"
-                       Height="18"
-                       Source="avares://Super Dev/Assets/app.ico"/>
+                <Border Width="18"
+                        Height="18"
+                        CornerRadius="4"
+                        Background="{DynamicResource AccentTextBrush}"
+                        ClipToBounds="True"
+                        VerticalAlignment="Center">
+                    <Viewbox>
+                        <Canvas Width="256" Height="256">
+                            <Path Stroke="{DynamicResource AppBackgroundBrush}"
+                                  StrokeThickness="22"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Data="M68,132 L110,174 L192,84"/>
+                        </Canvas>
+                    </Viewbox>
+                </Border>
                 <TextBlock x:Name="AppNameText"
                            Text="Super Dev"
                            FontSize="{DynamicResource Font14}"
@@ -925,6 +941,9 @@
                               Header="Save"/>
                     <MenuItem Header="Save As…"/>
                     <Separator/>
+                    <MenuItem x:Name="WindowExportJsonMenuItem"
+                              Header="Export as JSON…"
+                              IsEnabled="False"/>
                     <MenuItem x:Name="WindowExportCsvMenuItem"
                               Header="Export as CSV…"
                               IsEnabled="False"/>

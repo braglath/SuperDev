@@ -330,6 +330,11 @@
             <Setter Property="Opacity" Value="0.35"/>
         </Style>
 
+        <Style Selector="ItemsControl.locked Button.icon.explain">
+            <Setter Property="IsEnabled" Value="True"/>
+            <Setter Property="Opacity" Value="1"/>
+        </Style>
+
         <Style Selector="ItemsControl.locked CheckBox">
             <Setter Property="IsEnabled" Value="False"/>
         </Style>
@@ -337,6 +342,44 @@
         <Style Selector="Button.icon.selected">
             <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+        </Style>
+
+        <Style Selector="Button.icon.toolbar">
+            <Setter Property="Width" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBodyBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+
+        <Style Selector="Button.icon.toolbar:pointerover">
+            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+        <Style Selector="Button.icon.toolbar.selected">
+            <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+        <Style Selector="Button.icon.toolbar.selected:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AccentSubtleHoverBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}"/>
+        </Style>
+
+        <Style Selector="Button.icon.toolbar.delete:pointerover">
+            <Setter Property="Background" Value="{DynamicResource DangerSurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource DangerTextBrush}"/>
+        </Style>
+
+        <Style Selector="Button.icon.toolbar:disabled">
+            <Setter Property="Opacity" Value="0.4"/>
         </Style>
 
         <Style Selector="Button.icon.density">
@@ -500,6 +543,10 @@
         <Style Selector="Button.subtask-link.done">
             <Setter Property="Foreground" Value="{DynamicResource SuccessTextBrush}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorderBrush}"/>
+        </Style>
+
+        <Style Selector="Button.subtask-link.optional:not(.done)">
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
         </Style>
 
         <Style Selector="Button.deadline-clear">
@@ -819,14 +866,24 @@
                             VerticalAlignment="Center">
 
                 <Button x:Name="ExportButton"
-                        Content="Export"
-                        Classes="action secondary"
-                        ToolTip.Tip="Export this checklist as a CSV file, or copy it as text">
+                        Classes="icon toolbar"
+                        ToolTip.Tip="Export this checklist as a JSON or CSV file, or copy it as text">
+                    <Viewbox Width="16" Height="16">
+                        <Path Stroke="{Binding $parent[Button].Foreground}"
+                              StrokeThickness="1.6"
+                              StrokeLineCap="Round"
+                              StrokeJoin="Round"
+                              Data="M21,15 V19 A2,2 0 0 1 19,21 H5 A2,2 0 0 1 3,19 V15 M7,10 L12,15 L17,10 M12,15 V3"/>
+                    </Viewbox>
                     <Button.Flyout>
                         <Flyout Placement="BottomEdgeAlignedRight"
                                 FlyoutPresenterClasses="app-popup">
                             <StackPanel Spacing="8"
                                         MinWidth="188">
+                                <Button Content="Export as JSON…"
+                                        Classes="action secondary"
+                                        HorizontalAlignment="Stretch"
+                                        Click="ExportJson_Click"/>
                                 <Button Content="Export as CSV…"
                                         Classes="action secondary"
                                         HorizontalAlignment="Stretch"
@@ -1192,26 +1249,55 @@
                 Click="SaveAsTemplate_Click"/>
 
         <Button x:Name="CopyButton"
-                Content="Copy"
-                Classes="action secondary"
+                Classes="icon toolbar"
                 ToolTip.Tip="Choose checks to copy to another open checklist, or save them as a new file"
-                Click="Copy_Click"/>
+                Click="Copy_Click">
+            <Viewbox Width="16" Height="16">
+                <Path Stroke="{Binding $parent[Button].Foreground}"
+                      StrokeThickness="1.6"
+                      StrokeLineCap="Round"
+                      StrokeJoin="Round"
+                      Data="M8,8 H20 A2,2 0 0 1 22,10 V20 A2,2 0 0 1 20,22 H10 A2,2 0 0 1 8,20 Z M4,16 C2.9,16 2,15.1 2,14 V4 C2,2.9 2.9,2 4,2 H14 C15.1,2 16,2.9 16,4"/>
+            </Viewbox>
+        </Button>
 
         <Button x:Name="DeleteChecksButton"
-                Content="Delete"
-                Classes="action secondary"
+                Classes="icon toolbar delete"
                 ToolTip.Tip="Choose checks to remove together"
-                Click="DeleteChecks_Click"/>
+                Click="DeleteChecks_Click">
+            <Viewbox Width="16" Height="16">
+                <Path Stroke="{Binding $parent[Button].Foreground}"
+                      StrokeThickness="1.6"
+                      StrokeLineCap="Round"
+                      StrokeJoin="Round"
+                      Data="M3,6 H21 M19,6 V20 C19,21 18,22 17,22 H7 C6,22 5,21 5,20 V6 M8,6 V4 C8,3 9,2 10,2 H14 C15,2 16,3 16,4 V6 M10,11 V17 M14,11 V17"/>
+            </Viewbox>
+        </Button>
 
         <Button x:Name="RearrangeButton"
-                Content="Rearrange"
-                Classes="action secondary"
-                Click="Rearrange_Click"/>
+                Classes="icon toolbar"
+                Click="Rearrange_Click">
+            <Viewbox Width="16" Height="16">
+                <Path Stroke="{Binding $parent[Button].Foreground}"
+                      StrokeThickness="1.6"
+                      StrokeLineCap="Round"
+                      StrokeJoin="Round"
+                      Data="M21,16 L17,20 L13,16 M17,20 V4 M3,8 L7,4 L11,8 M7,4 V20"/>
+            </Viewbox>
+        </Button>
 
         <Button x:Name="FilterToggleButton"
-                Content="Hide filters"
-                Classes="action secondary"
-                Click="FilterToggle_Click"/>
+                Classes="icon toolbar selected"
+                ToolTip.Tip="Hide filters"
+                Click="FilterToggle_Click">
+            <Viewbox Width="16" Height="16">
+                <Path Stroke="{Binding $parent[Button].Foreground}"
+                      StrokeThickness="1.6"
+                      StrokeLineCap="Round"
+                      StrokeJoin="Round"
+                      Data="M22,3 H2 L10,12.46 V19 L14,21 V12.46 Z"/>
+            </Viewbox>
+        </Button>
     </StackPanel>
 
     <Button x:Name="ReviewWithAiButton"
@@ -1226,6 +1312,7 @@
             Grid.Column="2"
             Content="✓  Complete"
             Classes="action primary complete-toggle"
+            ToolTip.ShowOnDisabled="True"
             Click="Complete_Click"/>
 
 </Grid>
@@ -1337,7 +1424,7 @@
                                     Margin="0,0,0,10"
                                     Loaded="CheckItem_Loaded">
 
-                                <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto"
+                                <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto"
                                       ColumnSpacing="12">
 
                                     <!-- Checkbox -->
@@ -1372,6 +1459,14 @@
             <TextBlock Text="{Binding Priority}"
                        Classes="priority-label"/>
         </Border>
+        <TextBlock Text="·"
+                   Classes="priority"
+                   VerticalAlignment="Center"
+                   IsVisible="{Binding HasItemType}"/>
+        <TextBlock Text="{Binding ItemType}"
+                   Classes="priority"
+                   VerticalAlignment="Center"
+                   IsVisible="{Binding HasItemType}"/>
         <TextBlock Text="·"
                    Classes="priority"
                    VerticalAlignment="Center"
@@ -1417,6 +1512,38 @@
             Click="ViewNotes_Click"/>
 
 </StackPanel>
+
+<StackPanel Spacing="6"
+            IsVisible="{Binding HasAcceptance}">
+    <TextBlock Text="Acceptance"
+               Classes="priority"/>
+    <controls:NoteText Source="{Binding Acceptance}"
+                       Classes="check-notes"
+                       MaxHeight="72"/>
+    <Button Content="View acceptance"
+            Classes="notes-link"
+            Tag="{Binding}"
+            Click="ViewAcceptance_Click"/>
+</StackPanel>
+
+<ItemsControl ItemsSource="{Binding References}"
+              IsVisible="{Binding HasReferences}">
+    <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="models:CheckReference">
+            <StackPanel Spacing="6" Margin="0,0,0,6">
+                <TextBlock Text="{Binding Label}"
+                           Classes="priority"/>
+                <controls:NoteText Source="{Binding Text}"
+                                   Classes="check-notes"
+                                   MaxHeight="72"/>
+                <Button Content="{Binding ViewLabel}"
+                        Classes="notes-link"
+                        Tag="{Binding}"
+                        Click="ViewReference_Click"/>
+            </StackPanel>
+        </DataTemplate>
+    </ItemsControl.ItemTemplate>
+</ItemsControl>
 
 <StackPanel Spacing="6"
             IsVisible="{Binding HasEvidence}">
@@ -1466,8 +1593,17 @@
                                                 Click="MoveDown_Click"/>
                                     </StackPanel>
 
-                                    <!-- Edit -->
                                     <Button Grid.Column="3"
+                                            Classes="icon explain"
+                                            VerticalAlignment="Top"
+                                            ToolTip.Tip="Explain this check"
+                                            Tag="{Binding}"
+                                            Click="ExplainCheck_Click">
+                                        <controls:AiMark Width="18" Height="18"/>
+                                    </Button>
+
+                                    <!-- Edit -->
+                                    <Button Grid.Column="4"
                                             Classes="icon"
                                             VerticalAlignment="Top"
                                             ToolTip.Tip="Edit (F2)"
@@ -1485,7 +1621,7 @@
 
 
                                     <!-- Delete -->
-                                    <Button Grid.Column="4"
+                                    <Button Grid.Column="5"
                                             Classes="icon delete"
                                             VerticalAlignment="Top"
                                             Content="🗑"

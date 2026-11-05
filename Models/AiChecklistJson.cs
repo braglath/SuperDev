@@ -39,6 +39,16 @@ public static class AiChecklistJson
 
         return string.Empty;
     }
+
+    public static (string TestReports, string Logs, string CodeReferences, string ApiResponses, string PullRequestLinks)
+        References(JsonElement element) =>
+        (
+            FirstString(element, "testReports", "test_reports", "testReport"),
+            FirstString(element, "logs", "log"),
+            FirstString(element, "codeReferences", "code_references", "codeReference"),
+            FirstString(element, "apiResponses", "api_responses", "apiResponse"),
+            FirstString(element, "pullRequestLinks", "pull_request_links", "prLinks", "prLink")
+        );
 }
 
 /// <summary>
@@ -70,13 +80,19 @@ public sealed class GeneratedSectionConverter : JsonConverter<GeneratedSection>
             if (item.ValueKind != JsonValueKind.Object)
                 continue;
 
+            var references = AiChecklistJson.References(item);
             section.Items.Add(new GeneratedCheckItem
             {
                 Title = AiChecklistJson.FirstString(item, "title", "name"),
                 Description = AiChecklistJson.FirstString(item, "description", "detail"),
                 Type = AiChecklistJson.FirstString(item, "type", "itemType", "item_type"),
                 Priority = AiChecklistJson.FirstString(item, "priority"),
-                AcceptanceCriteria = AiChecklistJson.FirstString(item, "acceptanceCriteria", "acceptance_criteria", "acceptance")
+                AcceptanceCriteria = AiChecklistJson.FirstString(item, "acceptanceCriteria", "acceptance_criteria", "acceptance"),
+                TestReports = references.TestReports,
+                Logs = references.Logs,
+                CodeReferences = references.CodeReferences,
+                ApiResponses = references.ApiResponses,
+                PullRequestLinks = references.PullRequestLinks
             });
         }
 
@@ -121,6 +137,7 @@ public sealed class GeneratedCheckConverter : JsonConverter<GeneratedCheck>
 
         using var document = JsonDocument.ParseValue(ref reader);
         var element = document.RootElement;
+        var references = AiChecklistJson.References(element);
         return new GeneratedCheck
         {
             Title = AiChecklistJson.FirstString(element, "title", "name"),
@@ -128,6 +145,12 @@ public sealed class GeneratedCheckConverter : JsonConverter<GeneratedCheck>
             Priority = AiChecklistJson.FirstString(element, "priority"),
             Description = AiChecklistJson.FirstString(element, "description", "detail", "notes"),
             AcceptanceCriteria = AiChecklistJson.FirstString(element, "acceptanceCriteria", "acceptance_criteria", "acceptance"),
+            Type = AiChecklistJson.FirstString(element, "type", "itemType", "item_type"),
+            TestReports = references.TestReports,
+            Logs = references.Logs,
+            CodeReferences = references.CodeReferences,
+            ApiResponses = references.ApiResponses,
+            PullRequestLinks = references.PullRequestLinks,
             Subtasks = ReadSubtasks(element)
         };
     }
@@ -140,6 +163,12 @@ public sealed class GeneratedCheckConverter : JsonConverter<GeneratedCheck>
         writer.WriteString("priority", value.Priority);
         writer.WriteString("description", value.Description);
         writer.WriteString("acceptanceCriteria", value.AcceptanceCriteria);
+        writer.WriteString("type", value.Type);
+        writer.WriteString("testReports", value.TestReports);
+        writer.WriteString("logs", value.Logs);
+        writer.WriteString("codeReferences", value.CodeReferences);
+        writer.WriteString("apiResponses", value.ApiResponses);
+        writer.WriteString("pullRequestLinks", value.PullRequestLinks);
         writer.WritePropertyName("subtasks");
         writer.WriteStartArray();
         foreach (var subtask in value.Subtasks)

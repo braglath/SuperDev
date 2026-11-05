@@ -1,10 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:SuperDev.Views"
         x:Class="SuperDev.Views.CopyChecklistWindow"
-        Width="560"
-        Height="640"
-        MinWidth="480"
-        MinHeight="480"
+        Width="640"
+        Height="720"
+        MinWidth="560"
+        MinHeight="560"
         CanResize="True"
         Title="Copy checks"
         Background="{DynamicResource AppBackgroundBrush}"
@@ -33,12 +34,6 @@
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
         </Style>
 
-        <Style Selector="TextBlock.check-label">
-            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
-            <Setter Property="TextWrapping" Value="Wrap"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-
         <Style Selector="ComboBox.destination">
             <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
             <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
@@ -55,17 +50,6 @@
             <Setter Property="MinWidth" Value="100"/>
             <Setter Property="Padding" Value="20,8"/>
             <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-
-        <Style Selector="Button.small-button">
-            <Setter Property="Height" Value="{DynamicResource ControlHeightXs}"/>
-            <Setter Property="MinWidth" Value="72"/>
-            <Setter Property="Padding" Value="12,0"/>
-            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -103,7 +87,7 @@
         </Style>
     </Window.Styles>
 
-    <Grid Margin="30" RowDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto">
+    <Grid Margin="30" RowDefinitions="Auto,Auto,*,Auto,Auto,Auto">
         <TextBlock Grid.Row="0"
                    Classes="dialog-title"
                    Text="Copy checks"/>
@@ -113,57 +97,22 @@
                    Margin="0,12,0,0"
                    Text="Choose the checks to copy. Then add them to an open checklist, or save them as a new file. This checklist stays as it is."/>
 
-        <Grid Grid.Row="2"
-              Margin="0,16,0,8"
-              ColumnDefinitions="Auto,Auto,*,Auto">
-            <Button Grid.Column="0"
-                    Classes="small-button secondary"
-                    Content="Select all"
-                    Click="SelectAll_Click"/>
-            <Button Grid.Column="1"
-                    Classes="small-button secondary"
-                    Margin="8,0,0,0"
-                    Content="Clear"
-                    Click="Clear_Click"/>
-            <TextBlock x:Name="SelectionCount"
-                       Grid.Column="3"
-                       Classes="field-label"
-                       VerticalAlignment="Center"
-                       Text="0 selected"/>
-        </Grid>
+        <views:CheckPicker x:Name="Picker"
+                           Grid.Row="2"
+                           Margin="0,16,0,0"/>
 
-        <Border Grid.Row="3"
-                Background="{DynamicResource SurfaceBrush}"
-                BorderBrush="{DynamicResource BorderSubtleBrush}"
-                BorderThickness="1"
-                CornerRadius="12"
-                Padding="14">
-            <Grid>
-                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto">
-                    <StackPanel x:Name="ChecksPanel" Spacing="10"/>
-                </ScrollViewer>
-                <TextBlock x:Name="EmptyChecksText"
-                           Classes="dialog-message"
-                           Text="This checklist has no checks."
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           IsVisible="False"/>
-            </Grid>
-        </Border>
-
-        <TextBlock Grid.Row="4"
+        <TextBlock Grid.Row="3"
                    Classes="field-label"
                    Margin="0,16,0,6"
                    Text="Open checklist"/>
 
         <ComboBox x:Name="DestinationBox"
-                  Grid.Row="5"
+                  Grid.Row="4"
                   Classes="destination"
                   SelectionChanged="Destination_SelectionChanged"/>
 
         <Border x:Name="NoDestinationText"
-                Grid.Row="5"
+                Grid.Row="4"
                 Height="{DynamicResource ControlHeight}"
                 Background="{DynamicResource SurfaceInsetBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
@@ -177,7 +126,7 @@
                        VerticalAlignment="Center"/>
         </Border>
 
-        <StackPanel Grid.Row="6"
+        <StackPanel Grid.Row="5"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,16,0,0"

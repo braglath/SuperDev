@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -122,6 +123,16 @@ public sealed class GeneratedCheckItem
     public string Priority { get; set; } = ChecklistVocabulary.DefaultPriority;
 
     public string AcceptanceCriteria { get; set; } = string.Empty;
+
+    public string TestReports { get; set; } = string.Empty;
+
+    public string Logs { get; set; } = string.Empty;
+
+    public string CodeReferences { get; set; } = string.Empty;
+
+    public string ApiResponses { get; set; } = string.Empty;
+
+    public string PullRequestLinks { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -134,6 +145,21 @@ public static class ChecklistVocabulary
     public const string DefaultPriority = "Required";
 
     public static readonly string[] Types = ["Investigation", "Implementation", "Verification", "Documentation"];
+
+    public static string? CanonicalItemType(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return null;
+
+        var trimmed = raw.Trim();
+        foreach (var type in Types)
+        {
+            if (type.Equals(trimmed, StringComparison.OrdinalIgnoreCase))
+                return type;
+        }
+
+        return null;
+    }
 
     public static readonly string[] Priorities = ["Critical", "Required", "Conditional", "Review"];
 
@@ -180,6 +206,20 @@ public sealed class CheckGenerationRequest
 
     public string? DraftNotes { get; init; }
 
+    public string? DraftAcceptance { get; init; }
+
+    public string? DraftItemType { get; init; }
+
+    public string? DraftTestReports { get; init; }
+
+    public string? DraftLogs { get; init; }
+
+    public string? DraftCodeReferences { get; init; }
+
+    public string? DraftApiResponses { get; init; }
+
+    public string? DraftPullRequestLinks { get; init; }
+
     public string? DraftCategory { get; init; }
 
     public IReadOnlyList<string> ExistingTitles { get; init; } = [];
@@ -197,6 +237,18 @@ public sealed class GeneratedCheck
     public string Description { get; set; } = string.Empty;
 
     public string AcceptanceCriteria { get; set; } = string.Empty;
+
+    public string Type { get; set; } = string.Empty;
+
+    public string TestReports { get; set; } = string.Empty;
+
+    public string Logs { get; set; } = string.Empty;
+
+    public string CodeReferences { get; set; } = string.Empty;
+
+    public string ApiResponses { get; set; } = string.Empty;
+
+    public string PullRequestLinks { get; set; } = string.Empty;
 
     public List<string> Subtasks { get; set; } = [];
 }

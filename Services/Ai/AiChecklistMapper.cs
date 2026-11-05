@@ -39,7 +39,14 @@ public static class AiChecklistMapper
                     Title = item.Title.Trim(),
                     Category = category,
                     Priority = ToPriority(item),
-                    Notes = ToNotes(item)
+                    Notes = item.Description.Trim(),
+                    Acceptance = item.AcceptanceCriteria,
+                    ItemType = item.Type,
+                    TestReports = item.TestReports,
+                    Logs = item.Logs,
+                    CodeReferences = item.CodeReferences,
+                    ApiResponses = item.ApiResponses,
+                    PullRequestLinks = item.PullRequestLinks
                 });
             }
         }

@@ -373,7 +373,12 @@ public partial class GenerateChecklistWindow : Window
                     Description = item.Description.Text?.Trim() ?? string.Empty,
                     Type = item.Type.SelectedItem as string ?? ChecklistVocabulary.DefaultType,
                     Priority = item.Priority.SelectedItem as string ?? ChecklistVocabulary.DefaultPriority,
-                    AcceptanceCriteria = item.Acceptance.Text?.Trim() ?? string.Empty
+                    AcceptanceCriteria = item.Acceptance.Text?.Trim() ?? string.Empty,
+                    TestReports = item.TestReports.Text?.Trim() ?? string.Empty,
+                    Logs = item.Logs.Text?.Trim() ?? string.Empty,
+                    CodeReferences = item.CodeReferences.Text?.Trim() ?? string.Empty,
+                    ApiResponses = item.ApiResponses.Text?.Trim() ?? string.Empty,
+                    PullRequestLinks = item.PullRequestLinks.Text?.Trim() ?? string.Empty
                 });
             }
 
@@ -460,7 +465,22 @@ public partial class GenerateChecklistWindow : Window
             Content = "Remove",
             MinWidth = 72
         };
-        var editor = new ItemEditor(title, description, type, priority, acceptance);
+        var testReports = Multiline(item.TestReports, "Report, path, or link");
+        var logs = Multiline(item.Logs, "Log excerpt or link");
+        var codeReferences = Multiline(item.CodeReferences, "File, symbol, or link");
+        var apiResponses = Multiline(item.ApiResponses, "Response excerpt or link");
+        var pullRequests = Multiline(item.PullRequestLinks, "Pull request link");
+        var editor = new ItemEditor(
+            title,
+            description,
+            type,
+            priority,
+            acceptance,
+            testReports,
+            logs,
+            codeReferences,
+            apiResponses,
+            pullRequests);
         remove.Click += (_, _) =>
         {
             section.Items.Remove(editor);
@@ -484,19 +504,25 @@ public partial class GenerateChecklistWindow : Window
         row.Children.Add(priority);
         row.Children.Add(remove);
 
+        var body = new StackPanel
+        {
+            Spacing = 10,
+            Children =
+            {
+                row,
+                Labeled("Description", description),
+                Labeled("Acceptance criteria", acceptance)
+            }
+        };
+        AddFilled(body, "Test reports", testReports);
+        AddFilled(body, "Logs", logs);
+        AddFilled(body, "Code references", codeReferences);
+        AddFilled(body, "API responses", apiResponses);
+        AddFilled(body, "PR links", pullRequests);
         var card = new Border
         {
             Classes = { "item-card" },
-            Child = new StackPanel
-            {
-                Spacing = 10,
-                Children =
-                {
-                    row,
-                    Labeled("Description", description),
-                    Labeled("Acceptance criteria", acceptance)
-                }
-            }
+            Child = body
         };
         editor.Card = card;
         section.Items.Add(editor);
@@ -574,6 +600,12 @@ public partial class GenerateChecklistWindow : Window
         return box;
     }
 
+    private static void AddFilled(StackPanel body, string label, TextBox field)
+    {
+        if (!string.IsNullOrWhiteSpace(field.Text))
+            body.Children.Add(Labeled(label, field));
+    }
+
     private static Control Labeled(string label, Control field) => new StackPanel
     {
         Spacing = 4,
@@ -595,7 +627,17 @@ public partial class GenerateChecklistWindow : Window
         public Border Card { get; set; } = new();
     }
 
-    private sealed class ItemEditor(TextBox title, TextBox description, ComboBox type, ComboBox priority, TextBox acceptance)
+    private sealed class ItemEditor(
+        TextBox title,
+        TextBox description,
+        ComboBox type,
+        ComboBox priority,
+        TextBox acceptance,
+        TextBox testReports,
+        TextBox logs,
+        TextBox codeReferences,
+        TextBox apiResponses,
+        TextBox pullRequestLinks)
     {
         public TextBox Title { get; } = title;
 
@@ -606,6 +648,16 @@ public partial class GenerateChecklistWindow : Window
         public ComboBox Priority { get; } = priority;
 
         public TextBox Acceptance { get; } = acceptance;
+
+        public TextBox TestReports { get; } = testReports;
+
+        public TextBox Logs { get; } = logs;
+
+        public TextBox CodeReferences { get; } = codeReferences;
+
+        public TextBox ApiResponses { get; } = apiResponses;
+
+        public TextBox PullRequestLinks { get; } = pullRequestLinks;
 
         public Border Card { get; set; } = new();
     }

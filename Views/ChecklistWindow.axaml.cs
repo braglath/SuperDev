@@ -131,6 +131,9 @@ public partial class ChecklistWindow : Window
       item.Category = result.Category;
       item.Priority = result.Priority;
       item.Notes = result.Notes;
+      item.Acceptance = result.Acceptance;
+      item.ItemType = result.ItemType;
+      item.CopyReferencesFrom(result);
       item.Evidence = result.Evidence ?? [];
       item.IsCompleted = result.IsCompleted;
 

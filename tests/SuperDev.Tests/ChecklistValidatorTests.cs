@@ -245,6 +245,8 @@ public class ChecklistValidatorTests
                       "description": "Configure secure token handling.",
                       "type": "Implementation",
                       "priority": "High",
+                      "logs": "token rejected",
+                      "pullRequestLinks": "https://example.com/pull/4",
                       "commands": "do not run"
                     }
                   ]
@@ -270,7 +272,11 @@ public class ChecklistValidatorTests
         var saved = AiChecklistMapper.ToItems(inspection.Checklist);
         Assert.Equal("Security & Authentication", saved[0].Category);
         Assert.Equal(ChecklistPriority.Critical, saved[0].Priority);
-        Assert.Contains("Configure secure token handling.", saved[0].Notes, StringComparison.Ordinal);
+        Assert.Equal("Configure secure token handling.", saved[0].Notes);
+        Assert.Equal("Implementation", saved[0].ItemType);
+        Assert.Null(saved[0].Acceptance);
+        Assert.Equal("token rejected", saved[0].Logs);
+        Assert.Equal("https://example.com/pull/4", saved[0].PullRequestLinks);
     }
 
     [Fact]
@@ -536,6 +542,7 @@ public class ChecklistValidatorTests
                       "title": "Retest the fix",
                       "description": "Run the same steps.",
                       "priority": "Required",
+                      "type": "Verification",
                       "acceptanceCriteria": "The crash is gone."
                     }
                   ]
@@ -548,5 +555,6 @@ public class ChecklistValidatorTests
         Assert.Equal("Retest the fix", inspection.Check!.Title);
         Assert.Equal("Testing", inspection.Check.Category);
         Assert.Equal("The crash is gone.", inspection.Check.AcceptanceCriteria);
+        Assert.Equal("Verification", inspection.Check.Type);
     }
 }

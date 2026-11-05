@@ -1,0 +1,131 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:SuperDev.Controls"
+        x:Class="SuperDev.Views.TaskExplainWindow"
+        Width="640"
+        Height="720"
+        MinWidth="480"
+        MinHeight="420"
+        CanResize="True"
+        Title="Explain"
+        Background="{DynamicResource AppBackgroundBrush}"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style Selector="Border.explanation">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16"/>
+        </Style>
+
+        <Style Selector="Button.form-button">
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
+        </Style>
+
+        <Style Selector="Button.cancel">
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.primary:disabled, Button.cancel:disabled">
+            <Setter Property="Opacity" Value="0.55"/>
+        </Style>
+
+        <Style Selector="ProgressBar.progress">
+            <Setter Property="Height" Value="6"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="24" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="16">
+        <StackPanel Spacing="4">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Explain"
+                           FontSize="{DynamicResource Font28}"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"/>
+                <controls:AiMark Width="32" Height="32" VerticalAlignment="Center"/>
+            </StackPanel>
+            <TextBlock x:Name="CheckTitle"
+                       FontSize="{DynamicResource Font16}"
+                       FontWeight="SemiBold"
+                       TextWrapping="Wrap"/>
+            <TextBlock x:Name="ContextText"
+                       Classes="hint"/>
+            <TextBlock Classes="hint"
+                       Text="This stays on this computer and does not change the check."/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="8">
+            <TextBlock x:Name="StatusText"
+                       FontSize="{DynamicResource Font14}"
+                       FontWeight="SemiBold"
+                       Text="Preparing the explanation…"/>
+            <TextBlock x:Name="WarningText"
+                       Classes="hint"
+                       IsVisible="False"/>
+            <ProgressBar x:Name="ExplainProgress"
+                         Classes="progress"
+                         IsIndeterminate="True"
+                         IsVisible="False"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="2"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <Border x:Name="ExplanationCard"
+                    Classes="explanation"
+                    IsVisible="False">
+                <StackPanel x:Name="ExplanationBody" Spacing="14"/>
+            </Border>
+        </ScrollViewer>
+
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <Button x:Name="CancelButton"
+                    Grid.Column="1"
+                    Content="Cancel"
+                    Classes="form-button cancel"
+                    IsVisible="False"
+                    Click="Cancel_Click"/>
+            <Button x:Name="CloseButton"
+                    Grid.Column="2"
+                    Content="Close"
+                    Classes="form-button cancel"
+                    Click="Close_Click"/>
+        </Grid>
+    </Grid>
+</Window>

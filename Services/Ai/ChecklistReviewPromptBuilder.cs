@@ -15,9 +15,18 @@ public sealed class ChecklistReviewPromptBuilder
         Reply with JSON only. No markdown.
         Review the checklist as a senior software engineer.
         Report only real gaps. Do not regenerate the checklist or invent requirements.
-        Do not suggest a check that already exists. Use {"findings":[]} when it is already sufficient.
+        Do not suggest a check that already exists. Use an empty findings list when an area has no gap.
         Return at most 10 findings, highest risk first.
-        category is Completeness, Duplicates, Clarity, Testing, Security, Performance, or Priority.
+        Always return qualityScore and summary.
+        qualityScore is an integer from 0 to 100. Use 90-100 when checks are specific, distinct, and cover the task. Lower it for missing checks, duplicates, vague checks, unstated risks, or missing validation.
+        summary is one sentence on overall checklist quality.
+        Assess these areas:
+        Missing checks: category Completeness, recommendationType AddItem.
+        Duplicate checks: category Duplicates, recommendationType PossibleDuplicate, with both ids in relatedItemIds.
+        Vague or incomplete checks: category Clarity, recommendationType ImproveItem. A check is vague when it names no observable result.
+        Potential risks: category Risk. Cover failure, data-loss, auth, and regression risks the checks leave open.
+        Additional validation: category Testing, recommendationType AddItem, for a concrete check that proves the work.
+        category is Completeness, Duplicates, Clarity, Testing, Security, Performance, Priority, or Risk.
         severity is Critical, High, Medium, or Low.
         recommendationType is AddItem, ImproveItem, PossibleDuplicate, PriorityAdjustment, or Observation.
         AddItem adds one new check. suggestedItem.title is that check, never an instruction such as "Add this to item i2".
@@ -29,6 +38,7 @@ public sealed class ChecklistReviewPromptBuilder
         type is Investigation, Implementation, Verification, or Documentation.
         title, explanation, whyItMatters, and suggestedAction are one short sentence each.
         Use only the platform, framework, and task lines that are present. Do not guess missing ones, and do not report them as findings.
+        Test reports, logs, code references, API responses, and PR links already written on an item are evidence. Do not invent any, and do not add a check just to collect evidence that is already there.
         """;
 
     public Prompt Build(ChecklistReviewRequest request)
@@ -46,7 +56,7 @@ public sealed class ChecklistReviewPromptBuilder
         user.AppendLine("Completed checks stay completed. Do not suggest removing them.");
         user.AppendLine("Items:");
         AppendItems(user, request.Items);
-        user.Append("Return findings for this checklist only.");
+        user.Append("Return findings, a qualityScore from 0 to 100, and a one-sentence summary for this checklist only.");
         return new Prompt(SystemPrompt, user.ToString());
     }
 
@@ -91,6 +101,12 @@ public sealed class ChecklistReviewPromptBuilder
                     user.Append(" | Acceptance: ");
                     user.Append(Compact(item.AcceptanceCriteria, 120));
                 }
+
+                AppendEvidence(user, "Test reports", item.TestReports);
+                AppendEvidence(user, "Logs", item.Logs);
+                AppendEvidence(user, "Code references", item.CodeReferences);
+                AppendEvidence(user, "API responses", item.ApiResponses);
+                AppendEvidence(user, "PR links", item.PullRequestLinks);
             }
 
             user.AppendLine();
@@ -98,6 +114,17 @@ public sealed class ChecklistReviewPromptBuilder
 
         if (items.Count > listed)
             user.AppendLine("And " + (items.Count - listed) + " more items are on the checklist.");
+    }
+
+    private static void AppendEvidence(StringBuilder user, string label, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return;
+
+        user.Append(" | ");
+        user.Append(label);
+        user.Append(": ");
+        user.Append(Compact(value, 100));
     }
 
     private static string Sections(IReadOnlyList<ChecklistReviewItem> items)

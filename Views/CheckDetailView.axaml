@@ -110,7 +110,7 @@
     <Grid RowDefinitions="Auto,*,Auto"
           RowSpacing="14">
 
-        <Grid ColumnDefinitions="*,Auto"
+        <Grid ColumnDefinitions="*,Auto,Auto"
               ColumnSpacing="8">
 
             <TextBlock x:Name="TitleText"
@@ -119,8 +119,17 @@
                        TextWrapping="Wrap"
                        VerticalAlignment="Center"/>
 
-            <Button x:Name="CloseButton"
+            <Button x:Name="ExplainButton"
                     Grid.Column="1"
+                    Classes="detail-close"
+                    ToolTip.Tip="Explain this check"
+                    Click="Explain_Click"
+                    VerticalAlignment="Top">
+                <controls:AiMark Width="16" Height="16"/>
+            </Button>
+
+            <Button x:Name="CloseButton"
+                    Grid.Column="2"
                     Classes="detail-close"
                     ToolTip.Tip="Close"
                     Click="Close_Click"
@@ -183,7 +192,16 @@
                                IsVisible="False"/>
                 </StackPanel>
 
-                <StackPanel Spacing="4">
+                <StackPanel x:Name="TypeSection"
+                            Spacing="4"
+                            IsVisible="False">
+                    <TextBlock Text="Type" Classes="detail-label"/>
+                    <TextBlock x:Name="TypeText" Classes="detail-value"/>
+                </StackPanel>
+
+                <StackPanel x:Name="NotesSection"
+                            Spacing="4"
+                            IsVisible="False">
                     <TextBlock Text="Notes" Classes="detail-label"/>
                     <controls:NoteText x:Name="NotesText"
                                        FontSize="{DynamicResource Font14}"
@@ -191,6 +209,19 @@
                                        Foreground="{DynamicResource TextBodyBrush}"
                                        TextWrapping="Wrap"/>
                 </StackPanel>
+
+                <StackPanel x:Name="AcceptanceSection"
+                            Spacing="4"
+                            IsVisible="False">
+                    <TextBlock Text="Acceptance" Classes="detail-label"/>
+                    <controls:NoteText x:Name="AcceptanceText"
+                                       FontSize="{DynamicResource Font14}"
+                                       LineHeight="22"
+                                       Foreground="{DynamicResource TextBodyBrush}"
+                                       TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <StackPanel x:Name="ReferenceList" Spacing="12"/>
 
                 <StackPanel x:Name="EvidenceSection"
                             Spacing="6"

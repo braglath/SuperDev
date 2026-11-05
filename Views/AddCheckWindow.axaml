@@ -422,6 +422,28 @@
             <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}"/>
         </Style>
 
+        <Style Selector="Button.link-requirement">
+            <Setter Property="Width" Value="96"/>
+            <Setter Property="Height" Value="{DynamicResource ControlHeightSm}"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBodyBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.link-requirement.on">
+            <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentPressedBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
     </Window.Styles>
 
     <Grid RowDefinitions="*,Auto"
@@ -434,7 +456,7 @@
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
 
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
           RowSpacing="18"
           Margin="0,0,16,0">
 
@@ -605,7 +627,60 @@
                 </StackPanel>
             </Grid>
 
-            <StackPanel Grid.Row="4"
+            <StackPanel Grid.Row="3"
+                        Spacing="6">
+                <TextBlock Text="Type"
+                           Classes="field-label"/>
+                <ComboBox x:Name="TypeComboBox"
+                          Classes="field">
+                    <ComboBoxItem Content="None"/>
+                    <ComboBoxItem Content="Investigation"/>
+                    <ComboBoxItem Content="Implementation"/>
+                    <ComboBoxItem Content="Verification"/>
+                    <ComboBoxItem Content="Documentation"/>
+                </ComboBox>
+                <TextBlock Text="What kind of work this check is. Leave it as None when it does not apply."
+                           FontSize="{DynamicResource Font12}"
+                           Foreground="{DynamicResource TextSubtleBrush}"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="6"
+                        Spacing="8">
+                <TextBlock Text="References"
+                           Classes="field-label"/>
+                <TextBlock Text="Shown on the check only when filled. Paste an https link to open it from the checklist."
+                           FontSize="{DynamicResource Font12}"
+                           Foreground="{DynamicResource TextSubtleBrush}"
+                           TextWrapping="Wrap"/>
+                <TextBlock Text="Test reports" Classes="field-label"/>
+                <TextBox x:Name="TestReportsTextBox"
+                         Classes="notes"
+                         MinHeight="72"
+                         PlaceholderText="Report name, path, or link"/>
+                <TextBlock Text="Logs" Classes="field-label"/>
+                <TextBox x:Name="LogsTextBox"
+                         Classes="notes"
+                         MinHeight="72"
+                         PlaceholderText="Log excerpt or link"/>
+                <TextBlock Text="Code references" Classes="field-label"/>
+                <TextBox x:Name="CodeReferencesTextBox"
+                         Classes="notes"
+                         MinHeight="72"
+                         PlaceholderText="File, symbol, or link"/>
+                <TextBlock Text="API responses" Classes="field-label"/>
+                <TextBox x:Name="ApiResponsesTextBox"
+                         Classes="notes"
+                         MinHeight="72"
+                         PlaceholderText="Response excerpt or link"/>
+                <TextBlock Text="PR links" Classes="field-label"/>
+                <TextBox x:Name="PullRequestLinksTextBox"
+                         Classes="notes"
+                         MinHeight="72"
+                         PlaceholderText="Pull request link"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="7"
                         Spacing="8">
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Text="Evidence"
@@ -628,10 +703,14 @@
                                           AllowRemove="True"/>
             </StackPanel>
 
-            <StackPanel Grid.Row="5"
+            <StackPanel Grid.Row="8"
                         Spacing="8">
                 <TextBlock Text="Linked checklists"
                            Classes="field-label"/>
+                <TextBlock Text="Required links must be completed before this check can be completed. Optional links do not."
+                           FontSize="{DynamicResource Font12}"
+                           Foreground="{DynamicResource TextSubtleBrush}"
+                           TextWrapping="Wrap"/>
                 <Button Content="Link checklist"
                         Classes="expand-notes"
                         HorizontalAlignment="Left"
@@ -639,7 +718,7 @@
                 <ItemsControl x:Name="LinkList">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="models:ChecklistSubtask">
-                            <Grid ColumnDefinitions="*,Auto"
+                            <Grid ColumnDefinitions="*,Auto,Auto"
                                   ColumnSpacing="8"
                                   Margin="0,0,0,6">
                                 <TextBlock Text="{Binding Title}"
@@ -647,6 +726,11 @@
                                            TextWrapping="Wrap"
                                            FontSize="{DynamicResource Font14}"/>
                                 <Button Grid.Column="1"
+                                        Classes="link-requirement"
+                                        Content="Required"
+                                        Click="LinkRequirement_Click"
+                                        Loaded="LinkRequirement_Loaded"/>
+                                <Button Grid.Column="2"
                                         Classes="deadline-clear"
                                         Content="×"
                                         Click="RemoveLink_Click"/>
@@ -681,7 +765,7 @@
             </StackPanel>
 
             <!-- Notes -->
-            <Grid Grid.Row="3"
+            <Grid Grid.Row="4"
                   RowDefinitions="Auto,Auto"
                   RowSpacing="6">
 
@@ -701,6 +785,30 @@
                          Grid.Row="1"
                          Classes="notes"
                          PlaceholderText="Add notes. Paste an https link to open it from the checklist."/>
+
+            </Grid>
+
+            <Grid Grid.Row="5"
+                  RowDefinitions="Auto,Auto"
+                  RowSpacing="6">
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Acceptance"
+                               Classes="field-label"
+                               VerticalAlignment="Center"/>
+
+                    <Button x:Name="ExpandAcceptanceButton"
+                            Grid.Column="1"
+                            Content="Expand"
+                            Classes="expand-notes"
+                            Click="ToggleAcceptance_Click"/>
+                </Grid>
+
+                <TextBox x:Name="AcceptanceTextBox"
+                         Grid.Row="1"
+                         Classes="notes"
+                         MinHeight="96"
+                         PlaceholderText="How you know this check is done. Paste an https link to open it from the checklist."/>
 
             </Grid>
 

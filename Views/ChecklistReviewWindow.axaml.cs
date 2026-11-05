@@ -41,6 +41,7 @@ public partial class ChecklistReviewWindow : Window
         ReviewCategory.Completeness,
         ReviewCategory.Duplicates,
         ReviewCategory.Clarity,
+        ReviewCategory.Risk,
         ReviewCategory.Testing,
         ReviewCategory.Security,
         ReviewCategory.Performance,
@@ -204,11 +205,12 @@ public partial class ChecklistReviewWindow : Window
     {
         _warnings = warnings;
         var active = review.ActiveCount;
+        var quality = "Quality " + review.QualityScore + ".";
         StatusText.Text = active == 0
-            ? "Review complete. No findings."
+            ? "Review complete. " + quality + " No findings."
             : active == 1
-                ? "Review complete. 1 finding."
-                : "Review complete. " + active + " findings.";
+                ? "Review complete. " + quality + " 1 finding."
+                : "Review complete. " + quality + " " + active + " findings.";
         WarningText.Text = string.Join(" ", warnings);
         WarningText.IsVisible = warnings.Count > 0;
         Render(review);
@@ -217,6 +219,7 @@ public partial class ChecklistReviewWindow : Window
     private void Render(ChecklistReviewResult review)
     {
         FindingsPanel.Children.Clear();
+        FindingsPanel.Children.Add(ScoreCard(review));
         var visible = review.Findings.Where(finding => !finding.Dismissed).ToList();
         var canApply = _session.CanApply();
         var bulk = review.AllowsBulkSelection;
@@ -230,7 +233,9 @@ public partial class ChecklistReviewWindow : Window
             {
                 Classes = { "hint" },
                 Text = review.Findings.Count == 0
-                    ? "No findings. This checklist already covers the available task."
+                    ? review.QualityScore >= 90
+                        ? "No findings. This checklist already covers the available task."
+                        : "No separate findings. The score and summary above are the review."
                     : "All findings in this review were dismissed. Rerun the review to look at the checklist again."
             });
             return;
@@ -572,10 +577,13 @@ public partial class ChecklistReviewWindow : Window
             ? parsed.ToString()
             : "Required";
         var section = string.IsNullOrWhiteSpace(item.Section) ? "(no section)" : item.Section.Trim();
-        var notes = ChecklistReviewMapper.ComposeNotes(item.Description, item.AcceptanceCriteria);
+        var notes = string.IsNullOrWhiteSpace(item.Description) ? "No notes." : item.Description.Trim();
+        var acceptance = string.IsNullOrWhiteSpace(item.AcceptanceCriteria)
+            ? string.Empty
+            : "\nAcceptance: " + item.AcceptanceCriteria.Trim();
         var type = string.IsNullOrWhiteSpace(item.Type) ? string.Empty : "\nType: " + item.Type.Trim();
         return item.Title.Trim() + "\nSection: " + section + "\nPriority: " + priority + type
-            + "\nNotes: " + (string.IsNullOrWhiteSpace(notes) ? "No notes." : notes.Trim());
+            + "\nNotes: " + notes + acceptance;
     }
 
     private static Control Block(string label, string text)
@@ -598,6 +606,73 @@ public partial class ChecklistReviewWindow : Window
         return panel;
     }
 
+    private static Control ScoreCard(ChecklistReviewResult review)
+    {
+        var score = Math.Clamp(review.QualityScore, 0, 100);
+        var panel = new StackPanel { Spacing = 6 };
+        var row = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 14
+        };
+        row.Children.Add(new TextBlock
+        {
+            Text = score.ToString(),
+            FontSize = 32,
+            FontWeight = FontWeight.Bold,
+            Foreground = ScoreBrush(score),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        var words = new StackPanel
+        {
+            Spacing = 2,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        words.Children.Add(new TextBlock
+        {
+            Text = "Checklist quality · " + ScoreBand(score),
+            FontSize = 16,
+            FontWeight = FontWeight.SemiBold
+        });
+        words.Children.Add(new TextBlock
+        {
+            Classes = { "hint" },
+            Text = "Covers missing checks, duplicates, vague checks, risks, and extra validation."
+        });
+        row.Children.Add(words);
+        panel.Children.Add(row);
+        if (!string.IsNullOrWhiteSpace(review.Summary))
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = review.Summary,
+                FontSize = 14,
+                TextWrapping = TextWrapping.Wrap
+            });
+        }
+
+        return new Border
+        {
+            Classes = { "finding" },
+            Child = panel
+        };
+    }
+
+    private static string ScoreBand(int score) => score switch
+    {
+        >= 90 => "Strong",
+        >= 75 => "Good",
+        >= 50 => "Fair",
+        _ => "Needs work"
+    };
+
+    private static IBrush ScoreBrush(int score) => score switch
+    {
+        >= 75 => AppearanceService.Brush("SuccessTextBrush"),
+        >= 50 => AppearanceService.Brush("WarningTextBrush"),
+        _ => AppearanceService.Brush("DangerTextBrush")
+    };
+
     private static int SeverityRank(ReviewSeverity severity) => severity switch
     {
         ReviewSeverity.Critical => 0,
@@ -618,10 +693,11 @@ public partial class ChecklistReviewWindow : Window
 
     private static string CategoryLabel(ReviewCategory category) => category switch
     {
-        ReviewCategory.Completeness => "Completeness",
-        ReviewCategory.Duplicates => "Duplicates",
-        ReviewCategory.Clarity => "Clarity",
-        ReviewCategory.Testing => "Testing",
+        ReviewCategory.Completeness => "Missing checks",
+        ReviewCategory.Duplicates => "Duplicate checks",
+        ReviewCategory.Clarity => "Vague or incomplete",
+        ReviewCategory.Testing => "Additional validation",
+        ReviewCategory.Risk => "Potential risks",
         ReviewCategory.Security => "Security",
         ReviewCategory.Performance => "Performance",
         _ => "Priority"

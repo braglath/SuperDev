@@ -89,6 +89,8 @@ public static class ChecklistReviewApplicator
             current.Title = step.Title;
             current.Category = step.Category;
             current.Notes = step.Notes;
+            current.Acceptance = step.Acceptance;
+            current.ItemType = step.ItemType;
             current.Priority = step.Priority;
             changed = true;
             itemId ??= current.Id;
@@ -139,6 +141,8 @@ public static class ChecklistReviewApplicator
                 Title = item.Title,
                 Category = item.Category ?? string.Empty,
                 Notes = item.Notes ?? string.Empty,
+                Acceptance = item.Acceptance ?? string.Empty,
+                ItemType = item.ItemType ?? string.Empty,
                 Priority = item.Priority
             }
         ];
@@ -162,6 +166,8 @@ public static class ChecklistReviewApplicator
             if (Same(current.Title, projected.Title)
                 && Same(current.Category, projected.Category)
                 && Same(current.Notes, projected.Notes)
+                && Same(current.Acceptance, projected.Acceptance)
+                && Same(current.ItemType, projected.ItemType)
                 && !priorityChanges)
                 continue;
 
@@ -169,6 +175,8 @@ public static class ChecklistReviewApplicator
             current.Title = projected.Title;
             current.Category = projected.Category;
             current.Notes = projected.Notes;
+            current.Acceptance = projected.Acceptance;
+            current.ItemType = projected.ItemType;
             if (priorityChanges)
                 current.Priority = priority;
         }
@@ -218,6 +226,8 @@ public static class ChecklistReviewApplicator
         Title = item.Title ?? string.Empty,
         Category = item.Category ?? string.Empty,
         Notes = item.Notes ?? string.Empty,
+        Acceptance = item.Acceptance ?? string.Empty,
+        ItemType = item.ItemType ?? string.Empty,
         Priority = item.Priority
     };
 

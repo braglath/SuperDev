@@ -33,7 +33,7 @@ The generator asks Ollama for JSON with a title, a summary, and sections of chec
 
 Super Dev checks that JSON before showing it. A missing type or priority is filled in. A value the checklist cannot store is changed to the nearest supported value. Empty titles and duplicate items are removed. The preview states this in one sentence. A response that is not a checklist is rejected with a retry message. Generated text is never run as a command.
 
-When you create the checklist, sections become item categories. Priority is saved as Critical, Required, Conditional, or Review. The description and acceptance criteria are saved in the item notes. The summary and item type stay in the preview. The task, platform, and framework are saved with the checklist so a later review can use them. A checklist created by hand does not gain those fields.
+When you create the checklist, sections become item categories. Priority is saved as Critical, Required, Conditional, or Review. The description and acceptance criteria are saved in the item notes. The summary and item type stay in the preview. The task, platform, and framework are saved with the checklist so a later review or explanation can use them. A checklist created by hand does not gain those fields.
 
 ## Review a checklist
 
@@ -42,6 +42,12 @@ Open a checklist and choose **Review**. Super Dev sends the checklist that is op
 The review lists missing work, overlap, unclear checks, test gaps, and priority problems. Security and performance findings are requested only when they fit the task. A checklist that already covers the task can come back with no findings.
 
 Nothing on the checklist changes until you apply a suggestion. **Add item** inserts one check. **Replace item** and **Update priority** ask you to confirm, and they keep the check's id, completion, notes you did not change, evidence, and subtasks. Duplicate and observation findings are information only. **Dismiss** hides a finding for this session. **Rerun review** reads the checklist as it is now and replaces the previous findings.
+
+## Explain a check
+
+Each check has an AI icon. The same icon is on the check in the side panel and in the check popup. It explains that one check: what it is asking, why it is on the list, how to do it, and when it is done.
+
+Super Dev sends that check, including its notes and subtasks, plus the checklist title and work type. Platform, framework, and the original task are included only when the checklist has them. The explanation does not change the check. Choosing the icon again for a check that is already explained brings that explanation forward. **Cancel** stops a request that is still running. The icon stays available after the checklist is completed.
 
 ## Troubleshooting
 

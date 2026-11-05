@@ -20,7 +20,11 @@ public sealed class PromptBuilder
         section_title names each section.
         type is Investigation, Implementation, Verification, or Documentation.
         priority is Critical, Required, Conditional, or Review.
-        title is a short action. description and acceptanceCriteria are one short sentence.
+        title is a short action. description and acceptanceCriteria are one short sentence each.
+        Do not put the acceptance sentence inside description.
+        testReports, logs, codeReferences, apiResponses, and pullRequestLinks are optional evidence.
+        Copy them only when the task text already includes that evidence. Use an empty string otherwise.
+        Do not invent a report, a log, a file path, a response, or a link.
         """;
 
     public Prompt BuildChecklist(AiChecklistRequest request)
@@ -73,9 +77,14 @@ public sealed class PromptBuilder
         Write exactly one checklist item for the checklist that is already open.
         category is Understand, Development, Testing, Communication, PR, Merge, Deployment, or Closure.
         priority is Critical, Required, Conditional, or Review.
+        type is Investigation, Implementation, Verification, or Documentation. Use an empty string when the check has no single kind.
         title is a short action. description and acceptanceCriteria are one short sentence.
+        acceptanceCriteria says how you know the check is done. Leave it empty only when the draft has none and the check does not need one.
         subtasks are 0 to 4 short steps for this check. Use an empty list when the check is one action.
-        Do not invent a deadline, a link, or a second check.
+        testReports, logs, codeReferences, apiResponses, and pullRequestLinks are optional evidence.
+        Copy them only when a draft already includes that evidence. Use an empty string otherwise.
+        Do not invent a report, a log, a file path, a response, or a link.
+        Do not invent a deadline or a second check.
         """;
 
     public Prompt BuildCheck(CheckGenerationRequest request)
@@ -99,6 +108,15 @@ public sealed class PromptBuilder
         var draftNotes = string.IsNullOrWhiteSpace(request.DraftNotes)
             ? "None."
             : Describe(request.DraftNotes);
+        var draftAcceptance = string.IsNullOrWhiteSpace(request.DraftAcceptance)
+            ? "None."
+            : Describe(request.DraftAcceptance);
+        var draftType = ChecklistVocabulary.CanonicalItemType(request.DraftItemType) ?? "None.";
+        var draftTestReports = Draft(request.DraftTestReports);
+        var draftLogs = Draft(request.DraftLogs);
+        var draftCode = Draft(request.DraftCodeReferences);
+        var draftApi = Draft(request.DraftApiResponses);
+        var draftPullRequest = Draft(request.DraftPullRequestLinks);
         var category = string.IsNullOrWhiteSpace(request.DraftCategory)
             ? "Choose one."
             : Describe(request.DraftCategory);
@@ -108,10 +126,19 @@ public sealed class PromptBuilder
             Work type: {WorkLabel(request.WorkType)}
             Draft title: {draftTitle}
             Draft notes: {draftNotes}
+            Draft acceptance: {draftAcceptance}
+            Draft type: {draftType}
+            Draft test reports: {draftTestReports}
+            Draft logs: {draftLogs}
+            Draft code references: {draftCode}
+            Draft API responses: {draftApi}
+            Draft PR links: {draftPullRequest}
             Preferred category: {category}
             Do not repeat these checks: {avoid}
             Write one check for this checklist. Keep the draft title when it already says what to do.
-            Return title, category, priority, description, acceptanceCriteria, and subtasks.
+            Keep a draft acceptance when it already says how you know the check is done. Keep a draft type when it is set.
+            Keep a filled draft for test reports, logs, code references, API responses, and PR links.
+            Return title, category, priority, type, description, acceptanceCriteria, testReports, logs, codeReferences, apiResponses, pullRequestLinks, and subtasks.
             """;
         return new Prompt(CheckSystemPrompt, user);
     }
@@ -150,6 +177,9 @@ public sealed class PromptBuilder
         AiWorkKind.SecurityReview => "Security review: check the described behavior for auth, data, and input risks.",
         _ => "Stay on the described task."
     };
+
+    private static string Draft(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "None." : Describe(value);
 
     private static string Describe(string? description)
     {

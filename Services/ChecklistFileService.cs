@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using SuperDev.Models;
+using SuperDev.Services.Ai;
 
 namespace SuperDev.Services;
 
@@ -224,6 +225,8 @@ public sealed class ChecklistFileService
 
             if (!Enum.IsDefined(item.Priority))
                 throw new ChecklistFileException("A checklist item has an unknown priority.");
+
+            ChecklistReviewMapper.SeparateLegacyAcceptance(item);
 
             item.Subtasks ??= [];
             foreach (var subtask in item.Subtasks)
