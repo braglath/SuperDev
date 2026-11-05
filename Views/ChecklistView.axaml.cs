@@ -27,7 +27,8 @@ public partial class ChecklistView : UserControl
    {
       All,
       Open,
-      Completed
+      Completed,
+      Skipped
    }
 
    private enum PriorityFilter
@@ -56,6 +57,7 @@ public partial class ChecklistView : UserControl
    private bool _syncingCheck;
    private bool _editOpen;
    private bool _linksOpen;
+   private bool _descriptionOpen;
    private bool _documentCompleted;
    private bool _completionOfferOpen;
    private ChecklistItem? _selectedItem;
@@ -140,11 +142,19 @@ public partial class ChecklistView : UserControl
 
    public Func<TaskExplainRequest, CancellationToken, Task<TaskExplainOutcome>>? ExplainTask { get; set; }
 
+   public string? Description { get; private set; }
+
    public string? TaskDescription { get; private set; }
 
    public string? AiPlatform { get; private set; }
 
    public string? AiFramework { get; private set; }
+
+   public void SetDescription(string? description)
+   {
+      Description = CleanContext(description);
+      ApplyDescription();
+   }
 
    public void SetAiContext(string? taskDescription, string? platform, string? framework)
    {
@@ -209,10 +219,7 @@ public partial class ChecklistView : UserControl
        IncompleteRequiredCount() > 0;
 
    private int IncompleteRequiredCount() =>
-       _checklist.Count(item =>
-           !item.IsCompleted &&
-           (item.Priority == ChecklistPriority.Critical ||
-            item.Priority == ChecklistPriority.Required));
+       ChecklistCounts.IncompleteRequired(_checklist);
 
    public ChecklistView(
        WorkType workType,
@@ -236,6 +243,7 @@ public partial class ChecklistView : UserControl
       SideDetail.EditRequested += (_, _) => EditOpenDetail();
       SideDetail.DeleteRequested += (_, _) => DeleteOpenDetail();
       SideDetail.CompleteRequested += (_, _) => CompleteOpenDetail();
+      SideDetail.SkipRequested += (_, _) => SkipOpenDetail();
       SideDetail.LinkRequested += (_, subtask) =>
           LinkedSubtaskOpenRequested?.Invoke(this, subtask);
       SideDetail.CopiedFromRequested += (_, path) =>
@@ -256,6 +264,7 @@ public partial class ChecklistView : UserControl
       _checklist = new ObservableCollection<ChecklistItem>(checklist);
 
       WorkflowTitleBox.Text = workTitle;
+      ApplyDescription();
       ApplyWorkLinks();
       UpdateDeadlinePresentation();
       ChecklistItems.ItemsSource = _visible;
@@ -727,13 +736,9 @@ public partial class ChecklistView : UserControl
 
    private void UpdateProgress()
    {
-      var total = _checklist.Count;
-      var completed = _checklist.Count(x => x.IsCompleted);
-
-      ProgressText.Text = $"{completed} / {total} completed";
-      ProgressBar.Value = total == 0
-          ? 0
-          : (double)completed / total * 100;
+      var progress = ChecklistCounts.Measure(_checklist);
+      ProgressText.Text = progress.Label;
+      ProgressBar.Value = progress.Percent;
    }
 
    private Window? GetOwnerWindow() =>
@@ -761,8 +766,10 @@ public partial class ChecklistView : UserControl
          return;
       }
 
-      item.IsCompleted = completed;
+      item.MarkCompleted(completed);
       SelectItem(item);
+      if (FindItemBorder(item) is { } border)
+         ApplyItemState(border);
 
       if (item.IsCompleted)
          SuperDev.SuccessSound.PlayCheck();
@@ -1409,6 +1416,7 @@ public partial class ChecklistView : UserControl
       border.Focusable = true;
       border.FocusAdorner = null;
       ApplySelection(border);
+      ApplyItemState(border);
       UpdateMoveButtons(border);
 
       if (Equals(border.Tag, "shortcut-ready"))
@@ -1601,6 +1609,7 @@ public partial class ChecklistView : UserControl
          popup.Detail.EditRequested += (_, _) => EditOpenDetail();
          popup.Detail.DeleteRequested += (_, _) => DeleteOpenDetail();
          popup.Detail.CompleteRequested += (_, _) => CompleteOpenDetail();
+         popup.Detail.SkipRequested += (_, _) => SkipOpenDetail();
          popup.Detail.LinkRequested += (_, subtask) =>
              LinkedSubtaskOpenRequested?.Invoke(this, subtask);
          popup.Detail.CopiedFromRequested += (_, path) =>
@@ -1665,6 +1674,21 @@ public partial class ChecklistView : UserControl
          ToggleItem(_detailItem);
    }
 
+   private void SkipOpenDetail()
+   {
+      if (_detailItem is not null && !_documentCompleted)
+         ToggleSkip(_detailItem);
+   }
+
+   public bool TryCloseDetail()
+   {
+      if (_detailPopup is null && !DetailPane.IsVisible)
+         return false;
+
+      CloseDetails();
+      return true;
+   }
+
    private void CloseDetails()
    {
       _detailItem = null;
@@ -1700,8 +1724,10 @@ public partial class ChecklistView : UserControl
          return;
       }
 
-      item.IsCompleted = !item.IsCompleted;
+      item.MarkCompleted(!item.IsCompleted);
       SyncParentCheckBox(item);
+      if (FindItemBorder(item) is { } border)
+         ApplyItemState(border);
 
       if (item.IsCompleted)
          SuperDev.SuccessSound.PlayCheck();
@@ -1711,12 +1737,90 @@ public partial class ChecklistView : UserControl
          _ = OfferChecklistCompletionAsync();
    }
 
+   private void SkipCheck_Click(object? sender, RoutedEventArgs e)
+   {
+      if (_documentCompleted || sender is not Button { Tag: ChecklistItem item })
+         return;
+
+      SelectItem(item);
+      ToggleSkip(item);
+   }
+
+   private void ToggleSkip(ChecklistItem item)
+   {
+      if (_documentCompleted || !_checklist.Contains(item))
+         return;
+
+      item.MarkSkipped(!item.IsSkipped);
+      SyncParentCheckBox(item);
+      if (FindItemBorder(item) is { } border)
+         ApplyItemState(border);
+
+      MarkEdited();
+      if (item.IsSkipped)
+         _ = OfferChecklistCompletionAsync();
+   }
+
+   private void ApplyItemState(Border border)
+   {
+      if (border.DataContext is not ChecklistItem item)
+         return;
+
+      if (item.IsSkipped)
+         border.Classes.Add("skipped");
+      else
+         border.Classes.Remove("skipped");
+
+      foreach (var text in border.GetVisualDescendants().OfType<TextBlock>())
+      {
+         if (text.Classes.Contains("check-title"))
+         {
+            if (item.IsSkipped)
+               text.Classes.Add("skipped");
+            else
+               text.Classes.Remove("skipped");
+         }
+
+         if (text.Classes.Contains("skip-meta"))
+            text.IsVisible = item.IsSkipped;
+      }
+
+      foreach (var button in border.GetVisualDescendants().OfType<Button>())
+      {
+         if (!button.Classes.Contains("skip"))
+            continue;
+
+         if (item.IsSkipped)
+            button.Classes.Add("selected");
+         else
+            button.Classes.Remove("selected");
+
+         ToolTip.SetTip(
+             button,
+             item.IsSkipped
+                 ? "Skipped. Click to include this check again."
+                 : "Skip this check. It stays unfinished and is left out of progress.");
+      }
+
+      var box = border.GetVisualDescendants()
+          .OfType<CheckBox>()
+          .FirstOrDefault(candidate => candidate.DataContext is ChecklistItem);
+      if (box is not null)
+      {
+         ToolTip.SetTip(
+             box,
+             item.IsSkipped
+                 ? "Skipped. Check to mark it complete."
+                 : "Toggle completion (Space)");
+      }
+   }
+
    private async Task OfferChecklistCompletionAsync()
    {
       if (_documentCompleted || _completionOfferOpen || _editOpen)
          return;
 
-      if (_checklist.Count == 0 || _checklist.Any(item => !item.IsCompleted))
+      if (!ChecklistCounts.AllCountedComplete(_checklist))
          return;
 
       var owner = GetOwnerWindow();
@@ -1728,13 +1832,13 @@ public partial class ChecklistView : UserControl
       {
          var dialog = new StyledDialog(
              "All checks completed",
-             "All check items are completed. Mark this checklist as completed?",
+             "Every check that still counts is done. Mark this checklist as completed?",
              "Complete",
              "Not now");
          if (!await dialog.ShowDialog<bool>(owner))
             return;
 
-         if (_documentCompleted || _checklist.Any(item => !item.IsCompleted))
+         if (_documentCompleted || !ChecklistCounts.AllCountedComplete(_checklist))
             return;
 
          MarkChecklistCompleted();
@@ -1860,7 +1964,8 @@ public partial class ChecklistView : UserControl
           NotifyBeforeMinutes = item.NotifyBeforeMinutes,
           DeadlineSilent = item.DeadlineSilent,
           Subtasks = CopySubtasks(item.Subtasks),
-          IsCompleted = item.IsCompleted,
+          IsCompleted = item.IsSkipped ? false : item.IsCompleted,
+          IsSkipped = item.IsSkipped,
           CopiedFrom = copiedFrom,
           CopiedFromPath = copiedFromPath
        };
@@ -1972,6 +2077,78 @@ public partial class ChecklistView : UserControl
 
    private void Title_LostFocus(object? sender, RoutedEventArgs e) =>
        CommitTitle();
+
+   private void AddDescription_Click(object? sender, RoutedEventArgs e) =>
+       _ = EditDescriptionAsync();
+
+   private void ViewDescription_Click(object? sender, RoutedEventArgs e) =>
+       _ = ShowDescriptionAsync();
+
+   private async Task EditDescriptionAsync()
+   {
+      if (_documentCompleted)
+         return;
+
+      await OpenDescriptionAsync(editing: true);
+   }
+
+   private async Task ShowDescriptionAsync()
+   {
+      if (string.IsNullOrWhiteSpace(Description))
+         return;
+
+      await OpenDescriptionAsync(editing: false);
+   }
+
+   private async Task OpenDescriptionAsync(bool editing)
+   {
+      if (_descriptionOpen)
+         return;
+
+      var owner = GetOwnerWindow();
+      if (owner is null)
+         return;
+
+      _descriptionOpen = true;
+      try
+      {
+         var dialog = new DescriptionWindow(WorkTitle, Description, editing, canEdit: !_documentCompleted);
+         var result = await dialog.ShowDialog<string?>(owner);
+         if (result is null)
+            return;
+
+         var next = CleanContext(result);
+         if (next == Description)
+            return;
+
+         Description = next;
+         ApplyDescription();
+         DocumentEdited?.Invoke(this, EventArgs.Empty);
+      }
+      finally
+      {
+         _descriptionOpen = false;
+      }
+   }
+
+   private void ApplyDescription()
+   {
+      var text = Description ?? string.Empty;
+      var hasDescription = text.Length > 0;
+      AddDescriptionButton.IsVisible = !hasDescription;
+      DescriptionPreviewButton.IsVisible = hasDescription;
+      DescriptionPreview.Text = CollapsePreview(text);
+   }
+
+   private static string CollapsePreview(string text)
+   {
+      if (text.Length == 0)
+         return string.Empty;
+
+      return string.Join(
+          ' ',
+          text.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries));
+   }
 
    private void AddDetails_Click(object? sender, RoutedEventArgs e) =>
        _ = EditWorkLinksAsync();
@@ -2088,6 +2265,14 @@ public partial class ChecklistView : UserControl
          return;
 
       text.IsVisible = !string.IsNullOrWhiteSpace(item.Category);
+   }
+
+   private void SkipMeta_Loaded(object? sender, RoutedEventArgs e)
+   {
+      if (sender is not TextBlock text || text.DataContext is not ChecklistItem item)
+         return;
+
+      text.IsVisible = item.IsSkipped;
    }
 
    private void DeadlineSeparator_Loaded(object? sender, RoutedEventArgs e)
@@ -2226,8 +2411,9 @@ public partial class ChecklistView : UserControl
 
       matches = (StatusFilter)StatusFilterBox.SelectedIndex switch
       {
-         StatusFilter.Open => matches.Where(entry => !entry.item.IsCompleted),
+         StatusFilter.Open => matches.Where(entry => !entry.item.IsCompleted && !entry.item.IsSkipped),
          StatusFilter.Completed => matches.Where(entry => entry.item.IsCompleted),
+         StatusFilter.Skipped => matches.Where(entry => entry.item.IsSkipped),
          _ => matches
       };
 
@@ -2353,6 +2539,7 @@ public partial class ChecklistView : UserControl
       ClearReminderButton.IsEnabled = !locked;
       AddDetailsButton.IsEnabled = !locked;
       EditDetailsButton.IsEnabled = !locked;
+      AddDescriptionButton.IsEnabled = !locked;
       if (locked)
          ChecklistItems.Classes.Add("locked");
       else
@@ -2827,7 +3014,7 @@ public partial class ChecklistView : UserControl
          item.NotifyBeforeMinutes = result.Deadline is null ? null : result.NotifyBeforeMinutes;
          item.DeadlineSilent = result.Deadline is not null && result.DeadlineSilent;
          item.Subtasks = result.Subtasks;
-         item.IsCompleted = result.IsCompleted;
+         item.MarkCompleted(result.IsCompleted);
 
          MarkEdited();
          RefreshVisibleItem(item);

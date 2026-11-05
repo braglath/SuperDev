@@ -431,6 +431,57 @@
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
         </Style>
 
+        <Style Selector="Border.check-item.skipped">
+            <Setter Property="Opacity" Value="0.72"/>
+        </Style>
+
+        <Style Selector="TextBlock.check-title.skipped">
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+        </Style>
+
+        <Style Selector="TextBlock.priority.skipped-label">
+            <Setter Property="Foreground" Value="{DynamicResource WarningTextBrush}"/>
+        </Style>
+
+        <Style Selector="Button.skip">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="MinWidth" Value="18"/>
+            <Setter Property="MinHeight" Value="18"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.skip:pointerover">
+            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style Selector="Button.skip.selected">
+            <Setter Property="Background" Value="{DynamicResource WarningSurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource WarningTextBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource WarningTextBrush}"/>
+        </Style>
+
+        <Style Selector="Button.skip.selected:pointerover">
+            <Setter Property="Background" Value="{DynamicResource WarningSurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource WarningTextBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource WarningTextBrush}"/>
+        </Style>
+
+        <Style Selector="ItemsControl.locked Button.skip">
+            <Setter Property="IsEnabled" Value="False"/>
+            <Setter Property="Opacity" Value="0.35"/>
+        </Style>
+
 <Style Selector="TextBlock.check-notes">
     <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
     <Setter Property="LineHeight" Value="18"/>
@@ -452,6 +503,36 @@
 
         <Style Selector="Button.notes-link:pointerover">
             <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
+        </Style>
+
+        <Style Selector="Button.description-preview">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button.description-preview TextBlock">
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="LineHeight" Value="18"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="TextAlignment" Value="Left"/>
+        </Style>
+
+        <Style Selector="Button.description-preview:pointerover TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="TextDecorations" Value="Underline"/>
+        </Style>
+
+        <Style Selector="StackPanel.page-header.compact Button.description-preview TextBlock">
+            <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
+            <Setter Property="LineHeight" Value="16"/>
         </Style>
 
         <Style Selector="Button.copied-from-link">
@@ -917,6 +998,26 @@
 
             </Grid>
 
+            <Button x:Name="AddDescriptionButton"
+                    Content="Add description"
+                    Classes="notes-link"
+                    MinHeight="0"
+                    HorizontalAlignment="Left"
+                    Click="AddDescription_Click"/>
+
+            <Button x:Name="DescriptionPreviewButton"
+                    Classes="description-preview"
+                    Click="ViewDescription_Click"
+                    IsVisible="False"
+                    ToolTip.Tip="Show full description">
+                <TextBlock x:Name="DescriptionPreview"
+                           HorizontalAlignment="Stretch"
+                           TextWrapping="Wrap"
+                           TextAlignment="Left"
+                           MaxLines="2"
+                           TextTrimming="CharacterEllipsis"/>
+            </Button>
+
             <StackPanel x:Name="HeaderDetails">
 
             <StackPanel Orientation="Horizontal"
@@ -1356,6 +1457,7 @@
                             <ComboBoxItem Content="Any status"/>
                             <ComboBoxItem Content="Open"/>
                             <ComboBoxItem Content="Completed"/>
+                            <ComboBoxItem Content="Skipped"/>
                         </ComboBox>
                     </StackPanel>
 
@@ -1427,13 +1529,27 @@
                                 <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto"
                                       ColumnSpacing="12">
 
-                                    <!-- Checkbox -->
-                                    <CheckBox Grid.Column="0"
-                                              IsChecked="{Binding IsCompleted}"
-                                              Click="CheckBox_Click"
-                                              VerticalAlignment="Top"
-                                              Margin="0,2,0,0"
-                                              ToolTip.Tip="Toggle completion (Space)"/>
+                                    <StackPanel Grid.Column="0"
+                                                Orientation="Vertical"
+                                                Spacing="6"
+                                                VerticalAlignment="Top">
+                                        <CheckBox IsChecked="{Binding IsCompleted}"
+                                                  Click="CheckBox_Click"
+                                                  HorizontalAlignment="Left"
+                                                  Margin="0,2,0,0"
+                                                  ToolTip.Tip="Toggle completion (Space)"/>
+                                        <Button Classes="skip"
+                                                Tag="{Binding}"
+                                                Click="SkipCheck_Click"
+                                                ToolTip.Tip="Skip this check">
+                                            <Viewbox Width="10" Height="10">
+                                                <Path Stroke="{Binding $parent[Button].Foreground}"
+                                                      StrokeThickness="2"
+                                                      StrokeLineCap="Round"
+                                                      Data="M1,5 H9"/>
+                                            </Viewbox>
+                                        </Button>
+                                    </StackPanel>
 
 
                                     <!-- Title + Priority -->
@@ -1467,6 +1583,16 @@
                    Classes="priority"
                    VerticalAlignment="Center"
                    IsVisible="{Binding HasItemType}"/>
+        <TextBlock Text="·"
+                   Classes="priority skip-meta"
+                   VerticalAlignment="Center"
+                   IsVisible="False"
+                   Loaded="SkipMeta_Loaded"/>
+        <TextBlock Text="Skipped"
+                   Classes="priority skipped-label skip-meta"
+                   VerticalAlignment="Center"
+                   IsVisible="False"
+                   Loaded="SkipMeta_Loaded"/>
         <TextBlock Text="·"
                    Classes="priority"
                    VerticalAlignment="Center"

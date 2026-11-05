@@ -50,6 +50,8 @@ public sealed class TaskExplainRequest
 
     public bool IsCompleted { get; init; }
 
+    public bool IsSkipped { get; init; }
+
     public IReadOnlyList<TaskExplainChild> Subtasks { get; init; } = [];
 
     public IReadOnlyList<TaskExplainChild> Links { get; init; } = [];

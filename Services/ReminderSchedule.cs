@@ -405,7 +405,7 @@ public static class ReminderSchedule
                 return false;
 
             var check = document.Items?.Find(entry => entry.Id == itemId);
-            return check is null || check.IsCompleted;
+            return check is null || check.IsCompleted || check.IsSkipped;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {

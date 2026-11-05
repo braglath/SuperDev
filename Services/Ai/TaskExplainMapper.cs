@@ -34,7 +34,8 @@ public static class TaskExplainMapper
             CodeReferences = Blank(item.CodeReferences),
             ApiResponses = Blank(item.ApiResponses),
             PullRequestLinks = Blank(item.PullRequestLinks),
-            IsCompleted = item.IsCompleted,
+            IsCompleted = item.IsCompleted && !item.IsSkipped,
+            IsSkipped = item.IsSkipped,
             Subtasks = item.ManualSubtasks.Select(Child).ToList(),
             Links = item.LinkedSubtasks.Select(Child).ToList()
         };

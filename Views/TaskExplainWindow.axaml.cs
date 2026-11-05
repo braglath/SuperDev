@@ -130,7 +130,7 @@ public partial class TaskExplainWindow : Window
         Title = title;
         var category = string.IsNullOrWhiteSpace(request.Category) ? "General" : request.Category.Trim();
         var priority = string.IsNullOrWhiteSpace(request.Priority) ? "Required" : request.Priority.Trim();
-        var status = request.IsCompleted ? "Completed" : "Open";
+        var status = request.IsSkipped ? "Skipped" : request.IsCompleted ? "Completed" : "Open";
         ContextText.Text = category + " · " + priority + " · " + status;
     }
 

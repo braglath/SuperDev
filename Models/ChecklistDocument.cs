@@ -14,6 +14,12 @@ public sealed class ChecklistDocument
 
     public string Title { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Optional summary shown under the title. Missing on older files.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Description { get; set; }
+
     public string BranchName { get; set; } = string.Empty;
 
     public string PullRequestUrl { get; set; } = string.Empty;

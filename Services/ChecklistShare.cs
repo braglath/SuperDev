@@ -13,6 +13,9 @@ public static class ChecklistShare
     public static string ToPlainText(ChecklistDocument document)
     {
         var lines = new List<string> { DisplayTitle(document) };
+        if (!string.IsNullOrWhiteSpace(document.Description))
+            lines.Add(document.Description.Trim());
+
         var workflow = WorkflowName(document);
         if (workflow.Length > 0)
             lines.Add(workflow);
@@ -49,14 +52,15 @@ public static class ChecklistShare
 
     public static string ToCsv(ChecklistDocument document, string? fileName)
     {
-        var done = document.Items.Count(item => item.IsCompleted);
+        var progress = ChecklistCounts.Measure(document.Items);
         var rows = new List<string>
         {
             Csv("Details"),
             Detail("File name", fileName),
             Detail("Workflow", WorkflowName(document)),
+            Detail("Description", document.Description),
             Detail("Status", document.IsCompleted ? "Completed" : "In progress"),
-            Detail("Progress", $"{done} of {document.Items.Count} complete"),
+            Detail("Progress", progress.ShareLabel),
             Detail("Branch", document.BranchName),
             Detail("Pull Request", document.PullRequestUrl),
             string.Empty,
@@ -67,7 +71,7 @@ public static class ChecklistShare
         {
             rows.Add(Row(
                 item.Title,
-                item.IsCompleted ? "Completed" : "Open",
+                ItemStatus(item),
                 item.Category,
                 item.Priority.ToString(),
                 item.ItemType ?? string.Empty,
@@ -88,9 +92,10 @@ public static class ChecklistShare
 
     private static void AppendItem(List<string> lines, ChecklistItem item)
     {
-        var mark = item.IsCompleted ? "x" : " ";
+        var mark = item.IsSkipped ? "-" : item.IsCompleted ? "x" : " ";
         var title = string.IsNullOrWhiteSpace(item.Title) ? "Untitled check" : item.Title.Trim();
-        lines.Add($"- [{mark}] {title} — {item.Detail}");
+        var detail = item.IsSkipped ? $"{item.Detail} · Skipped" : item.Detail;
+        lines.Add($"- [{mark}] {title} — {detail}");
 
         var deadline = DeadlineText(item.Deadline, item.DeadlineMinute, item.NotifyBeforeMinutes, item.DeadlineSilent);
         if (deadline.Length > 0)
@@ -172,13 +177,15 @@ public static class ChecklistShare
         return $"[{mark}] {subtask.Title}{kind}";
     }
 
+    private static string ItemStatus(ChecklistItem item) =>
+        item.IsSkipped ? "Skipped" : item.IsCompleted ? "Completed" : "Open";
+
     private static string? Progress(ChecklistDocument document)
     {
         if (document.Items.Count == 0)
             return null;
 
-        var done = document.Items.Count(item => item.IsCompleted);
-        return $"{done} of {document.Items.Count} complete";
+        return ChecklistCounts.Measure(document.Items).ShareLabel;
     }
 
     private static string? ReminderLabel(ChecklistDocument document)

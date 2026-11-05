@@ -20,6 +20,8 @@ public partial class CheckDetailView : UserControl
 
    public event EventHandler? CompleteRequested;
 
+   public event EventHandler? SkipRequested;
+
    public event EventHandler<ChecklistSubtask>? LinkRequested;
 
    public event EventHandler<string>? CopiedFromRequested;
@@ -50,10 +52,21 @@ public partial class CheckDetailView : UserControl
       CopiedFromLink.IsVisible = item.CanOpenCopiedFrom;
       CopiedFromLink.Content = item.CopiedFrom;
       CopiedFromLink.Tag = item.CopiedFromPath;
-      StatusText.Text = item.IsCompleted ? "Completed" : "Open";
-      StatusText.Foreground = item.IsCompleted
-          ? AppearanceService.Brush("SuccessTextBrush")
-          : AppearanceService.Brush("TextSecondaryBrush");
+      if (item.IsSkipped)
+      {
+         StatusText.Text = "Skipped";
+         StatusText.Foreground = AppearanceService.Brush("WarningTextBrush");
+      }
+      else if (item.IsCompleted)
+      {
+         StatusText.Text = "Completed";
+         StatusText.Foreground = AppearanceService.Brush("SuccessTextBrush");
+      }
+      else
+      {
+         StatusText.Text = "Open";
+         StatusText.Foreground = AppearanceService.Brush("TextSecondaryBrush");
+      }
       CategoryText.Text = string.IsNullOrWhiteSpace(item.Category) ? "General" : item.Category;
       PriorityText.Text = item.Priority.ToString();
       PriorityText.Foreground = PriorityAppearance.BrushFor(item.Priority);
@@ -123,6 +136,12 @@ public partial class CheckDetailView : UserControl
       DeleteButton.IsEnabled = canEdit;
       CompleteButton.IsEnabled = canEdit;
       CompleteButton.Content = item.IsCompleted ? "Mark as open" : "Mark as completed";
+      SkipButton.IsEnabled = canEdit;
+      SkipButton.Content = item.IsSkipped ? "Skipped" : "Skip";
+      if (item.IsSkipped)
+         SkipButton.Classes.Add("on");
+      else
+         SkipButton.Classes.Remove("on");
    }
 
    private void ShowReferences(ChecklistItem item)
@@ -167,6 +186,9 @@ public partial class CheckDetailView : UserControl
 
    private void Complete_Click(object? sender, RoutedEventArgs e) =>
        CompleteRequested?.Invoke(this, EventArgs.Empty);
+
+   private void Skip_Click(object? sender, RoutedEventArgs e) =>
+       SkipRequested?.Invoke(this, EventArgs.Empty);
 
    private void Link_Click(object? sender, RoutedEventArgs e)
    {

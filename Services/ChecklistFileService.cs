@@ -248,6 +248,9 @@ public sealed class ChecklistFileService
 
             if (!item.CanComplete)
                 item.IsCompleted = false;
+
+            if (item.IsSkipped)
+                item.IsCompleted = false;
         }
     }
 

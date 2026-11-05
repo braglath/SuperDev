@@ -81,6 +81,25 @@
             <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
         </Style>
 
+        <Style Selector="Button.detail-skip">
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+        </Style>
+
+        <Style Selector="Button.detail-skip:pointerover">
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
+        </Style>
+
+        <Style Selector="Button.detail-skip.on">
+            <Setter Property="Background" Value="{DynamicResource WarningSurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource WarningTextBrush}"/>
+        </Style>
+
+        <Style Selector="Button.detail-skip.on:pointerover">
+            <Setter Property="Background" Value="{DynamicResource WarningSurfaceBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource WarningTextBrush}"/>
+        </Style>
+
         <Style Selector="Button.detail-link">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
@@ -271,6 +290,12 @@
                         Click="Delete_Click"/>
 
             </Grid>
+
+            <Button x:Name="SkipButton"
+                    Classes="detail-action detail-skip"
+                    Content="Skip"
+                    HorizontalAlignment="Stretch"
+                    Click="Skip_Click"/>
 
             <Button x:Name="CompleteButton"
                     Classes="detail-action detail-complete"

@@ -56,21 +56,9 @@ public partial class ChecklistWindow : Window
 
    private void UpdateProgress()
    {
-      var total = _checklist.Count;
-
-      if (total == 0)
-      {
-         ProgressText.Text = "0 / 0 completed";
-         ProgressBar.Value = 0;
-         return;
-      }
-
-      var completed = _checklist.Count(x => x.IsCompleted);
-
-      var percentage = (double)completed / total * 100;
-
-      ProgressText.Text = $"{completed} / {total} completed";
-      ProgressBar.Value = percentage;
+      var progress = ChecklistCounts.Measure(_checklist);
+      ProgressText.Text = progress.Label;
+      ProgressBar.Value = progress.Percent;
    }
 
    private void CheckBox_Click(object? sender, RoutedEventArgs e)
@@ -81,7 +69,7 @@ public partial class ChecklistWindow : Window
       if (checkBox.DataContext is not ChecklistItem item)
          return;
 
-      item.IsCompleted = checkBox.IsChecked == true;
+      item.MarkCompleted(checkBox.IsChecked == true);
 
       if (checkBox.Parent?.Parent is Border border)
       {
@@ -135,7 +123,7 @@ public partial class ChecklistWindow : Window
       item.ItemType = result.ItemType;
       item.CopyReferencesFrom(result);
       item.Evidence = result.Evidence ?? [];
-      item.IsCompleted = result.IsCompleted;
+      item.MarkCompleted(result.IsCompleted);
 
       ChecklistItems.ItemsSource = null;
       ChecklistItems.ItemsSource = _checklist;
@@ -185,18 +173,13 @@ public partial class ChecklistWindow : Window
     object? sender,
     RoutedEventArgs e)
    {
-      var incompleteRequired = _checklist
-          .Where(x =>
-              !x.IsCompleted &&
-              (x.Priority == ChecklistPriority.Critical ||
-               x.Priority == ChecklistPriority.Required))
-          .ToList();
+      var incompleteRequired = ChecklistCounts.IncompleteRequired(_checklist);
 
-      if (incompleteRequired.Count > 0)
+      if (incompleteRequired > 0)
       {
          var dialog = new StyledDialog(
              "Checklist incomplete",
-             $"You still have {incompleteRequired.Count} " +
+             $"You still have {incompleteRequired} " +
              "Critical/Required check(s) incomplete.");
 
          await dialog.ShowDialog(this);

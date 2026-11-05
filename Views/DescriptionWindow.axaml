@@ -1,0 +1,160 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SuperDev.Views.DescriptionWindow"
+        Width="560"
+        Height="460"
+        MinWidth="420"
+        MinHeight="320"
+        Title="Description"
+        Background="{DynamicResource AppBackgroundBrush}"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style Selector="TextBlock.dialog-title">
+            <Setter Property="FontSize" Value="{DynamicResource Font20}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style Selector="TextBlock.dialog-detail">
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style Selector="TextBox.editor">
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font15}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="PlaceholderForeground" Value="{DynamicResource TextSubtleBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+        </Style>
+
+        <Style Selector="TextBox.editor:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+        <Style Selector="Button.dialog-button">
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="Button.dialog-button.primary">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style Selector="Button.dialog-button.primary:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+        <Style Selector="Button.dialog-button.secondary">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBodyBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style Selector="Button.dialog-button.secondary:pointerover">
+            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+
+    </Window.Styles>
+
+    <Grid Margin="24"
+          RowDefinitions="Auto,Auto,*,Auto"
+          RowSpacing="14">
+
+        <TextBlock x:Name="Heading"
+                   Classes="dialog-title"
+                   Text="Description"/>
+
+        <TextBlock x:Name="DetailText"
+                   Grid.Row="1"
+                   Classes="dialog-detail"/>
+
+        <Border x:Name="ViewPanel"
+                Grid.Row="2"
+                Background="{DynamicResource SurfaceInsetBrush}"
+                BorderBrush="{DynamicResource BorderSubtleBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="18">
+
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+
+                <SelectableTextBlock x:Name="BodyText"
+                                     FontSize="{DynamicResource Font15}"
+                                     LineHeight="24"
+                                     Foreground="{DynamicResource TextBodyBrush}"
+                                     TextWrapping="Wrap"/>
+
+            </ScrollViewer>
+
+        </Border>
+
+        <Border x:Name="EditPanel"
+                Grid.Row="2"
+                IsVisible="False">
+            <TextBox x:Name="Editor"
+                     Classes="editor"
+                     HorizontalAlignment="Stretch"
+                     VerticalAlignment="Stretch"
+                     PlaceholderText="What is this checklist about?"/>
+        </Border>
+
+        <Grid Grid.Row="3">
+
+            <StackPanel x:Name="ViewActions"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8">
+                <Button x:Name="EditButton"
+                        Content="Edit"
+                        Classes="dialog-button secondary"
+                        Click="Edit_Click"/>
+                <Button Content="Close"
+                        Classes="dialog-button primary"
+                        Click="Close_Click"/>
+            </StackPanel>
+
+            <StackPanel x:Name="EditActions"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="8"
+                        IsVisible="False">
+                <Button Content="Cancel"
+                        Classes="dialog-button secondary"
+                        Click="Cancel_Click"/>
+                <Button Content="Save"
+                        Classes="dialog-button primary"
+                        Click="Save_Click"/>
+            </StackPanel>
+
+        </Grid>
+
+    </Grid>
+
+</Window>

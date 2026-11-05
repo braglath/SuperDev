@@ -87,7 +87,25 @@ public class TaskExplainTests
 
         Assert.Contains("Status: completed", prompt.User, StringComparison.Ordinal);
         Assert.Contains("do not tell them to do it again", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("A skipped check was set aside", prompt.System, StringComparison.Ordinal);
         Assert.Contains("Notes: No notes.", prompt.User, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Skipped_check_is_not_described_as_open()
+    {
+        var prompt = _prompts.Build(new TaskExplainRequest
+        {
+            WorkType = WorkType.Bug,
+            Title = "Rotate the screen",
+            Priority = "Critical",
+            IsSkipped = true,
+            IsCompleted = true
+        });
+
+        Assert.Contains("Status: skipped", prompt.User, StringComparison.Ordinal);
+        Assert.DoesNotContain("Status: completed", prompt.User, StringComparison.Ordinal);
+        Assert.DoesNotContain("Status: open", prompt.User, StringComparison.Ordinal);
     }
 
     [Fact]

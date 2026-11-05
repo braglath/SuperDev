@@ -215,8 +215,9 @@ public partial class CheckPicker : UserControl
     {
         var statusMatches = status switch
         {
-            1 => !item.IsCompleted,
+            1 => !item.IsCompleted && !item.IsSkipped,
             2 => item.IsCompleted,
+            3 => item.IsSkipped,
             _ => true
         };
         if (!statusMatches)

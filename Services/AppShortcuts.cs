@@ -35,6 +35,7 @@ public static class AppShortcuts
     public const string NextTab = "next-tab";
     public const string PreviousTab = "previous-tab";
     public const string Search = "search";
+    public const string ClosePopup = "close-popup";
     public const string AddItem = "add-item";
     public const string EditItem = "edit-item";
     public const string ToggleItem = "toggle-item";
@@ -49,6 +50,7 @@ public static class AppShortcuts
         Command(Save, "Save checklist", ShortcutGroup.Application, ShortcutScope.Window, Key.S, shift: false, "Ctrl+S", "Command+S"),
         Command(Settings, "Settings", ShortcutGroup.Application, ShortcutScope.Window, Key.OemComma, shift: false, "Ctrl+,", "Command+,"),
 
+        Plain(ClosePopup, "Close popup", ShortcutGroup.Workspace, ShortcutScope.Window, Key.Escape, KeyModifiers.None, "Esc", "Esc"),
         Command(CloseTab, "Close active tab", ShortcutGroup.Workspace, ShortcutScope.Window, Key.W, shift: false, "Ctrl+W", "Command+W"),
         Plain(NextTab, "Next tab", ShortcutGroup.Workspace, ShortcutScope.Window, Key.Tab, KeyModifiers.Control, "Ctrl+Tab", "Ctrl+Tab"),
         Plain(PreviousTab, "Previous tab", ShortcutGroup.Workspace, ShortcutScope.Window, Key.Tab, KeyModifiers.Control | KeyModifiers.Shift, "Ctrl+Shift+Tab", "Ctrl+Shift+Tab"),
@@ -71,6 +73,9 @@ public static class AppShortcuts
 
         return null;
     }
+
+    public static bool IsClosePopup(KeyEventArgs e) =>
+        All.First(item => item.Id == ClosePopup).Matches(e);
 
     public static string WithShortcut(string id, string? action = null)
     {

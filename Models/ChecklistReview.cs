@@ -68,6 +68,8 @@ public sealed class ChecklistReviewItem
     public string PullRequestLinks { get; init; } = string.Empty;
 
     public bool IsCompleted { get; init; }
+
+    public bool IsSkipped { get; init; }
 }
 
 public sealed class ChecklistReviewRequest

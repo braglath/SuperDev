@@ -81,7 +81,7 @@ public sealed class ChecklistReviewPromptBuilder
             user.Append(" | ");
             user.Append(string.IsNullOrWhiteSpace(item.Priority) ? "Required" : Compact(item.Priority, 20));
             user.Append(" | ");
-            user.Append(item.IsCompleted ? "done" : "open");
+            user.Append(item.IsSkipped ? "skipped" : item.IsCompleted ? "done" : "open");
             if (!string.IsNullOrWhiteSpace(item.ItemType))
             {
                 user.Append(" | type ");

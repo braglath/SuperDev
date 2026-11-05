@@ -671,6 +671,7 @@ public partial class MainWindow : Window
             document.ReminderEveryMinutes,
             document.ReminderSilent,
             document.Items);
+        view.SetDescription(document.Description);
         view.SetAiContext(document.TaskDescription, document.AiPlatform, document.AiFramework);
         view.EnsureAiReady = EnsureLocalAiAsync;
         view.GenerateOneCheck = (request, token) => _localAi.GenerateCheckAsync(request, token);
@@ -2019,7 +2020,8 @@ public partial class MainWindow : Window
             return;
 
         var shortcut = AppShortcuts.Match(e, ShortcutScope.Window);
-        if (shortcut is null)
+        // Escape is handled after focused editors, so it can revert a field before closing a popup.
+        if (shortcut is null || shortcut.Id == AppShortcuts.ClosePopup)
             return;
 
         e.Handled = true;
@@ -2031,6 +2033,23 @@ public partial class MainWindow : Window
 
     private void ShortcutKeyUp(object? sender, KeyEventArgs e) =>
         _keysDown.Remove(e.Key);
+
+    internal bool DismissTransientView()
+    {
+        if (_settingsOpen || _shortcutsOpen)
+        {
+            CloseSettings_Click(this, new RoutedEventArgs());
+            return true;
+        }
+
+        if (_remindersOpen)
+        {
+            CloseReminders();
+            return true;
+        }
+
+        return WorkspaceContent.IsVisible && ActiveTab()?.View.TryCloseDetail() == true;
+    }
 
     private bool CanUseShortcuts()
     {
@@ -2580,6 +2599,7 @@ public partial class MainWindow : Window
             FormatVersion = ChecklistDocument.CurrentFormatVersion,
             Id = Guid.NewGuid(),
             Title = source.View.WorkTitle,
+            Description = source.View.Description,
             BranchName = source.View.BranchName,
             PullRequestUrl = source.View.PullRequestUrl,
             Deadline = source.View.Deadline,
@@ -2681,7 +2701,8 @@ public partial class MainWindow : Window
                     LinkOptional = subtask.LinkOptional
                 })
                 .ToList(),
-            IsCompleted = item.IsCompleted,
+            IsCompleted = item.IsSkipped ? false : item.IsCompleted,
+            IsSkipped = item.IsSkipped,
             CopiedFrom = copiedFrom,
             CopiedFromPath = copiedFromPath
         };
@@ -2889,6 +2910,7 @@ public partial class MainWindow : Window
     {
         tab.View.CommitDetails();
         tab.Document.Title = tab.View.WorkTitle;
+        tab.Document.Description = tab.View.Description;
         tab.Document.BranchName = tab.View.BranchName;
         tab.Document.PullRequestUrl = tab.View.PullRequestUrl;
         tab.Document.Deadline = tab.View.Deadline;
@@ -2911,6 +2933,7 @@ public partial class MainWindow : Window
         tab.EditVersion++;
         tab.IsDirty = true;
         tab.Document.Title = tab.View.WorkTitle;
+        tab.Document.Description = tab.View.Description;
         tab.Document.BranchName = tab.View.BranchName;
         tab.Document.PullRequestUrl = tab.View.PullRequestUrl;
         tab.Document.Deadline = tab.View.Deadline;
@@ -3444,7 +3467,7 @@ public partial class MainWindow : Window
 
         foreach (var item in tab.View.Items)
         {
-            if (item.IsCompleted)
+            if (item.IsCompleted || item.IsSkipped)
             {
                 ReminderSchedule.DismissSlot(tab.Document.Id, ScheduledReminder.ItemSlot(item.Id));
                 continue;

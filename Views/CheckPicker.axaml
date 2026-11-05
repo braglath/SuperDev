@@ -99,6 +99,7 @@
                     <ComboBoxItem Content="Any status"/>
                     <ComboBoxItem Content="Open"/>
                     <ComboBoxItem Content="Completed"/>
+                    <ComboBoxItem Content="Skipped"/>
                 </ComboBox>
             </StackPanel>
 

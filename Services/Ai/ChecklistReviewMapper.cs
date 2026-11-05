@@ -44,7 +44,8 @@ public static class ChecklistReviewMapper
                 CodeReferences = item.CodeReferences ?? string.Empty,
                 ApiResponses = item.ApiResponses ?? string.Empty,
                 PullRequestLinks = item.PullRequestLinks ?? string.Empty,
-                IsCompleted = item.IsCompleted
+                IsCompleted = item.IsCompleted,
+                IsSkipped = item.IsSkipped
             });
         }
 

@@ -1535,7 +1535,7 @@
                         VerticalAlignment="Center"
                         Click="CloseSettings_Click"/>
             </Grid>
-            <TextBlock Text="Shortcuts depend on the focused control. Space and F2 stay with a text field while you are typing, and shortcuts do not run while a dialog is open. Highlighted keys are the ones used on this computer."
+            <TextBlock Text="Shortcuts depend on the focused control. Space and F2 stay with a text field while you are typing. Esc closes the open popup, and other shortcuts do not run while a dialog is open. Highlighted keys are the ones used on this computer."
                        FontSize="{DynamicResource Font13}"
                        Foreground="{DynamicResource TextMutedBrush}"
                        TextWrapping="Wrap"/>

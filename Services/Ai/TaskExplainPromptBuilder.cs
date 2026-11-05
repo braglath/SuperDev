@@ -21,6 +21,7 @@ public sealed class TaskExplainPromptBuilder
         summary, whyItMatters, and doneWhen are one or two short sentences each.
         steps is 2 to 5 short actions. Each step is one sentence.
         A completed check is already done. Explain what it asked for, and do not tell them to do it again.
+        A skipped check was set aside. Explain what it asked for, and do not tell them they still have to do it.
         Do not tell them to mark the check complete.
         """;
 
@@ -37,7 +38,7 @@ public sealed class TaskExplainPromptBuilder
         user.AppendLine("Check: " + Shown(request.Title, "Untitled check", 200));
         user.AppendLine("Category: " + Shown(request.Category, "General", 80));
         user.AppendLine("Priority: " + Shown(request.Priority, "Required", 40));
-        user.AppendLine("Status: " + (request.IsCompleted ? "completed" : "open"));
+        user.AppendLine("Status: " + Status(request));
         user.AppendLine("Notes: " + Shown(request.Notes, "No notes.", MaxNotes));
         user.AppendLine("Acceptance: " + Shown(request.Acceptance, "None.", MaxNotes));
         user.AppendLine("Type: " + Shown(request.ItemType, "None.", 40));
@@ -51,6 +52,9 @@ public sealed class TaskExplainPromptBuilder
         user.Append("Explain this check only.");
         return new Prompt(SystemPrompt, user.ToString());
     }
+
+    private static string Status(TaskExplainRequest request) =>
+        request.IsSkipped ? "skipped" : request.IsCompleted ? "completed" : "open";
 
     private static void AppendChildren(
         StringBuilder user,

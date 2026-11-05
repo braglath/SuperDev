@@ -254,6 +254,38 @@ public class ChecklistItem
    public bool IsCompleted { get; set; }
 
    /// <summary>
+   /// The user set this check aside. It is not completed.
+   /// It is left out of progress and does not block completing the checklist, including when it is Critical or Required.
+   /// Missing on older files, which stay included.
+   /// </summary>
+   [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+   public bool IsSkipped { get; set; }
+
+   /// <summary>
+   /// An open Critical or Required check still has to be finished or skipped before the checklist can be completed.
+   /// </summary>
+   [JsonIgnore]
+   public bool BlocksWorkspaceCompletion =>
+       !IsSkipped &&
+       !IsCompleted &&
+       Priority is ChecklistPriority.Critical or ChecklistPriority.Required;
+
+   public void MarkCompleted(bool completed)
+   {
+      if (completed)
+         IsSkipped = false;
+
+      IsCompleted = completed;
+   }
+
+   public void MarkSkipped(bool skipped)
+   {
+      IsSkipped = skipped;
+      if (skipped)
+         IsCompleted = false;
+   }
+
+   /// <summary>
    /// File name of the checklist this check was copied from. Missing when the check was created here.
    /// </summary>
    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -339,4 +371,68 @@ public enum ChecklistPriority
    Required,
    Conditional,
    Review
+}
+
+/// <summary>
+/// Progress over the checks that still count. Skipped checks are left out of both numbers.
+/// </summary>
+public readonly record struct ChecklistProgress(int Completed, int Total, int Skipped)
+{
+   public double Percent => Total == 0 ? 0 : (double)Completed / Total * 100;
+
+   public string Label =>
+       Skipped == 0
+           ? $"{Completed} / {Total} completed"
+           : $"{Completed} / {Total} completed · {Skipped} skipped";
+
+   public string ShareLabel =>
+       Skipped == 0
+           ? $"{Completed} of {Total} complete"
+           : $"{Completed} of {Total} complete, {Skipped} skipped";
+}
+
+public static class ChecklistCounts
+{
+   public static ChecklistProgress Measure(IEnumerable<ChecklistItem> items)
+   {
+      var completed = 0;
+      var total = 0;
+      var skipped = 0;
+      foreach (var item in items)
+      {
+         if (item.IsSkipped)
+         {
+            skipped++;
+            continue;
+         }
+
+         total++;
+         if (item.IsCompleted)
+            completed++;
+      }
+
+      return new ChecklistProgress(completed, total, skipped);
+   }
+
+   public static int IncompleteRequired(IEnumerable<ChecklistItem> items) =>
+       items.Count(item => item.BlocksWorkspaceCompletion);
+
+   /// <summary>
+   /// Every check that still counts is done. A list of only skipped checks has nothing finished.
+   /// </summary>
+   public static bool AllCountedComplete(IEnumerable<ChecklistItem> items)
+   {
+      var any = false;
+      foreach (var item in items)
+      {
+         if (item.IsSkipped)
+            continue;
+
+         any = true;
+         if (!item.IsCompleted)
+            return false;
+      }
+
+      return any;
+   }
 }
