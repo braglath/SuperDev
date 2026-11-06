@@ -118,6 +118,103 @@
     <Setter Property="ZIndex" Value="2"/>
 </Style>
 
+<Style Selector="Border.workspace-tab:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Border.workspace-tab.project-tab">
+    <Setter Property="MinWidth" Value="148"/>
+    <Setter Property="MaxWidth" Value="250"/>
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+</Style>
+
+<Style Selector="Border.workspace-tab.project-tab.drop-target">
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+</Style>
+
+<Style Selector="Border.project-group.drop-target">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+    <Setter Property="BorderThickness" Value="2"/>
+</Style>
+
+<Style Selector="Border.workspace-tab.child-tab">
+    <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+    <Setter Property="MinWidth" Value="72"/>
+    <Setter Property="MaxWidth" Value="180"/>
+    <Setter Property="BorderThickness" Value="2"/>
+    <Setter Property="Margin" Value="0"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Border.project-group">
+    <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="Padding" Value="6"/>
+    <Setter Property="Margin" Value="0,0,2,0"/>
+</Style>
+
+<Style Selector="Button.project-fold">
+    <Setter Property="Width" Value="18"/>
+    <Setter Property="Height" Value="18"/>
+    <Setter Property="MinWidth" Value="18"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="4"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.project-fold:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.project-card">
+    <Setter Property="MinHeight" Value="138"/>
+    <Setter Property="MinWidth" Value="340"/>
+    <Setter Property="MaxWidth" Value="354"/>
+    <Setter Property="Margin" Value="0,0,12,12"/>
+    <Setter Property="Padding" Value="14,12"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+    <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="12"/>
+</Style>
+
+<Style Selector="Button.project-card:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.project-card.archived">
+    <Setter Property="Opacity" Value="0.72"/>
+</Style>
+
+<Style Selector="Button.project-create">
+    <Setter Property="Height" Value="36"/>
+    <Setter Property="MinWidth" Value="132"/>
+    <Setter Property="Padding" Value="14,0"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Button.project-create:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
 <!-- The tab scroller reserves a row for its bar so it does not cover the tabs.
      These styles keep that bar as a thin thumb, without the arrow buttons. -->
 <Style Selector="ScrollViewer.tabs /template/ ScrollBar#PART_HorizontalScrollBar">
@@ -509,22 +606,6 @@
 <Style Selector="Button.recent:pressed">
     <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
 </Style>
-
-<Style Selector="Button.recent.open">
-    <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
-    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
-    <Setter Property="BorderThickness" Value="2"/>
-</Style>
-
-<Style Selector="Button.recent.open:pointerover">
-    <Setter Property="Background" Value="{DynamicResource AccentSubtleHoverBrush}"/>
-    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
-</Style>
-
-<Style Selector="Button.recent.open:pressed">
-    <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
-</Style>
-
 
         <!-- ========================================================= -->
         <!-- TEMPLATE CARD                                              -->
@@ -1039,27 +1120,104 @@
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
     <Grid RowDefinitions="Auto,Auto,Auto,Auto,*"
-          Margin="50">
+          Margin="24,12,24,12">
 
         <!-- ========================================================= -->
-        <!-- HEADER                                                      -->
+        <!-- PROJECT OVERVIEW                                            -->
         <!-- ========================================================= -->
 
-        <StackPanel Grid.Row="0"
+        <StackPanel x:Name="ProjectSection"
+                    Grid.Row="0"
+                    Width="720"
                     HorizontalAlignment="Center"
-                    Spacing="8"
-                    Margin="0,20,0,45">
+                    Spacing="12"
+                    Margin="0,0,0,36">
 
-            <TextBlock Text="Super Dev"
-                       FontSize="{DynamicResource Font38}"
-                       FontWeight="Bold"
-                       HorizontalAlignment="Center"
-                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="Project overview"
+                               FontSize="{DynamicResource Font14}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextBodyBrush}"/>
+                    <TextBlock Text="Projects group the checklists you already have"
+                               FontSize="{DynamicResource Font13}"
+                               Foreground="{DynamicResource TextSubtleBrush}"/>
+                </StackPanel>
+                <Button x:Name="CreateProjectButton"
+                        Grid.Column="1"
+                        Classes="project-create"
+                        Content="Create Project"
+                        ToolTip.Tip="Create a project"
+                        Click="CreateProject_Click"/>
+            </Grid>
 
-            <TextBlock Text="Developer Checklist Assistant"
-                       FontSize="{DynamicResource Font17}"
-                       HorizontalAlignment="Center"
-                       Foreground="{DynamicResource TextMutedBrush}"/>
+            <Grid ColumnDefinitions="*,*,*,*">
+                <Border Grid.Column="0" Margin="0,0,8,0" Padding="12,10" CornerRadius="10"
+                        Background="{DynamicResource SurfaceInsetBrush}"
+                        BorderBrush="{DynamicResource BorderSoftBrush}"
+                        BorderThickness="1">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Projects"
+                                   FontSize="{DynamicResource Font12}"
+                                   Foreground="{DynamicResource TextMutedBrush}"/>
+                        <TextBlock x:Name="ProjectStatProjects"
+                                   Text="0"
+                                   FontSize="{DynamicResource Font20}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Margin="0,0,8,0" Padding="12,10" CornerRadius="10"
+                        Background="{DynamicResource SurfaceInsetBrush}"
+                        BorderBrush="{DynamicResource BorderSoftBrush}"
+                        BorderThickness="1">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Tasklists"
+                                   FontSize="{DynamicResource Font12}"
+                                   Foreground="{DynamicResource TextMutedBrush}"/>
+                        <TextBlock x:Name="ProjectStatTasklists"
+                                   Text="0"
+                                   FontSize="{DynamicResource Font20}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Margin="0,0,8,0" Padding="12,10" CornerRadius="10"
+                        Background="{DynamicResource SurfaceInsetBrush}"
+                        BorderBrush="{DynamicResource BorderSoftBrush}"
+                        BorderThickness="1">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="In progress"
+                                   FontSize="{DynamicResource Font12}"
+                                   Foreground="{DynamicResource TextMutedBrush}"/>
+                        <TextBlock x:Name="ProjectStatInProgress"
+                                   Text="0"
+                                   FontSize="{DynamicResource Font20}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="3" Padding="12,10" CornerRadius="10"
+                        Background="{DynamicResource SurfaceInsetBrush}"
+                        BorderBrush="{DynamicResource BorderSoftBrush}"
+                        BorderThickness="1">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Completed"
+                                   FontSize="{DynamicResource Font12}"
+                                   Foreground="{DynamicResource TextMutedBrush}"/>
+                        <TextBlock x:Name="ProjectStatCompleted"
+                                   Text="0"
+                                   FontSize="{DynamicResource Font20}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <TextBlock x:Name="ProjectEmptyText"
+                       Text="No projects yet."
+                       FontSize="{DynamicResource Font13}"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       IsVisible="False"/>
+
+            <WrapPanel x:Name="ProjectCards"
+                       Orientation="Horizontal"/>
 
         </StackPanel>
 
@@ -1073,7 +1231,7 @@
                     Width="720"
                     HorizontalAlignment="Center"
                     Spacing="8"
-                    Margin="0,0,0,32"
+                    Margin="0,0,0,36"
                     IsVisible="False">
 
             <TextBlock Text="Recent checklists"
@@ -1083,7 +1241,7 @@
 
             <Grid x:Name="RecentItems"
                   ColumnDefinitions="*,*"
-                  RowDefinitions="Auto,Auto,Auto"
+                  RowDefinitions="Auto,Auto"
                   ColumnSpacing="12"
                   RowSpacing="8"/>
 
@@ -1097,8 +1255,8 @@
         <StackPanel Grid.Row="2"
                     Width="720"
                     HorizontalAlignment="Center"
-                    Spacing="9"
-                    Margin="0,0,0,35">
+                    Spacing="8"
+                    Margin="0,0,0,36">
 
             <TextBlock Text="Work title"
                        FontSize="{DynamicResource Font14}"
@@ -1120,8 +1278,8 @@
         <StackPanel Grid.Row="3"
                     Width="720"
                     HorizontalAlignment="Center"
-                    Spacing="5"
-                    Margin="0,0,0,20">
+                    Spacing="4"
+                    Margin="0,0,0,12">
 
             <TextBlock Text="Choose a workflow"
                        FontSize="{DynamicResource Font14}"
@@ -1141,7 +1299,7 @@
 
         <StackPanel Grid.Row="4"
                     HorizontalAlignment="Center"
-                    Spacing="36">
+                    Spacing="12">
 
             <!-- TEMPLATE CARDS -->
 

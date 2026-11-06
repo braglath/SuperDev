@@ -45,6 +45,11 @@ public partial class MainWindow : Window
     private double _dragOriginX;
     private int _dragTarget = -1;
     private bool _tabDragging;
+    private bool _dragCanReorder;
+    private bool _dragReleaseChild;
+    private double _dragPointerX;
+    private ProjectTab? _dragProject;
+    private Border? _dragLayer;
     private bool _slideClock;
     private int _slideEpoch;
     private readonly Dictionary<Border, double> _slideTarget = new();
@@ -99,6 +104,11 @@ public partial class MainWindow : Window
             SyncAppearanceSelection();
             BuildShortcutSettings();
             RefreshRecentList();
+            RefreshProjectOverview();
+            foreach (var project in _projectTabs)
+                UpdateProjectHeader(project);
+            if (_activeProjectTab is not null && WorkspaceContent.Content == _activeProjectTab.Detail)
+                ShowProject(_activeProjectTab);
             BuildTemplateCards(_selectedTemplateId);
             foreach (var tab in _tabs)
                 tab.View.ApplyAppearance();
@@ -108,6 +118,7 @@ public partial class MainWindow : Window
         Deactivated += (_, _) => _keysDown.Clear();
         UpdateManualSaveVisibility();
         RefreshRecentList();
+        RefreshProjectOverview();
         BuildTemplateCards(null);
         ToolTip.SetTip(NewTabButton, AppShortcuts.WithShortcut(AppShortcuts.NewChecklist));
         ToolTip.SetTip(OpenChecklistButton, AppShortcuts.WithShortcut(AppShortcuts.OpenChecklist));
@@ -129,6 +140,7 @@ public partial class MainWindow : Window
                 OpenFromNotification(request.DocumentId, request.FilePath);
         }
 
+        _ = IndexKnownChecklistsAsync();
         if (!_automaticUpdateStarted &&
             (UpdateService.CheckAutomatically || UpdateService.InstallAutomatically))
         {
@@ -655,7 +667,8 @@ public partial class MainWindow : Window
     private void OpenDocumentTab(
         ChecklistDocument document,
         string? filePath,
-        bool isDirty)
+        bool isDirty,
+        Guid? openedFromProjectId = null)
     {
         var view = new ChecklistView(
             document.WorkType,
@@ -709,12 +722,35 @@ public partial class MainWindow : Window
 
         ToolTip.SetTip(completionMark, "Completed");
 
+        var projectLabel = new TextBlock
+        {
+            MaxWidth = 96,
+            FontSize = 10,
+            LineHeight = 12,
+            Margin = new Avalonia.Thickness(0),
+            Padding = new Avalonia.Thickness(0),
+            TextAlignment = TextAlignment.Left,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
+            IsVisible = false
+        };
+
+        var titleStack = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Vertical,
+            Spacing = 0,
+            Margin = new Avalonia.Thickness(0),
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Children = { titleText, projectLabel }
+        };
+
         var titleRow = new StackPanel
         {
             Orientation = Avalonia.Layout.Orientation.Horizontal,
             Spacing = 6,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            Children = { completionMark, titleText }
+            Children = { completionMark, titleStack }
         };
 
         var pinButton = new Button
@@ -731,6 +767,11 @@ public partial class MainWindow : Window
 
         closeButton.Classes.Add("tab-close");
         ToolTip.SetTip(closeButton, AppShortcuts.WithShortcut(AppShortcuts.CloseTab));
+        closeButton.AddHandler(
+            PointerPressedEvent,
+            (_, e) => e.Handled = true,
+            RoutingStrategies.Bubble,
+            handledEventsToo: true);
 
         var headerGrid = new Grid
         {
@@ -756,10 +797,11 @@ public partial class MainWindow : Window
             Child = headerGrid
         };
 
-        var tab = new ChecklistTab(document, view, tabHeader, titleText, completionMark, pinButton)
+        var tab = new ChecklistTab(document, view, tabHeader, titleText, projectLabel, completionMark, pinButton)
         {
             FilePath = filePath,
-            IsDirty = isDirty
+            IsDirty = isDirty,
+            OpenedFromProjectId = openedFromProjectId
         };
 
         view.SetManualSaveVisible(string.IsNullOrWhiteSpace(filePath));
@@ -783,11 +825,25 @@ public partial class MainWindow : Window
         tabHeader.PointerReleased += (_, e) => EndTabDrag(tab, e);
         tabHeader.PointerCaptureLost += (_, _) => EndTabDrag(tab, null);
 
-        closeButton.Click += (_, _) => _ = CloseTabFromUserAsync(tab);
+        closeButton.Click += (_, e) =>
+        {
+            e.Handled = true;
+            _ = CloseTabFromUserAsync(tab);
+        };
         pinButton.Click += (_, _) => TogglePin(tab);
 
         _tabs.Add(tab);
-        TabsPanel.Children.Add(tabHeader);
+        if (openedFromProjectId is Guid parentProjectId)
+        {
+            var parent = _projectTabs.FirstOrDefault(item => item.Project.Id == parentProjectId);
+            if (parent is not null)
+                parent.ChildrenCollapsed = false;
+        }
+
+        if (StripNeedsGroups())
+            ArrangeTabStrip();
+        else
+            TabsPanel.Children.Add(tabHeader);
         UpdatePinVisibility();
 
         UpdateTabChrome(tab);
@@ -887,45 +943,34 @@ public partial class MainWindow : Window
 
     private void RemoveTab(ChecklistTab tab)
     {
-        var index = _tabs.IndexOf(tab);
-
-        if (index < 0)
+        if (!_tabs.Contains(tab))
             return;
 
-        tab.AutoSaveTimer?.Stop();
-        TabsPanel.Children.Remove(tab.HeaderContainer);
-        _tabs.Remove(tab);
+        var wasActive = _activeTab == tab;
+        var before = CaptureTabs();
+        var projectIds = CaptureProjectIds();
+        DetachChecklist(tab);
         UpdatePinVisibility();
+        if (StripNeedsGroups())
+            ArrangeTabStrip();
 
-        if (_activeTab != tab)
+        if (!wasActive)
         {
-            TabBar.IsVisible = _tabs.Count > 0;
+            TabBar.IsVisible = HasOpenTabs();
             RefreshRecentList();
-            if (string.IsNullOrWhiteSpace(tab.FilePath))
-                ReminderSchedule.Remove(tab.Document.Id);
             RefreshNotificationBell();
+            RefreshProjectSurfaces();
             return;
         }
 
-        if (_tabs.Count > 0)
-        {
-            var nextIndex = Math.Min(index, _tabs.Count - 1);
-            ActivateTab(_tabs[nextIndex]);
-        }
-        else
-        {
-            _activeTab = null;
-            WorkspaceContent.Content = null;
-            WorkspaceContent.IsVisible = false;
-            TabBar.IsVisible = false;
-            HomePanel.IsVisible = true;
-            SetChecklistActionsEnabled(false);
-        }
-
+        ApplyFocus(TabSession.AfterChecklistClosed(
+            before,
+            projectIds,
+            new TabFocus(tab.Document.Id, null),
+            tab.Document.Id));
         RefreshRecentList();
-        if (string.IsNullOrWhiteSpace(tab.FilePath))
-            ReminderSchedule.Remove(tab.Document.Id);
         RefreshNotificationBell();
+        RefreshProjectSurfaces();
     }
 
     private void BeginTabDrag(ChecklistTab tab, PointerPressedEventArgs e)
@@ -937,13 +982,26 @@ public partial class MainWindow : Window
             return;
 
         ActivateTab(tab);
-        if (tab.IsPinned || _tabs.Count(open => !open.IsPinned) < 2)
+        _dragCanReorder = tab.OpenedFromProjectId is null
+            && !tab.IsPinned
+            && _tabs.Count(open => open.OpenedFromProjectId is null && !open.IsPinned) >= 2;
+        if (!_dragCanReorder && _projectTabs.Count == 0)
             return;
 
         _dragTab = tab;
         _dragStart = e.GetPosition(TabsPanel);
-        _dragOriginX = tab.HeaderContainer.Bounds.X;
-        _dragTarget = _tabs.IndexOf(tab);
+        var shift = (tab.HeaderContainer.RenderTransform as TranslateTransform)?.X ?? 0;
+        _dragOriginX = StripX(tab.HeaderContainer) - shift;
+        _dragTarget = tab.OpenedFromProjectId is Guid projectId
+            ? _tabs.Where(open => open.OpenedFromProjectId == projectId).ToList().IndexOf(tab)
+            : !_dragCanReorder
+                ? -1
+                : StripNeedsGroups()
+                    ? _tabs.Where(open => open.OpenedFromProjectId is null && !open.IsPinned).ToList().IndexOf(tab)
+                    : _tabs.IndexOf(tab);
+        _dragProject = null;
+        _dragReleaseChild = false;
+        _dragPointerX = _dragStart.X;
         _tabDragging = false;
         e.Pointer.Capture(tab.HeaderContainer);
         e.Handled = true;
@@ -969,16 +1027,59 @@ public partial class MainWindow : Window
             _tabDragging = true;
             tab.HeaderContainer.Classes.Add("dragging");
             tab.HeaderContainer.ZIndex = 2;
+            _dragLayer = ProjectGroupOf(tab.HeaderContainer);
+            if (_dragLayer is not null)
+                _dragLayer.ZIndex = 2;
             tab.HeaderContainer.Cursor = new Cursor(StandardCursorType.SizeWestEast);
         }
 
+        _dragPointerX = position.X;
+        var home = HomeProject(tab);
+        var project = ProjectUnderDrag(position, tab);
+        if (project is not null && home is not null && project.Project.Id == home.Project.Id)
+            project = null;
+
+        SetProjectDropTarget(project);
+        var insideHome = home is not null && PointerInsideProject(home, position);
+        _dragReleaseChild = home is not null && project is null && !insideHome;
+        tab.HeaderContainer.Cursor = new Cursor(project is not null
+            ? StandardCursorType.DragCopy
+            : _dragReleaseChild
+                ? StandardCursorType.DragMove
+                : StandardCursorType.SizeWestEast);
+
         var grab = _dragStart.X - _dragOriginX;
         var visualX = ClampDraggedVisualX(tab, position.X - grab);
-        var target = DropIndex(visualX + grab, tab);
-        if (target != _dragTarget)
+        if (project is not null || _dragReleaseChild)
         {
-            _dragTarget = target;
-            SlideTabsForDrop(tab, target);
+            _dragTarget = -1;
+            ResetTabSlidesExcept(tab);
+        }
+        else if (insideHome)
+        {
+            if (SiblingCount(tab) >= 2)
+            {
+                var target = DropIndexAmongChildren(position.X, tab);
+                if (target != _dragTarget)
+                {
+                    _dragTarget = target;
+                    SlideChildTabs(tab, target);
+                }
+            }
+            else
+            {
+                _dragTarget = 0;
+                ResetTabSlidesExcept(tab);
+            }
+        }
+        else if (_dragCanReorder)
+        {
+            var target = DropIndex(position.X, tab);
+            if (target != _dragTarget)
+            {
+                _dragTarget = target;
+                SlideTabsForDrop(tab, target);
+            }
         }
 
         PlaceDraggedTab(tab, visualX);
@@ -992,16 +1093,38 @@ public partial class MainWindow : Window
 
         var dropped = _tabDragging;
         var target = _dragTarget;
+        var project = _dragProject;
+        var releaseChild = _dragReleaseChild;
+        var pointerX = _dragPointerX;
         _dragTab = null;
         _tabDragging = false;
         _dragTarget = -1;
+        _dragCanReorder = false;
+        _dragReleaseChild = false;
+        SetProjectDropTarget(null);
         tab.HeaderContainer.Classes.Remove("dragging");
         tab.HeaderContainer.ClearValue(Avalonia.Input.InputElement.CursorProperty);
+        if (_dragLayer is not null)
+        {
+            _dragLayer.ZIndex = 0;
+            _dragLayer = null;
+        }
 
         if (e is not null)
             e.Pointer.Capture(null);
 
-        if (dropped)
+        var foreignProject = project is not null &&
+            (tab.OpenedFromProjectId is not Guid parent || project.Project.Id != parent);
+        if (dropped && foreignProject)
+        {
+            ClearTabSlides();
+            _ = RunFileOperation(() => AdoptTabIntoProjectAsync(project!.Project, tab));
+        }
+        else if (dropped && releaseChild)
+            ReleaseChildToStandalone(tab, pointerX);
+        else if (dropped && tab.OpenedFromProjectId is not null)
+            CommitChildDrop(tab, target);
+        else if (dropped && target >= 0)
             CommitTabDrop(tab, target);
         else
             ClearTabSlides();
@@ -1014,6 +1137,9 @@ public partial class MainWindow : Window
     /// </summary>
     private int DropIndex(double pointerX, ChecklistTab dragging)
     {
+        if (StripNeedsGroups())
+            return DropIndexAmongStandalones(pointerX, dragging);
+
         var pinned = _tabs.Count(tab => tab.IsPinned);
         var index = pinned;
         foreach (var other in _tabs)
@@ -1031,6 +1157,12 @@ public partial class MainWindow : Window
 
     private void SlideTabsForDrop(ChecklistTab dragging, int target)
     {
+        if (StripNeedsGroups())
+        {
+            SlideStandaloneTabs(dragging, target);
+            return;
+        }
+
         var from = _tabs.IndexOf(dragging);
         if (from < 0)
             return;
@@ -1081,12 +1213,119 @@ public partial class MainWindow : Window
     {
         var header = tab.HeaderContainer;
         var translate = EnsureTabTranslate(header);
-        translate.X = visualX - header.Bounds.X;
-        translate.Y = -2;
+        translate.X = visualX - _dragOriginX;
+        translate.Y = 0;
+    }
+
+    private ProjectTab? HomeProject(ChecklistTab tab)
+    {
+        if (tab.OpenedFromProjectId is not Guid projectId)
+            return null;
+
+        return _projectTabs.FirstOrDefault(project => project.Project.Id == projectId);
+    }
+
+    private int SiblingCount(ChecklistTab tab) =>
+        tab.OpenedFromProjectId is not Guid projectId
+            ? 0
+            : _tabs.Count(item => item.OpenedFromProjectId == projectId);
+
+    private bool PointerInsideProject(ProjectTab project, Point pointer)
+    {
+        var origin = project.Group.TranslatePoint(new Point(0, 0), TabsPanel);
+        if (origin is not Point start)
+            return false;
+
+        var bounds = new Rect(start, project.Group.Bounds.Size).Inflate(6);
+        return bounds.Contains(pointer);
+    }
+
+    private double LayoutStripX(Control control)
+    {
+        var shift = (control.RenderTransform as TranslateTransform)?.X ?? 0;
+        return StripX(control) - shift;
+    }
+
+    private double StripX(Control control)
+    {
+        var point = control.TranslatePoint(new Point(0, 0), TabsPanel);
+        return point?.X ?? control.Bounds.X;
+    }
+
+    private ProjectTab? ProjectUnderDrag(Point pointer, ChecklistTab tab)
+    {
+        if (HitProject(pointer) is { } direct)
+            return direct;
+
+        var header = tab.HeaderContainer;
+        var center = header.TranslatePoint(
+            new Point(header.Bounds.Width / 2, header.Bounds.Height / 2),
+            TabsPanel);
+        return center is Point point ? HitProject(point) : null;
+    }
+
+    private ProjectTab? HitProject(Point point)
+    {
+        foreach (var project in _projectTabs)
+        {
+            var origin = project.Header.TranslatePoint(new Point(0, 0), TabsPanel);
+            if (origin is not Point start)
+                continue;
+
+            var bounds = new Rect(start, project.Header.Bounds.Size).Inflate(8);
+            if (bounds.Contains(point))
+                return project;
+        }
+
+        return null;
+    }
+
+    private void SetProjectDropTarget(ProjectTab? project)
+    {
+        if (_dragProject == project)
+            return;
+
+        _dragProject?.Header.Classes.Remove("drop-target");
+        _dragProject?.Group.Classes.Remove("drop-target");
+        _dragProject = project;
+        project?.Header.Classes.Add("drop-target");
+        project?.Group.Classes.Add("drop-target");
+    }
+
+    private static Border? ProjectGroupOf(Control control)
+    {
+        var current = control.Parent;
+        while (current is not null)
+        {
+            if (current is Border border && border.Classes.Contains("project-group"))
+                return border;
+            current = current.Parent;
+        }
+
+        return null;
+    }
+
+    private void ResetTabSlidesExcept(ChecklistTab dragging)
+    {
+        foreach (var open in _tabs)
+        {
+            if (open == dragging)
+                continue;
+
+            var shift = (open.HeaderContainer.RenderTransform as TranslateTransform)?.X ?? 0;
+            if (Math.Abs(shift) > 0.5 || _slideTarget.ContainsKey(open.HeaderContainer))
+                AnimateTabSlide(open.HeaderContainer, 0);
+        }
     }
 
     private void CommitTabDrop(ChecklistTab dragging, int target)
     {
+        if (StripNeedsGroups())
+        {
+            CommitStandaloneDrop(dragging, target);
+            return;
+        }
+
         CancelTabSlides();
 
         var visualX = new Dictionary<ChecklistTab, double>();
@@ -1195,9 +1434,9 @@ public partial class MainWindow : Window
 
     private void UpdatePinVisibility()
     {
-        var show = _tabs.Count > 1;
+        var show = _tabs.Count(tab => tab.OpenedFromProjectId is null) > 1;
         foreach (var tab in _tabs)
-            tab.PinButton.IsVisible = show;
+            tab.PinButton.IsVisible = show && tab.OpenedFromProjectId is null;
 
         UpdatePinMenuItem();
     }
@@ -1219,6 +1458,9 @@ public partial class MainWindow : Window
 
     private void TogglePin(ChecklistTab tab)
     {
+        if (tab.OpenedFromProjectId is not null)
+            return;
+
         if (_dragTab == tab)
             EndTabDrag(tab, null);
 
@@ -1232,6 +1474,21 @@ public partial class MainWindow : Window
         {
             tab.PinButton.Classes.Remove("pinned");
             ToolTip.SetTip(tab.PinButton, "Pin tab");
+        }
+
+        if (StripNeedsGroups())
+        {
+            var pinned = _tabs.Where(open => open.OpenedFromProjectId is null && open.IsPinned).ToList();
+            var loose = _tabs.Where(open => open.OpenedFromProjectId is null && !open.IsPinned).ToList();
+            var children = _tabs.Where(open => open.OpenedFromProjectId is not null).ToList();
+            _tabs.Clear();
+            _tabs.AddRange(pinned);
+            _tabs.AddRange(loose);
+            _tabs.AddRange(children);
+            ArrangeTabStrip();
+            ActivateTab(tab);
+            SetChecklistActionsEnabled(true);
+            return;
         }
 
         var from = _tabs.IndexOf(tab);
@@ -1273,9 +1530,10 @@ public partial class MainWindow : Window
     private void ActivateTab(ChecklistTab tab)
     {
         _activeTab = tab;
+        _activeProjectTab = null;
 
-        foreach (var openTab in _tabs)
-            openTab.HeaderContainer.Classes.Remove("selected");
+        ClearChecklistSelection();
+        ClearProjectSelection();
 
         tab.HeaderContainer.Classes.Add("selected");
 
@@ -1294,6 +1552,7 @@ public partial class MainWindow : Window
         HomePanel.IsVisible = false;
         SetChecklistActionsEnabled(true);
         UpdateManualSaveVisibility();
+        SyncProjectIndicators();
     }
 
     private void NewTab_Click(
@@ -1318,10 +1577,14 @@ public partial class MainWindow : Window
         WorkspaceContent.Content = null;
 
         HomePanel.IsVisible = true;
-        TabBar.IsVisible = _tabs.Count > 0;
+        TabBar.IsVisible = HasOpenTabs();
+        ClearProjectSelection();
+        _activeProjectTab = null;
         SetChecklistActionsEnabled(false);
         UpdateManualSaveVisibility();
         RefreshRecentList();
+        RefreshProjectOverview();
+        SyncProjectIndicators();
     }
 
     private void SetChecklistActionsEnabled(bool enabled)
@@ -1348,10 +1611,14 @@ public partial class MainWindow : Window
     {
         var checklistOpen = !HomePanel.IsVisible && !SettingsPanel.IsVisible && !ShortcutsPanel.IsVisible && !RemindersPanel.IsVisible && ActiveTab() is not null;
         var pinLabel = ActiveTab()?.IsPinned == true ? "Unpin Tab" : "Pin Tab";
+        var standaloneTabs = _tabs.Count(tab => tab.OpenedFromProjectId is null);
         if (_pinTabMenuItem is not null)
             _pinTabMenuItem.Header = pinLabel;
         WindowPinMenuItem.Header = pinLabel;
-        SetItemActionVisible(_pinTabMenuItem, WindowPinMenuItem, checklistOpen && _tabs.Count > 1);
+        SetItemActionVisible(
+            _pinTabMenuItem,
+            WindowPinMenuItem,
+            checklistOpen && ActiveTab()?.OpenedFromProjectId is null && standaloneTabs > 1);
     }
 
     private static void SetItemActionVisible(NativeMenuItem? nativeItem, MenuItem windowItem, bool visible)
@@ -1493,7 +1760,9 @@ public partial class MainWindow : Window
         if (!_settingsOpen && !_shortcutsOpen)
         {
             _settingsOverReminders = _remindersOpen;
-            _settingsOverChecklist = !_remindersOpen && ActiveTab() is not null;
+            _settingsOverChecklist = !HomePanel.IsVisible
+                && !_remindersOpen
+                && (_activeTab is not null || _activeProjectTab is not null);
         }
 
         _settingsOpen = settings;
@@ -1507,14 +1776,17 @@ public partial class MainWindow : Window
         ShortcutsPanel.IsVisible = !settings;
         if (settings)
             SyncAppearanceSelection();
-        TabBar.IsVisible = _tabs.Count > 0;
+        TabBar.IsVisible = HasOpenTabs();
         UpdateManualSaveVisibility();
+        SyncProjectIndicators();
     }
 
     private void CloseSettings_Click(object? sender, RoutedEventArgs e)
     {
         if (_settingsOverReminders)
             ShowReminders();
+        else if (_settingsOverChecklist && _activeProjectTab is not null && _projectTabs.Contains(_activeProjectTab))
+            ActivateProject(_activeProjectTab);
         else if (_settingsOverChecklist && _activeTab is not null && _tabs.Contains(_activeTab))
             ActivateTab(_activeTab);
         else
@@ -1539,6 +1811,8 @@ public partial class MainWindow : Window
     {
         if (_activeTab is not null && _tabs.Contains(_activeTab))
             ActivateTab(_activeTab);
+        else if (_activeProjectTab is not null && _projectTabs.Contains(_activeProjectTab))
+            ActivateProject(_activeProjectTab);
         else
             ShowHomeScreen();
     }
@@ -1550,8 +1824,8 @@ public partial class MainWindow : Window
         _settingsOverChecklist = false;
         _settingsOverReminders = false;
         _remindersOpen = true;
-        foreach (var openTab in _tabs)
-            openTab.HeaderContainer.Classes.Remove("selected");
+        ClearChecklistSelection();
+        ClearProjectSelection();
         RemindersButton.Classes.Add("selected");
         HomePanel.IsVisible = false;
         SettingsPanel.IsVisible = false;
@@ -1559,9 +1833,10 @@ public partial class MainWindow : Window
         WorkspaceContent.IsVisible = false;
         WorkspaceContent.Content = null;
         RemindersPanel.IsVisible = true;
-        TabBar.IsVisible = _tabs.Count > 0;
+        TabBar.IsVisible = HasOpenTabs();
         SetChecklistActionsEnabled(false);
         UpdateManualSaveVisibility();
+        SyncProjectIndicators();
         RefreshReminderRows();
     }
 
@@ -1641,6 +1916,12 @@ public partial class MainWindow : Window
         if (tab is not null)
         {
             ApplyReminderEdit(tab, current, edit);
+            return;
+        }
+
+        if (_projects.Find(current.DocumentId) is { } project)
+        {
+            ApplyProjectReminderEdit(project, current, edit);
             return;
         }
 
@@ -1806,12 +2087,13 @@ public partial class MainWindow : Window
         });
     }
 
-    private static string ReminderKind(ScheduledReminder reminder)
+    private string ReminderKind(ScheduledReminder reminder)
     {
+        var project = _projects.Find(reminder.DocumentId) is not null;
         if (string.IsNullOrEmpty(reminder.Slot))
-            return "Reminder";
+            return project ? "Project reminder" : "Reminder";
         if (reminder.Slot == ScheduledReminder.DeadlineSlot)
-            return "Deadline";
+            return project ? "Project deadline" : "Deadline";
         return "Check";
     }
 
@@ -2117,6 +2399,12 @@ public partial class MainWindow : Window
             case AppShortcuts.CloseTab:
                 if (ActiveTab() is { } closing)
                     _ = RunFileOperation(() => CloseTabAsync(closing));
+                else if (_activeProjectTab is not null
+                    && !HomePanel.IsVisible
+                    && !_remindersOpen
+                    && !_settingsOpen
+                    && !_shortcutsOpen)
+                    _ = RunFileOperation(() => CloseProjectTabAsync(_activeProjectTab));
                 break;
             case AppShortcuts.NextTab:
                 SelectTabRelative(1);
@@ -2145,6 +2433,12 @@ public partial class MainWindow : Window
 
     private void SelectTabRelative(int delta)
     {
+        if (StripNeedsGroups())
+        {
+            SelectVisualTab(delta);
+            return;
+        }
+
         if (_tabs.Count == 0)
             return;
 
@@ -2771,8 +3065,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RememberChecklist(string path, ChecklistDocument document) =>
+    private void RememberChecklist(string path, ChecklistDocument document)
+    {
+        _projects.Note(document, path);
         RememberChecklist(path, document.Title, document.WorkType, document.IsCompleted);
+        RefreshProjectSurfaces();
+    }
 
     private void RememberChecklist(
         string path,
@@ -2794,7 +3092,7 @@ public partial class MainWindow : Window
         RecentItems.Children.Clear();
 
         var index = 0;
-        foreach (var entry in _recentChecklists.Entries.Take(RecentChecklistService.MaxEntries))
+        foreach (var entry in _recentChecklists.Entries.Take(4))
         {
             var openTab = FindTabByPath(entry.Path);
             var missing = openTab is null && !File.Exists(entry.Path);
@@ -2807,13 +3105,12 @@ public partial class MainWindow : Window
                     ? "File missing"
                     : SavedChecklistDetail(entry);
 
-            var isOpen = openTab is not null;
             var titleText = new TextBlock
             {
                 Text = title,
                 FontSize = AppearanceService.Font(14),
                 FontWeight = FontWeight.SemiBold,
-                Foreground = AppearanceService.Brush(isOpen ? AppearanceService.AccentTextBrush : "TextPrimaryBrush"),
+                Foreground = AppearanceService.Brush("TextPrimaryBrush"),
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 TextAlignment = TextAlignment.Left,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch
@@ -2867,8 +3164,6 @@ public partial class MainWindow : Window
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Stretch
             };
-            if (isOpen)
-                button.Classes.Add("open");
             ToolTip.SetTip(button, entry.Path);
             button.Click += Recent_Click;
 
@@ -2958,6 +3253,7 @@ public partial class MainWindow : Window
         PublishLinkedCompletion(tab);
         ScheduleAutoSave(tab);
         SyncReminders();
+        RefreshProjectSurfaces();
     }
 
     private void OnDocumentCompleted(ChecklistTab tab)
@@ -2974,6 +3270,7 @@ public partial class MainWindow : Window
         PublishLinkedCompletion(tab);
         ScheduleAutoSave(tab);
         SyncReminders();
+        RefreshProjectSurfaces();
         if (ActiveTab() == tab)
             SetChecklistActionsEnabled(true);
     }
@@ -2991,6 +3288,7 @@ public partial class MainWindow : Window
         PublishLinkedCompletion(tab);
         ScheduleAutoSave(tab);
         SyncReminders();
+        RefreshProjectSurfaces();
         if (ActiveTab() == tab)
             SetChecklistActionsEnabled(true);
     }
@@ -3178,9 +3476,50 @@ public partial class MainWindow : Window
         var tip = tab.Document.IsCompleted
             ? $"{tab.Document.Title} — Completed — {location}"
             : $"{tab.Document.Title} — {location}";
+        var membership = ProjectNameFor(tab);
+        if (membership is not null)
+            tip = $"In {membership} — {tip}";
 
         ToolTip.SetTip(tab.HeaderContainer, tip);
         ToolTip.SetTip(tab.TitleText, tip);
+        UpdateProjectCaption(tab);
+    }
+
+    /// <summary>
+    /// A checklist opened on its own still names the project it belongs to, under the tab title.
+    /// One opened from that project is already grouped beside the project tab.
+    /// </summary>
+    private void UpdateProjectCaption(ChecklistTab tab)
+    {
+        var name = tab.OpenedFromProjectId is null ? ProjectNameFor(tab) : null;
+        var show = !string.IsNullOrWhiteSpace(name);
+        tab.ProjectLabel.IsVisible = show;
+        tab.HeaderContainer.Height = 40;
+        tab.TitleText.TextAlignment = show ? TextAlignment.Left : TextAlignment.Center;
+        tab.TitleText.HorizontalAlignment = show
+            ? Avalonia.Layout.HorizontalAlignment.Left
+            : Avalonia.Layout.HorizontalAlignment.Center;
+        if (!show)
+        {
+            tab.HeaderContainer.Padding = new Avalonia.Thickness(8, 3);
+            return;
+        }
+
+        tab.ProjectLabel.Text = name;
+        tab.ProjectLabel.TextAlignment = TextAlignment.Left;
+        tab.ProjectLabel.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left;
+        if (tab.Document.ProjectId is Guid projectId && _projects.Find(projectId) is { } project)
+            tab.ProjectLabel.Foreground = ProjectChrome.Brush(project.Color);
+        ToolTip.SetTip(tab.ProjectLabel, name);
+        tab.HeaderContainer.Padding = new Avalonia.Thickness(8, 1);
+    }
+
+    private string? ProjectNameFor(ChecklistTab tab)
+    {
+        if (tab.Document.ProjectId is not Guid projectId)
+            return null;
+
+        return _projects.Find(projectId)?.Name;
     }
 
     private static bool HasSavedFile(ChecklistTab tab) =>
@@ -3387,6 +3726,7 @@ public partial class MainWindow : Window
             }
         }
 
+        SyncProjectSchedules();
         ReminderSchedule.DeliverDue();
         PullDeliveredReminders();
         RefreshNotificationBell();
@@ -3667,6 +4007,12 @@ public partial class MainWindow : Window
             if (open is not null)
             {
                 ActivateTab(open);
+                return;
+            }
+
+            if (_projects.Find(documentId) is { } project)
+            {
+                OpenProject(project);
                 return;
             }
         }
@@ -4100,6 +4446,7 @@ public partial class MainWindow : Window
         ChecklistView view,
         Border headerContainer,
         TextBlock titleText,
+        TextBlock projectLabel,
         Control completionMark,
         Button pinButton)
     {
@@ -4107,9 +4454,11 @@ public partial class MainWindow : Window
         public ChecklistView View { get; } = view;
         public Border HeaderContainer { get; } = headerContainer;
         public TextBlock TitleText { get; } = titleText;
+        public TextBlock ProjectLabel { get; } = projectLabel;
         public Control CompletionMark { get; } = completionMark;
         public Button PinButton { get; } = pinButton;
         public bool IsPinned { get; set; }
+        public Guid? OpenedFromProjectId { get; set; }
         public string? FilePath { get; set; }
         public bool IsDirty { get; set; }
         public bool IsSaving { get; set; }

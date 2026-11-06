@@ -12,6 +12,13 @@ public sealed class ChecklistDocument
 
     public Guid Id { get; set; }
 
+    /// <summary>
+    /// Project that organizes this checklist. Null keeps it standalone.
+    /// Missing on checklists saved before projects existed.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Guid? ProjectId { get; set; }
+
     public string Title { get; set; } = string.Empty;
 
     /// <summary>
