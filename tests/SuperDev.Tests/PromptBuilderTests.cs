@@ -22,6 +22,9 @@ public class PromptBuilderTests
         Assert.Contains("6 to 12", prompt.System, StringComparison.Ordinal);
         Assert.Contains("Investigation", prompt.System, StringComparison.Ordinal);
         Assert.Contains("Critical", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("summary describes this checklist", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("Do not copy the task text into the summary", prompt.System, StringComparison.Ordinal);
+        Assert.Contains("Do not repeat the task text", prompt.User, StringComparison.Ordinal);
         Assert.DoesNotContain("Crash when rotating", prompt.System, StringComparison.Ordinal);
         Assert.Contains("the behavior already exists", prompt.User, StringComparison.Ordinal);
         Assert.Contains("Android", prompt.User, StringComparison.Ordinal);

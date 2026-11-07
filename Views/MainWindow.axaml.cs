@@ -57,6 +57,7 @@ public partial class MainWindow : Window
     private readonly Queue<string> _pendingFileOpens = new();
     private bool _settingsOpen;
     private bool _shortcutsOpen;
+    private int _surfaceDepth;
     private bool _settingsOverChecklist;
     private bool _settingsOverReminders;
     private bool _remindersOpen;
@@ -94,6 +95,7 @@ public partial class MainWindow : Window
         _aiModels = new AIModelManager(_localAi);
         _aiSetup = AISetupManager.Create(_localAi);
         InitializeComponent();
+        InitializeHistory();
         BindChecklistMenuItems();
         ConfigureTitleChrome();
         BuildShortcutSettings();
@@ -112,6 +114,7 @@ public partial class MainWindow : Window
             BuildTemplateCards(_selectedTemplateId);
             foreach (var tab in _tabs)
                 tab.View.ApplyAppearance();
+            RefreshHistoryIfOpen();
         };
         AddHandler(KeyDownEvent, ShortcutKeyDown, RoutingStrategies.Tunnel);
         AddHandler(KeyUpEvent, ShortcutKeyUp, RoutingStrategies.Tunnel);
@@ -120,7 +123,13 @@ public partial class MainWindow : Window
         RefreshRecentList();
         RefreshProjectOverview();
         BuildTemplateCards(null);
-        ToolTip.SetTip(NewTabButton, AppShortcuts.WithShortcut(AppShortcuts.NewChecklist));
+        var createProject = AppShortcuts.All.First(item => item.Id == AppShortcuts.CreateProject);
+        var createTasklist = AppShortcuts.All.First(item => item.Id == AppShortcuts.NewChecklist);
+        CreateProjectShortcut.Text = createProject.CurrentDisplay;
+        CreateTasklistShortcut.Text = createTasklist.CurrentDisplay;
+        ToolTip.SetTip(HomeEmptyCreateProjectButton, AppShortcuts.WithShortcut(AppShortcuts.CreateProject));
+        ToolTip.SetTip(AllProjectsEmptyCreateProjectButton, AppShortcuts.WithShortcut(AppShortcuts.CreateProject));
+        ToolTip.SetTip(NewTabButton, $"Create a project ({createProject.CurrentDisplay}) or tasklist ({createTasklist.CurrentDisplay})");
         ToolTip.SetTip(OpenChecklistButton, AppShortcuts.WithShortcut(AppShortcuts.OpenChecklist));
         StartReminderTimer();
         BindUpdateSettings();
@@ -145,7 +154,7 @@ public partial class MainWindow : Window
             (UpdateService.CheckAutomatically || UpdateService.InstallAutomatically))
         {
             _automaticUpdateStarted = true;
-            _ = RunUpdateCheckAsync(fromMenu: false, automatic: UpdateService.InstallAutomatically, announce: true);
+            _ = RunUpdateCheckAsync(interactive: false, automatic: UpdateService.InstallAutomatically);
         }
     }
 
@@ -178,6 +187,9 @@ public partial class MainWindow : Window
                 {
                     case "New Checklist":
                         ApplyMenuGesture(item, AppShortcuts.NewChecklist);
+                        break;
+                    case "Create Project":
+                        ApplyMenuGesture(item, AppShortcuts.CreateProject);
                         break;
                     case "Open…":
                         ApplyMenuGesture(item, AppShortcuts.OpenChecklist);
@@ -275,6 +287,35 @@ public partial class MainWindow : Window
         match.Classes.Add("selected");
     }
 
+    private static StackPanel TemplateCardContent(string icon, string title, string? description)
+    {
+        var content = new StackPanel
+        {
+            Spacing = 4,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        content.Children.Add(new TextBlock
+        {
+            Text = icon,
+            Classes = { "template-icon" }
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = title,
+            Classes = { "template-title" }
+        });
+        if (!string.IsNullOrWhiteSpace(description))
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = description,
+                Classes = { "template-description" }
+            });
+        }
+
+        return content;
+    }
+
     private Control CreateTemplateCard(ChecklistTemplate template, bool canEdit)
     {
         var button = new Button
@@ -284,24 +325,7 @@ public partial class MainWindow : Window
             Margin = new Thickness(0),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
-            Content = new StackPanel
-            {
-                Spacing = 4,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = template.Icon,
-                        Classes = { "template-icon" }
-                    },
-                    new TextBlock
-                    {
-                        Text = template.Title,
-                        Classes = { "template-title" }
-                    }
-                }
-            }
+            Content = TemplateCardContent(template.Icon, template.Title, ChecklistTemplateService.PredefinedDescription(template.Id))
         };
         button.Click += WorkflowButton_Click;
         _templateButtons.Add(button);
@@ -309,7 +333,7 @@ public partial class MainWindow : Window
         var host = new Grid
         {
             Width = 148,
-            Height = 84,
+            Height = 118,
             Margin = new Thickness(5)
         };
         host.Children.Add(button);
@@ -341,31 +365,14 @@ public partial class MainWindow : Window
             Margin = new Thickness(0),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
-            Content = new StackPanel
-            {
-                Spacing = 4,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = "＋",
-                        Classes = { "template-icon" }
-                    },
-                    new TextBlock
-                    {
-                        Text = "New template",
-                        Classes = { "template-title" }
-                    }
-                }
-            }
+            Content = TemplateCardContent("＋", "New template", description: null)
         };
         button.Click += NewTemplate_Click;
 
         return new Grid
         {
             Width = 148,
-            Height = 84,
+            Height = 118,
             Margin = new Thickness(5),
             Children = { button }
         };
@@ -516,6 +523,7 @@ public partial class MainWindow : Window
             Items = template.Id == "blank" ? [] : _checklistService.CreateItems(template)
         };
 
+        TrackCreated(document);
         OpenDocumentTab(document, filePath: null, isDirty: true);
         ClearCreateForm();
     }
@@ -539,6 +547,7 @@ public partial class MainWindow : Window
             FormatVersion = ChecklistDocument.CurrentFormatVersion,
             Id = Guid.NewGuid(),
             Title = draft.Title.Trim(),
+            Description = draft.Description,
             WorkType = draft.WorkType,
             TemplateName = draft.TemplateName,
             TaskDescription = draft.TaskDescription,
@@ -550,6 +559,7 @@ public partial class MainWindow : Window
             Items = draft.Items
         };
 
+        TrackCreated(document);
         OpenDocumentTab(document, filePath: null, isDirty: true);
     }
 
@@ -640,8 +650,12 @@ public partial class MainWindow : Window
             if (replaceDifferentDocument is null)
                 return false;
 
+            var replacedId = await ReplacedDocumentIdAsync(path, document.Id, replaceDifferentDocument.Value);
             await _fileService.SaveAsync(path, document, replaceDifferentDocument.Value);
-            RememberChecklist(path, document);
+            if (replacedId is Guid oldDailyId)
+                TrackDeleted(oldDailyId, null);
+            TrackCreated(document, path);
+            RememberChecklist(path, document, trackActivity: true);
             OpenDocumentTab(document, path, isDirty: false);
             return true;
         }
@@ -670,6 +684,9 @@ public partial class MainWindow : Window
         bool isDirty,
         Guid? openedFromProjectId = null)
     {
+        if (!isDirty)
+            TrackObserved(document, filePath);
+
         var view = new ChecklistView(
             document.WorkType,
             document.TemplateName,
@@ -956,7 +973,7 @@ public partial class MainWindow : Window
 
         if (!wasActive)
         {
-            TabBar.IsVisible = HasOpenTabs();
+            TabBar.IsVisible = true;
             RefreshRecentList();
             RefreshNotificationBell();
             RefreshProjectSurfaces();
@@ -1529,6 +1546,8 @@ public partial class MainWindow : Window
 
     private void ActivateTab(ChecklistTab tab)
     {
+        _returnToHistory = false;
+        HideHistory();
         _activeTab = tab;
         _activeProjectTab = null;
 
@@ -1553,17 +1572,77 @@ public partial class MainWindow : Window
         SetChecklistActionsEnabled(true);
         UpdateManualSaveVisibility();
         SyncProjectIndicators();
+        SyncHomeTab();
     }
 
-    private void NewTab_Click(
-        object? sender,
-        RoutedEventArgs e)
+    private void HomeTab_Click(object? sender, RoutedEventArgs e) =>
+        ShowHomeScreen();
+
+    private void HomeSettings_Click(object? sender, RoutedEventArgs e) =>
+        InvokeShortcut(AppShortcuts.Settings);
+
+    private void CreateTasklist_Click(object? sender, RoutedEventArgs e)
+    {
+        NewTabButton.Flyout?.Hide();
+        ShowCreateChecklist();
+    }
+
+    private void ViewAllProjects_Click(object? sender, RoutedEventArgs e)
     {
         ShowHomeScreen();
+        ShowHomeSurface(HomeSurface.Projects);
+    }
+
+    private void ViewAllFiles_Click(object? sender, RoutedEventArgs e)
+    {
+        ShowHomeScreen();
+        ShowHomeSurface(HomeSurface.Files);
+    }
+
+    private void HomeLayout_SizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (ActionRow.ColumnDefinitions.Count < 2)
+            return;
+
+        var narrow = e.NewSize.Width < 680;
+        ActionRow.ColumnDefinitions[1].Width = narrow
+            ? new GridLength(0)
+            : new GridLength(1, GridUnitType.Star);
+        Grid.SetColumn(CreateTasklistButton, narrow ? 0 : 1);
+        Grid.SetRow(CreateTasklistButton, narrow ? 1 : 0);
+        LayoutTemplateWrap(e.NewSize.Width);
+    }
+
+    private void LayoutTemplateWrap(double available)
+    {
+        const double tile = 158;
+        available = Math.Min(available, 1040);
+        if (available < tile)
+        {
+            TemplateList.Width = double.NaN;
+            return;
+        }
+
+        var columns = Math.Max(1, (int)Math.Floor(available / tile));
+        TemplateList.Width = columns * tile;
+    }
+
+    private enum HomeSurface
+    {
+        Dashboard,
+        Create,
+        CreateProject,
+        Projects,
+        Files
     }
 
     private void ShowHomeScreen()
     {
+        if (_surfaceDepth > 0)
+            return;
+
+        _returnToHistory = false;
+        HideHistory();
         _settingsOpen = false;
         _shortcutsOpen = false;
         _settingsOverChecklist = false;
@@ -1577,14 +1656,65 @@ public partial class MainWindow : Window
         WorkspaceContent.Content = null;
 
         HomePanel.IsVisible = true;
-        TabBar.IsVisible = HasOpenTabs();
+        TabBar.IsVisible = true;
+        ClearChecklistSelection();
         ClearProjectSelection();
         _activeProjectTab = null;
         SetChecklistActionsEnabled(false);
         UpdateManualSaveVisibility();
         RefreshRecentList();
         RefreshProjectOverview();
+        ShowHomeSurface(HomeSurface.Dashboard);
         SyncProjectIndicators();
+    }
+
+    private void ShowCreateChecklist()
+    {
+        ShowHomeScreen();
+        ShowHomeSurface(HomeSurface.Create);
+    }
+
+    private void ShowHomeSurface(HomeSurface surface)
+    {
+        HomeDashboard.IsVisible = surface == HomeSurface.Dashboard;
+        CreateChecklistPanel.IsVisible = surface == HomeSurface.Create;
+        CreateProjectPanel.IsVisible = surface == HomeSurface.CreateProject;
+        AllProjectsPanel.IsVisible = surface == HomeSurface.Projects;
+        AllFilesPanel.IsVisible = surface == HomeSurface.Files;
+        if (surface == HomeSurface.Create)
+            LayoutTemplateWrap(HomeLayout.Bounds.Width);
+        if (surface == HomeSurface.Projects)
+            RefreshProjectOverview();
+        if (surface == HomeSurface.Files)
+            RefreshAllFiles();
+        SyncHomeTab();
+    }
+
+    private HomeSurface CurrentHomeSurface()
+    {
+        if (CreateProjectPanel.IsVisible)
+            return HomeSurface.CreateProject;
+        if (CreateChecklistPanel.IsVisible)
+            return HomeSurface.Create;
+        if (AllProjectsPanel.IsVisible)
+            return HomeSurface.Projects;
+        if (AllFilesPanel.IsVisible)
+            return HomeSurface.Files;
+        return HomeSurface.Dashboard;
+    }
+
+    private void SyncHomeTab()
+    {
+        var onDashboard = HomePanel.IsVisible && HomeDashboard.IsVisible;
+        if (onDashboard)
+        {
+            if (!HomeTabButton.Classes.Contains("selected"))
+                HomeTabButton.Classes.Add("selected");
+        }
+        else
+        {
+            HomeTabButton.Classes.Remove("selected");
+        }
     }
 
     private void SetChecklistActionsEnabled(bool enabled)
@@ -1609,7 +1739,7 @@ public partial class MainWindow : Window
 
     private void UpdatePinMenuItem()
     {
-        var checklistOpen = !HomePanel.IsVisible && !SettingsPanel.IsVisible && !ShortcutsPanel.IsVisible && !RemindersPanel.IsVisible && ActiveTab() is not null;
+        var checklistOpen = !HomePanel.IsVisible && !_historyOpen && !SettingsPanel.IsVisible && !ShortcutsPanel.IsVisible && !RemindersPanel.IsVisible && ActiveTab() is not null;
         var pinLabel = ActiveTab()?.IsPinned == true ? "Unpin Tab" : "Pin Tab";
         var standaloneTabs = _tabs.Count(tab => tab.OpenedFromProjectId is null);
         if (_pinTabMenuItem is not null)
@@ -1675,6 +1805,7 @@ public partial class MainWindow : Window
                 var id = header switch
                 {
                     "New Checklist" => AppShortcuts.NewChecklist,
+                    "Create Project" => AppShortcuts.CreateProject,
                     "Open…" => AppShortcuts.OpenChecklist,
                     "Save" => AppShortcuts.Save,
                     "Add Check" => AppShortcuts.AddItem,
@@ -1698,6 +1829,9 @@ public partial class MainWindow : Window
         {
             case "New Checklist":
                 InvokeShortcut(AppShortcuts.NewChecklist);
+                break;
+            case "Create Project":
+                InvokeShortcut(AppShortcuts.CreateProject);
                 break;
             case "Open…":
                 InvokeShortcut(AppShortcuts.OpenChecklist);
@@ -1757,28 +1891,68 @@ public partial class MainWindow : Window
 
     private void ShowOverlay(bool settings)
     {
-        if (!_settingsOpen && !_shortcutsOpen)
+        _surfaceDepth++;
+        try
         {
-            _settingsOverReminders = _remindersOpen;
-            _settingsOverChecklist = !HomePanel.IsVisible
-                && !_remindersOpen
-                && (_activeTab is not null || _activeProjectTab is not null);
-        }
+            if (!_settingsOpen && !_shortcutsOpen)
+            {
+                if (_historyOpen)
+                    _returnToHistory = true;
+                _settingsOverReminders = _remindersOpen;
+                _settingsOverChecklist = !HomePanel.IsVisible
+                    && !_historyOpen
+                    && !_remindersOpen
+                    && (_activeTab is not null || _activeProjectTab is not null);
+            }
 
-        _settingsOpen = settings;
-        _shortcutsOpen = !settings;
-        _remindersOpen = false;
-        RemindersButton.Classes.Remove("selected");
+            _settingsOpen = settings;
+            _shortcutsOpen = !settings;
+            _remindersOpen = false;
+            RemindersButton.Classes.Remove("selected");
+            HomePanel.IsVisible = false;
+            WorkspaceContent.IsVisible = false;
+            RemindersPanel.IsVisible = false;
+            SettingsPanel.IsVisible = settings;
+            ShortcutsPanel.IsVisible = !settings;
+            HideHistory();
+            if (settings)
+                SyncAppearanceSelection();
+            TabBar.IsVisible = true;
+            UpdateManualSaveVisibility();
+            SyncProjectIndicators();
+            SyncHomeTab();
+            if (settings)
+                KeepSettingsOnTop();
+        }
+        finally
+        {
+            _surfaceDepth--;
+        }
+    }
+
+    private void KeepSettingsOnTop()
+    {
         HomePanel.IsVisible = false;
         WorkspaceContent.IsVisible = false;
         RemindersPanel.IsVisible = false;
-        SettingsPanel.IsVisible = settings;
-        ShortcutsPanel.IsVisible = !settings;
-        if (settings)
-            SyncAppearanceSelection();
-        TabBar.IsVisible = HasOpenTabs();
-        UpdateManualSaveVisibility();
-        SyncProjectIndicators();
+        ShortcutsPanel.IsVisible = false;
+        SettingsPanel.IsVisible = true;
+        _settingsOpen = true;
+        _shortcutsOpen = false;
+        if (_settingsOverChecklist && _activeTab is not null && _tabs.Contains(_activeTab))
+        {
+            ClearChecklistSelection();
+            ClearProjectSelection();
+            _activeTab.HeaderContainer.Classes.Add("selected");
+        }
+        else if (_settingsOverChecklist && _activeProjectTab is not null && _projectTabs.Contains(_activeProjectTab))
+        {
+            ClearChecklistSelection();
+            ClearProjectSelection();
+            _activeProjectTab.Header.Classes.Add("selected");
+        }
+
+        SyncHomeTab();
     }
 
     private void CloseSettings_Click(object? sender, RoutedEventArgs e)
@@ -1789,6 +1963,11 @@ public partial class MainWindow : Window
             ActivateProject(_activeProjectTab);
         else if (_settingsOverChecklist && _activeTab is not null && _tabs.Contains(_activeTab))
             ActivateTab(_activeTab);
+        else if (_returnToHistory)
+        {
+            _returnToHistory = false;
+            ShowHistory();
+        }
         else
             ShowHomeScreen();
     }
@@ -1809,6 +1988,13 @@ public partial class MainWindow : Window
 
     private void CloseReminders()
     {
+        if (_returnToHistory)
+        {
+            _returnToHistory = false;
+            ShowHistory();
+            return;
+        }
+
         if (_activeTab is not null && _tabs.Contains(_activeTab))
             ActivateTab(_activeTab);
         else if (_activeProjectTab is not null && _projectTabs.Contains(_activeProjectTab))
@@ -1819,6 +2005,9 @@ public partial class MainWindow : Window
 
     private void ShowReminders()
     {
+        if (_historyOpen)
+            _returnToHistory = true;
+
         _settingsOpen = false;
         _shortcutsOpen = false;
         _settingsOverChecklist = false;
@@ -1832,11 +2021,13 @@ public partial class MainWindow : Window
         ShortcutsPanel.IsVisible = false;
         WorkspaceContent.IsVisible = false;
         WorkspaceContent.Content = null;
+        HideHistory();
         RemindersPanel.IsVisible = true;
-        TabBar.IsVisible = HasOpenTabs();
+        TabBar.IsVisible = true;
         SetChecklistActionsEnabled(false);
         UpdateManualSaveVisibility();
         SyncProjectIndicators();
+        SyncHomeTab();
         RefreshReminderRows();
     }
 
@@ -2366,7 +2557,15 @@ public partial class MainWindow : Window
         switch (id)
         {
             case AppShortcuts.NewChecklist:
-                ShowHomeScreen();
+                if (_settingsOpen || _shortcutsOpen)
+                    break;
+                ShowCreateChecklist();
+                break;
+            case AppShortcuts.CreateProject:
+                if (_settingsOpen || _shortcutsOpen)
+                    break;
+                NewTabButton.Flyout?.Hide();
+                ShowProjectEditor(null);
                 break;
             case AppShortcuts.OpenChecklist:
                 _ = RunFileOperation(OpenAsync);
@@ -2394,9 +2593,14 @@ public partial class MainWindow : Window
                 }
                 break;
             case AppShortcuts.Settings:
-                ShowSettings();
+                if (_settingsOpen)
+                    KeepSettingsOnTop();
+                else
+                    ShowSettings();
                 break;
             case AppShortcuts.CloseTab:
+                if (_settingsOpen || _shortcutsOpen)
+                    break;
                 if (ActiveTab() is { } closing)
                     _ = RunFileOperation(() => CloseTabAsync(closing));
                 else if (_activeProjectTab is not null
@@ -2455,6 +2659,9 @@ public partial class MainWindow : Window
     private void NewChecklistMenu_Click(object? sender, EventArgs e) =>
         InvokeShortcut(AppShortcuts.NewChecklist);
 
+    private void CreateProjectMenu_Click(object? sender, EventArgs e) =>
+        InvokeShortcut(AppShortcuts.CreateProject);
+
     private void OpenMenu_Click(object? sender, EventArgs e) =>
         InvokeShortcut(AppShortcuts.OpenChecklist);
 
@@ -2495,7 +2702,7 @@ public partial class MainWindow : Window
         ShowShortcuts();
 
     private void CheckForUpdatesMenu_Click(object? sender, EventArgs e) =>
-        _ = RunUpdateCheckAsync(fromMenu: true, automatic: false, announce: false);
+        _ = RunUpdateCheckAsync(interactive: true, automatic: false);
 
     private void CopyMenu_Click(object? sender, EventArgs e)
     {
@@ -2539,7 +2746,7 @@ public partial class MainWindow : Window
 
     private ChecklistTab? ActiveTab()
     {
-        if (HomePanel.IsVisible || ((_settingsOpen || _shortcutsOpen) && !_settingsOverChecklist))
+        if (HomePanel.IsVisible || _historyOpen || ((_settingsOpen || _shortcutsOpen) && !_settingsOverChecklist))
             return null;
 
         return _activeTab;
@@ -2786,6 +2993,7 @@ public partial class MainWindow : Window
         if (replaceDifferentDocument is null)
             return false;
 
+        var replacedId = await ReplacedDocumentIdAsync(path, tab.Document.Id, replaceDifferentDocument.Value);
         var version = tab.EditVersion;
         CopyViewOntoDocument(tab);
 
@@ -2812,7 +3020,9 @@ public partial class MainWindow : Window
         tab.View.SetManualSaveVisible(!HasSavedFile(tab));
         UpdateTabChrome(tab);
         UpdateManualSaveVisibility();
-        RememberChecklist(path, tab.Document);
+        if (replacedId is Guid oldDocumentId)
+            TrackDeleted(oldDocumentId, null);
+        RememberChecklist(path, tab.Document, trackActivity: true);
         if (announce)
         {
             var saved = $"Saved \"{tab.Document.Title}\".";
@@ -2920,6 +3130,7 @@ public partial class MainWindow : Window
         if (replaceDifferentDocument is null)
             return;
 
+        var replacedCopyId = await ReplacedDocumentIdAsync(path, copy.Id, replaceDifferentDocument.Value);
         try
         {
             await _fileService.SaveAsync(path, copy, replaceDifferentDocument.Value);
@@ -2932,7 +3143,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        RememberChecklist(path, copy);
+        if (replacedCopyId is Guid oldCopyId)
+            TrackDeleted(oldCopyId, null);
+        TrackCreated(copy, path);
+        RememberChecklist(path, copy, trackActivity: true);
         OpenDocumentTab(copy, path, isDirty: false);
         await ShowMessage($"Saved a copy of \"{copy.Title}\".");
     }
@@ -3065,10 +3279,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RememberChecklist(string path, ChecklistDocument document)
+    private void RememberChecklist(string path, ChecklistDocument document, bool trackActivity = false)
     {
         _projects.Note(document, path);
         RememberChecklist(path, document.Title, document.WorkType, document.IsCompleted);
+        if (trackActivity)
+            TrackCaptured(document, path);
         RefreshProjectSurfaces();
     }
 
@@ -3087,105 +3303,259 @@ public partial class MainWindow : Window
         RefreshRecentList();
     }
 
+    private readonly record struct HomeFile(
+        string Path,
+        string Title,
+        WorkType? WorkType,
+        DateTime WhenUtc,
+        bool Completed,
+        bool Missing);
+
     private void RefreshRecentList()
     {
-        RecentItems.Children.Clear();
+        FillFileRows(RecentItems, RecentHomeFiles());
+        var empty = RecentItems.Children.Count == 0;
+        RecentEmpty.IsVisible = empty;
+        RecentItems.IsVisible = !empty;
+        if (AllFilesPanel.IsVisible)
+            RefreshAllFiles();
+    }
 
-        var index = 0;
-        foreach (var entry in _recentChecklists.Entries.Take(4))
+    private void RefreshAllFiles()
+    {
+        var files = AllKnownFiles();
+        FillFileRows(AllFileItems, files);
+        AllFilesEmpty.IsVisible = files.Count == 0;
+        AllFileItems.IsVisible = files.Count > 0;
+    }
+
+    private List<HomeFile> RecentHomeFiles()
+    {
+        var files = new List<HomeFile>();
+        foreach (var entry in _recentChecklists.Entries)
         {
-            var openTab = FindTabByPath(entry.Path);
-            var missing = openTab is null && !File.Exists(entry.Path);
-            var title = openTab?.Document.Title ?? entry.Title;
-            var completed = openTab?.Document.IsCompleted ?? entry.IsCompleted;
-
-            var detail = openTab is not null
-                ? OpenTabDetail(openTab)
-                : missing
-                    ? "File missing"
-                    : SavedChecklistDetail(entry);
-
-            var titleText = new TextBlock
-            {
-                Text = title,
-                FontSize = AppearanceService.Font(14),
-                FontWeight = FontWeight.SemiBold,
-                Foreground = AppearanceService.Brush("TextPrimaryBrush"),
-                TextTrimming = TextTrimming.CharacterEllipsis,
-                TextAlignment = TextAlignment.Left,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch
-            };
-
-            var detailText = new TextBlock
-            {
-                Text = detail,
-                FontSize = AppearanceService.Font(12),
-                Foreground = AppearanceService.Brush(missing ? AppearanceService.DangerTextBrush : AppearanceService.TextMutedBrush),
-                TextTrimming = TextTrimming.CharacterEllipsis,
-                TextAlignment = TextAlignment.Left,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch
-            };
-
-            var text = new StackPanel
-            {
-                Spacing = 2,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Children = { titleText, detailText }
-            };
-
-            var content = new Grid
-            {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            };
-            content.Children.Add(text);
-
-            if (completed && !missing)
-            {
-                var mark = new TextBlock
-                {
-                    Text = "Completed",
-                    FontSize = AppearanceService.Font(12),
-                    Foreground = AppearanceService.Brush("SuccessTextBrush"),
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                    Margin = new Avalonia.Thickness(12, 0, 0, 0)
-                };
-                Grid.SetColumn(mark, 1);
-                content.Children.Add(mark);
-            }
-
-            var button = new Button
-            {
-                Classes = { "recent" },
-                Tag = entry.Path,
-                Content = content,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
-                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Stretch
-            };
-            ToolTip.SetTip(button, entry.Path);
-            button.Click += Recent_Click;
-
-            Grid.SetColumn(button, index % 2);
-            Grid.SetRow(button, index / 2);
-            RecentItems.Children.Add(button);
-            index++;
+            var open = FindTabByPath(entry.Path);
+            files.Add(new HomeFile(
+                entry.Path,
+                string.IsNullOrWhiteSpace(open?.Document.Title) ? entry.Title : open.Document.Title,
+                open?.Document.WorkType ?? entry.WorkType,
+                entry.LastUsedOn,
+                open?.Document.IsCompleted ?? entry.IsCompleted,
+                open is null && !File.Exists(entry.Path)));
         }
 
-        RecentSection.IsVisible = RecentItems.Children.Count > 0;
+        return files;
     }
 
-    private static string OpenTabDetail(ChecklistTab tab)
+    private List<HomeFile> AllKnownFiles()
     {
-        var detail = WorkflowLabel(tab.Document.WorkType) + " · Open";
-        if (tab.IsDirty)
-            detail += " · Unsaved changes";
-        return detail;
+        var map = new Dictionary<string, HomeFile>(StringComparer.OrdinalIgnoreCase);
+        foreach (var file in RecentHomeFiles())
+        {
+            var key = NormalizePath(file.Path) ?? file.Path;
+            map[key] = file;
+        }
+
+        foreach (var record in _projects.Tasklists)
+        {
+            if (string.IsNullOrWhiteSpace(record.Path))
+                continue;
+
+            var key = NormalizePath(record.Path) ?? record.Path;
+            if (map.ContainsKey(key))
+                continue;
+
+            var open = FindTabByPath(record.Path);
+            map[key] = new HomeFile(
+                record.Path,
+                string.IsNullOrWhiteSpace(open?.Document.Title) ? record.Title : open.Document.Title,
+                open?.Document.WorkType,
+                record.UpdatedOn,
+                open?.Document.IsCompleted ?? record.IsCompleted,
+                open is null && !File.Exists(record.Path));
+        }
+
+        return map.Values.OrderByDescending(file => file.WhenUtc).ToList();
     }
 
-    private static string SavedChecklistDetail(RecentChecklistEntry entry) =>
-        WorkflowLabel(entry.WorkType);
+    private void FillFileRows(Panel host, IReadOnlyList<HomeFile> files)
+    {
+        host.Children.Clear();
+        foreach (var file in files)
+            host.Children.Add(FileRow(file));
+    }
+
+    private Control FileRow(HomeFile file)
+    {
+        var open = FindTabByPath(file.Path);
+        var title = new TextBlock
+        {
+            Text = file.Title,
+            FontSize = AppearanceService.Font(14),
+            FontWeight = FontWeight.SemiBold,
+            Foreground = AppearanceService.Brush(AppearanceService.TextPrimaryBrush),
+            TextTrimming = TextTrimming.CharacterEllipsis
+        };
+        var detail = new TextBlock
+        {
+            Text = FileSubtitle(file, open),
+            FontSize = AppearanceService.Font(12),
+            Foreground = AppearanceService.Brush(file.Missing ? AppearanceService.DangerTextBrush : AppearanceService.TextMutedBrush),
+            TextTrimming = TextTrimming.CharacterEllipsis
+        };
+        var text = new StackPanel
+        {
+            Spacing = 2,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children = { title, detail }
+        };
+        var category = FileCategory(file.WorkType);
+        var tint = FileTintFor(file.WorkType);
+        var pill = new Border
+        {
+            Background = tint.Plate,
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(8, 3),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new TextBlock
+            {
+                Text = category,
+                FontSize = AppearanceService.Font(12),
+                FontWeight = FontWeight.SemiBold,
+                Foreground = tint.Glyph
+            }
+        };
+        var when = new TextBlock
+        {
+            Text = FormatWhen(file.WhenUtc),
+            FontSize = AppearanceService.Font(12),
+            Foreground = AppearanceService.Brush(AppearanceService.TextMutedBrush),
+            VerticalAlignment = VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Right
+        };
+        var row = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto"),
+            ColumnSpacing = 12,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var mark = FileMark(tint.Plate, tint.Glyph);
+        Grid.SetColumn(text, 1);
+        Grid.SetColumn(pill, 2);
+        Grid.SetColumn(when, 3);
+        row.Children.Add(mark);
+        row.Children.Add(text);
+        row.Children.Add(pill);
+        row.Children.Add(when);
+
+        var button = new Button
+        {
+            Classes = { "recent-file" },
+            Tag = file.Path,
+            Content = row,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Stretch
+        };
+        ToolTip.SetTip(button, file.Path);
+        button.Click += Recent_Click;
+        return button;
+    }
+
+    private string FileSubtitle(HomeFile file, ChecklistTab? open)
+    {
+        if (file.Missing)
+            return "File missing";
+
+        var project = ProjectNameFor(file.Path);
+        var text = string.IsNullOrWhiteSpace(project) ? "Standalone checklist" : project;
+        if (open?.IsDirty == true)
+            text += " · Unsaved changes";
+        return text;
+    }
+
+    private string? ProjectNameFor(string path)
+    {
+        var full = NormalizePath(path);
+        if (full is null)
+            return null;
+
+        foreach (var record in _projects.Tasklists)
+        {
+            if (!string.Equals(NormalizePath(record.Path), full, StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (record.ProjectId is not Guid id)
+                return null;
+            return _projects.Find(id)?.Name;
+        }
+
+        return null;
+    }
+
+    private static string FileCategory(WorkType? workType) =>
+        workType is { } value ? WorkflowLabel(value) : "Tasklist";
+
+    private readonly record struct FileColors(IBrush Plate, IBrush Glyph);
+
+    private static FileColors FileTintFor(WorkType? workType)
+    {
+        IBrush Plate(string key) => AppearanceService.Brush(key);
+        return workType switch
+        {
+            WorkType.Bug => new FileColors(Plate(AppearanceService.DangerSurfaceBrush), Plate(AppearanceService.DangerTextBrush)),
+            WorkType.Feature => new FileColors(Plate(AppearanceService.AccentSubtleBrush), Plate(AppearanceService.AccentTextBrush)),
+            WorkType.Development => new FileColors(Plate(AppearanceService.SuccessSubtleBrush), Plate(AppearanceService.SuccessTextBrush)),
+            WorkType.Testing => new FileColors(Plate(AppearanceService.InfoSurfaceBrush), Plate(AppearanceService.InfoTextBrush)),
+            WorkType.PullRequest => new FileColors(Plate(AppearanceService.ReviewSurfaceBrush), Plate(AppearanceService.ReviewTextBrush)),
+            WorkType.Daily => new FileColors(Plate(AppearanceService.WarningSurfaceBrush), Plate(AppearanceService.WarningTextBrush)),
+            _ => new FileColors(Plate(AppearanceService.CardBrush), Plate(AppearanceService.TextSecondaryBrush))
+        };
+    }
+
+    private static Control FileMark(IBrush plate, IBrush glyph)
+    {
+        return new Border
+        {
+            Width = 36,
+            Height = 36,
+            CornerRadius = new CornerRadius(10),
+            Background = plate,
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new Viewbox
+            {
+                Width = 16,
+                Height = 16,
+                Stretch = Stretch.Uniform,
+                Child = new Avalonia.Controls.Shapes.Path
+                {
+                    Width = 16,
+                    Height = 16,
+                    Stretch = Stretch.Uniform,
+                    Stroke = glyph,
+                    StrokeThickness = 1.6,
+                    StrokeLineCap = PenLineCap.Round,
+                    StrokeJoin = PenLineJoin.Round,
+                    Fill = Brushes.Transparent,
+                    Data = Geometry.Parse("M3,1.5 H9 L12.5,5 V14.5 H3 Z M9,1.5 V5 H12.5")
+                }
+            }
+        };
+    }
+
+    private static string FormatWhen(DateTime value)
+    {
+        var local = value.Kind switch
+        {
+            DateTimeKind.Local => value,
+            DateTimeKind.Utc => value.ToLocalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc).ToLocalTime()
+        };
+        var time = local.ToString("h:mm tt", CultureInfo.CurrentCulture);
+        if (local.Date == DateTime.Today)
+            return $"Today, {time}";
+        if (local.Date == DateTime.Today.AddDays(-1))
+            return $"Yesterday, {time}";
+        return local.ToString("d MMM yyyy, h:mm tt", CultureInfo.CurrentCulture);
+    }
 
     private static string WorkflowLabel(WorkType workType) =>
         workType switch
@@ -4210,30 +4580,28 @@ public partial class MainWindow : Window
     }
 
     private async void CheckForUpdates_Click(object? sender, RoutedEventArgs e) =>
-        await RunUpdateCheckAsync(fromMenu: false, automatic: false, announce: false);
+        await RunUpdateCheckAsync(interactive: true, automatic: false);
 
     private async void InstallUpdate_Click(object? sender, RoutedEventArgs e)
     {
         if (_updateBusy || _availableUpdate is not { IsNewer: true } update)
             return;
 
-        if (!update.CanInstall)
+        if (string.IsNullOrWhiteSpace(update.DownloadUrl))
         {
             ExternalLink.TryOpen(update.ReleaseUrl);
             return;
         }
 
-        await RunInstallAsync(update, confirmRestart: true);
+        await WithUpdateAsync(() => ShowUpdateAsync(update, startDownload: true, confirmWhenReady: true));
     }
 
-    private async Task RunUpdateCheckAsync(bool fromMenu, bool automatic, bool announce)
+    private async Task RunUpdateCheckAsync(bool interactive, bool automatic)
     {
         if (_updateBusy)
             return;
 
-        _updateBusy = true;
-        SetUpdateControlsEnabled(false);
-        try
+        await WithUpdateAsync(async () =>
         {
             SetUpdateStatus("Checking for updates…");
             var result = await UpdateService.CheckAsync();
@@ -4241,52 +4609,24 @@ public partial class MainWindow : Window
 
             if (result.Error is not null)
             {
-                if (fromMenu)
+                if (interactive)
                     await ShowMessage(result.Error);
                 return;
             }
 
             if (!result.IsNewer || result.LatestText is null)
             {
-                if (fromMenu)
+                if (interactive)
                     await ShowMessage($"Super Dev {UpdateService.CurrentText} is up to date.");
                 return;
             }
 
-            if (automatic)
-            {
-                if (result.CanInstall)
-                    await InstallCoreAsync(result, confirmRestart: false);
-                else if (announce)
-                    ShowToast(StatusFor(result));
-                return;
-            }
-
-            if (announce)
-                ShowToast(StatusFor(result));
-
-            if (!fromMenu)
-                return;
-
-            if (!result.CanInstall)
-            {
-                if (await ConfirmAsync("Update available", StatusFor(result), "View release", "Later"))
-                    ExternalLink.TryOpen(result.ReleaseUrl);
-                return;
-            }
-
-            if (await ConfirmAsync("Update available", $"Super Dev {result.LatestText} is available.", "Install", "Later"))
-                await InstallCoreAsync(result, confirmRestart: true);
-        }
-        finally
-        {
-            _updateBusy = false;
-            if (!_restartingForUpdate)
-                SetUpdateControlsEnabled(true);
-        }
+            var installNow = automatic && result.CanInstall;
+            await ShowUpdateAsync(result, startDownload: installNow, confirmWhenReady: !installNow);
+        });
     }
 
-    private async Task RunInstallAsync(UpdateCheckResult update, bool confirmRestart)
+    private async Task WithUpdateAsync(Func<Task> action)
     {
         if (_updateBusy)
             return;
@@ -4295,7 +4635,7 @@ public partial class MainWindow : Window
         SetUpdateControlsEnabled(false);
         try
         {
-            await InstallCoreAsync(update, confirmRestart);
+            await action();
         }
         finally
         {
@@ -4305,37 +4645,38 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task InstallCoreAsync(UpdateCheckResult update, bool confirmRestart)
+    private async Task ShowUpdateAsync(UpdateCheckResult update, bool startDownload, bool confirmWhenReady)
     {
-        var progress = new Progress<string>(SetUpdateStatus);
-        var prepared = await UpdateService.PrepareInstallAsync(update, progress);
-        if (prepared.Error is not null)
+        var dialog = new UpdateAvailableWindow(update, startDownload, confirmWhenReady, SetUpdateStatus);
+        var outcome = await dialog.ShowDialog<UpdatePromptResult?>(this);
+        if (outcome?.Prepared is null)
         {
-            SetUpdateStatus(prepared.Error);
-            if (!confirmRestart)
-                ShowToast(prepared.Error);
+            if (outcome?.OpenRelease == true)
+                ExternalLink.TryOpen(update.ReleaseUrl);
             return;
         }
 
-        if (confirmRestart)
+        if (!outcome.Install)
         {
-            var restart = await ConfirmAsync(
-                "Restart to update",
-                RestartMessage(update),
-                update.Kind == UpdatePackageKind.WindowsMsix ? "Install" : "Restart",
-                "Later");
-            if (!restart)
+            try
             {
-                prepared.Cancel();
-                SetUpdateStatus(StatusFor(update));
-                return;
+                SetUpdateStatus("Opening the download…");
+                outcome.Prepared.Apply();
+                SetUpdateStatus($"Super Dev {update.LatestText} is downloaded.");
             }
+            catch (Exception)
+            {
+                outcome.Prepared.Cancel();
+                SetUpdateStatus("Couldn't open the download.");
+            }
+
+            return;
         }
 
-        if (!await PrepareToRestartAsync(promptForNewFiles: confirmRestart))
+        if (!await PrepareToRestartAsync(promptForNewFiles: outcome.PromptForNewFiles))
         {
-            prepared.Cancel();
-            SetUpdateStatus(confirmRestart
+            outcome.Prepared.Cancel();
+            SetUpdateStatus(outcome.PromptForNewFiles
                 ? StatusFor(update)
                 : $"Super Dev {update.LatestText} is available. Save open checklists, then install it.");
             return;
@@ -4347,11 +4688,11 @@ public partial class MainWindow : Window
             ShowToast(update.Kind == UpdatePackageKind.WindowsMsix
                 ? "Opening the installer…"
                 : "Restarting to install the update…");
-            prepared.Apply();
+            outcome.Prepared.Apply();
         }
         catch (Exception)
         {
-            prepared.Cancel();
+            outcome.Prepared.Cancel();
             SetUpdateStatus("Couldn't install the update.");
             return;
         }
@@ -4381,8 +4722,9 @@ public partial class MainWindow : Window
         }
 
         SetUpdateStatus(StatusFor(result));
-        InstallUpdateButton.Content = result.CanInstall ? "Install update" : "View release";
-        InstallUpdateButton.IsVisible = result.CanInstall || !string.IsNullOrWhiteSpace(result.ReleaseUrl);
+        var canDownload = !string.IsNullOrWhiteSpace(result.DownloadUrl);
+        InstallUpdateButton.Content = canDownload ? "Download" : "View release";
+        InstallUpdateButton.IsVisible = canDownload || !string.IsNullOrWhiteSpace(result.ReleaseUrl);
     }
 
     private static string StatusFor(UpdateCheckResult result)
@@ -4391,14 +4733,6 @@ public partial class MainWindow : Window
         if (!string.IsNullOrWhiteSpace(result.Note))
             status += " " + result.Note;
         return status;
-    }
-
-    private static string RestartMessage(UpdateCheckResult update)
-    {
-        if (update.Kind == UpdatePackageKind.WindowsMsix)
-            return $"Super Dev {update.LatestText} is ready. Super Dev will close and Windows will open the installer.";
-
-        return $"Super Dev {update.LatestText} is ready. Restart now to finish installing?";
     }
 
     private async Task<bool> PrepareToRestartAsync(bool promptForNewFiles)

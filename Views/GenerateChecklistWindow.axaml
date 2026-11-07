@@ -250,7 +250,7 @@
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
                                  MinHeight="72"
-                                 PlaceholderText="Short summary"/>
+                                 PlaceholderText="Summary of the checks and what each one covers"/>
                     </StackPanel>
                     <StackPanel x:Name="PreviewSections" Spacing="18"/>
                     <Button Classes="form-button secondary"

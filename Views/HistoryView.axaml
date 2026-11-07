@@ -1,0 +1,382 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SuperDev.Views.HistoryView"
+             x:Name="HistoryRoot"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch">
+    <UserControl.Styles>
+        <Style Selector="TextBlock.page-title">
+            <Setter Property="FontSize" Value="{DynamicResource Font28}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.section-hint">
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style Selector="Button.back-arrow">
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="MinWidth" Value="36"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.back-arrow:pointerover">
+            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+        </Style>
+        <Style Selector="Button.back-arrow Path">
+            <Setter Property="Stroke" Value="{DynamicResource TextSecondaryBrush}"/>
+        </Style>
+        <Style Selector="Button.period">
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBodyBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.period:pointerover">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+        </Style>
+        <Style Selector="Button.period.selected">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}"/>
+        </Style>
+        <Style Selector="Button.period.selected:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+        <Style Selector="Button.period-small">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.period-small.selected">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentBrush}"/>
+        </Style>
+        <Style Selector="Border.history-card">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="16,14"/>
+        </Style>
+        <Style Selector="Border.tone">
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="CornerRadius" Value="18"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Border.tone.success">
+            <Setter Property="Background" Value="{DynamicResource SuccessSubtleBrush}"/>
+        </Style>
+        <Style Selector="Border.tone.accent">
+            <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+        </Style>
+        <Style Selector="Border.tone.warning">
+            <Setter Property="Background" Value="{DynamicResource WarningSurfaceBrush}"/>
+        </Style>
+        <Style Selector="Border.tone.muted">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+        </Style>
+        <Style Selector="Border.tone.info">
+            <Setter Property="Background" Value="{DynamicResource InfoSurfaceBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.stat-value">
+            <Setter Property="FontSize" Value="{DynamicResource Font22}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+        <Style Selector="TextBlock.stat-label">
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBodyBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style Selector="TextBlock.stat-hint">
+            <Setter Property="FontSize" Value="{DynamicResource Font11}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style Selector="Button.history-link">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.history-link:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
+        </Style>
+        <Style Selector="Button.history-row">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.history-row:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+        </Style>
+        <Style Selector="CalendarDatePicker">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="MinWidth" Value="150"/>
+        </Style>
+        <Style Selector="ComboBox.history">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="MinWidth" Value="180"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+        <Style Selector="TextBox.history">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="MinWidth" Value="200"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <Grid Classes="page-frame">
+        <StackPanel Classes="page-column"
+                    Spacing="20">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <Border Width="40"
+                        Height="40"
+                        CornerRadius="12"
+                        Background="{DynamicResource AccentSubtleBrush}"
+                        VerticalAlignment="Center">
+                    <Path Width="18"
+                          Height="18"
+                          Stretch="Uniform"
+                          Stroke="{DynamicResource AccentTextBrush}"
+                          StrokeThickness="1.7"
+                          StrokeLineCap="Round"
+                          StrokeJoin="Round"
+                          Fill="Transparent"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Data="M9,1.8 A7.2,7.2 0 1 0 9,16.2 A7.2,7.2 0 1 0 9,1.8 M9,5 V9.1 L11.8,10.8"/>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="History" Classes="page-title"/>
+                    <TextBlock Text="Track your checklist activity and engineering progress."
+                               FontSize="{DynamicResource Font14}"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+                <Button Grid.Column="2"
+                        Classes="back-arrow"
+                        ToolTip.Tip="Back to Home"
+                        VerticalAlignment="Center"
+                        Click="Back_Click">
+                    <Viewbox Width="16" Height="16">
+                        <Canvas Width="16" Height="16">
+                            <Path Width="16"
+                                  Height="16"
+                                  Stretch="None"
+                                  Fill="Transparent"
+                                  StrokeThickness="1.8"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Data="M11.5,3.2 L5,8 L11.5,12.8"/>
+                        </Canvas>
+                    </Viewbox>
+                </Button>
+            </Grid>
+
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="12" RowDefinitions="Auto,Auto">
+                <Border Grid.Column="0"
+                        Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderSoftBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="4"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="2">
+                        <Button x:Name="WeekButton" Classes="period" Content="This Week" Click="Week_Click"/>
+                        <Button x:Name="MonthButton" Classes="period selected" Content="This Month" Click="Month_Click"/>
+                        <Button x:Name="CustomButton" Classes="period" Content="Custom Range" Click="Custom_Click"/>
+                    </StackPanel>
+                </Border>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center">
+                    <Path Width="16"
+                          Height="16"
+                          Stretch="Uniform"
+                          Stroke="{DynamicResource TextMutedBrush}"
+                          StrokeThickness="1.6"
+                          StrokeLineCap="Round"
+                          StrokeJoin="Round"
+                          Fill="Transparent"
+                          VerticalAlignment="Center"
+                          Data="M3,5.5 H13 V13.5 H3 Z M3,8 H13 M6,3.5 V6.5 M10,3.5 V6.5"/>
+                    <TextBlock x:Name="RangeText"
+                               VerticalAlignment="Center"
+                               FontSize="{DynamicResource Font14}"
+                               Foreground="{DynamicResource TextBodyBrush}"/>
+                </StackPanel>
+                <ComboBox x:Name="ProjectCombo"
+                          Grid.Column="3"
+                          Classes="history"
+                          VerticalAlignment="Center"
+                          HorizontalAlignment="Right"
+                          SelectionChanged="ProjectCombo_SelectionChanged"/>
+
+                <StackPanel x:Name="CustomRangePanel"
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="4"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            Margin="0,8,0,0"
+                            IsVisible="False">
+                    <CalendarDatePicker x:Name="RangeStart"
+                                         Watermark="Start date"
+                                         SelectedDateChanged="CustomDate_Changed"/>
+                    <TextBlock Text="–"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextMutedBrush}"/>
+                    <CalendarDatePicker x:Name="RangeEnd"
+                                         Watermark="End date"
+                                         SelectedDateChanged="CustomDate_Changed"/>
+                    <TextBlock x:Name="RangeErrorText"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource DangerTextBrush}"
+                               FontSize="{DynamicResource Font13}"
+                               IsVisible="False"/>
+                </StackPanel>
+            </Grid>
+
+            <UniformGrid x:Name="TasklistStats" Columns="4" ColumnSpacing="12" RowSpacing="12"/>
+            <UniformGrid x:Name="CheckStats" Columns="4" ColumnSpacing="12" RowSpacing="12"/>
+
+            <Grid x:Name="TrendLayout" ColumnDefinitions="*,260" RowDefinitions="Auto,Auto" ColumnSpacing="16" RowSpacing="16">
+                <Border Classes="history-card" Padding="18,16">
+                    <StackPanel Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <Path Width="16" Height="16" Stretch="Uniform"
+                                      Stroke="{DynamicResource AccentTextBrush}"
+                                      StrokeThickness="1.6"
+                                      Fill="Transparent"
+                                      Data="M2,14 V8 M6,14 V4 M10,14 V9 M14,14 V2"/>
+                                <TextBlock Text="Checklist Completion Trend"
+                                           FontSize="{DynamicResource Font16}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            </StackPanel>
+                            <Border Grid.Column="1"
+                                    Background="{DynamicResource CardBrush}"
+                                    CornerRadius="10"
+                                    Padding="3">
+                                <StackPanel Orientation="Horizontal" Spacing="2">
+                                    <Button x:Name="DailyButton" Classes="period-small" Content="Daily" Click="Daily_Click"/>
+                                    <Button x:Name="WeeklyButton" Classes="period-small" Content="Weekly" Click="Weekly_Click"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                        <Grid x:Name="TrendHost" Height="220"/>
+                    </StackPanel>
+                </Border>
+                <Border x:Name="RateCard" Grid.Column="1" Classes="history-card" VerticalAlignment="Stretch">
+                    <StackPanel Spacing="14" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border Classes="tone success" Width="28" Height="28" CornerRadius="14">
+                                <Path Width="14" Height="14" Stretch="Uniform"
+                                      Stroke="{DynamicResource SuccessTextBrush}"
+                                      StrokeThickness="1.8"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round"
+                                      Fill="Transparent"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      Data="M3,8 L6.2,11.2 L13,4"/>
+                            </Border>
+                            <TextBlock Text="Completion Rate"
+                                       VerticalAlignment="Center"
+                                       FontSize="{DynamicResource Font14}"
+                                       Foreground="{DynamicResource TextBodyBrush}"
+                                       ToolTip.Tip="Share of current checks that are done on tasklists active in this period. Skipped checks are left out."/>
+                        </StackPanel>
+                        <TextBlock x:Name="RateValue" Text="0%" FontSize="32" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <Border x:Name="RateTrack"
+                                Height="8"
+                                CornerRadius="4"
+                                Background="{DynamicResource BorderSoftBrush}"
+                                ClipToBounds="True">
+                            <Grid x:Name="RateBar" ColumnDefinitions="0,*">
+                                <Border Background="{DynamicResource SuccessBrush}" CornerRadius="4"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Path Width="16" Height="16" Stretch="Uniform"
+                              Stroke="{DynamicResource SuccessTextBrush}"
+                              StrokeThickness="1.7"
+                              StrokeLineCap="Round"
+                              StrokeJoin="Round"
+                              Fill="Transparent"
+                              Data="M8,1.6 A6.4,6.4 0 1 0 8,14.4 A6.4,6.4 0 1 0 8,1.6 M5.2,8.1 L7.1,10 L11,5.6"/>
+                        <TextBlock Text="Recent Completed Tasklists" Classes="section-title"/>
+                    </StackPanel>
+                    <Button x:Name="ViewAllButton"
+                            Grid.Column="1"
+                            Classes="history-link"
+                            Content="View All →"
+                            IsVisible="False"
+                            Click="ViewAll_Click"/>
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <TextBox x:Name="SearchBox"
+                             Classes="history"
+                             Watermark="Search tasklists"
+                             TextChanged="SearchBox_TextChanged"/>
+                    <ComboBox x:Name="WorkTypeCombo"
+                              Grid.Column="1"
+                              Classes="history"
+                              SelectionChanged="WorkTypeCombo_SelectionChanged"/>
+                </Grid>
+                <TextBlock x:Name="RecentEmpty"
+                           Text="No completed tasklists in this period."
+                           Classes="section-hint"
+                           IsVisible="False"/>
+                <StackPanel x:Name="RecentHost" Spacing="8"/>
+            </StackPanel>
+        </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

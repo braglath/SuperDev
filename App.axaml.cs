@@ -16,6 +16,7 @@ public partial class App : Application
         AvaloniaXamlLoader.Load(this);
         AppearanceService.Install();
         PopupDismissal.Install();
+        WindowScreenFit.Install();
     }
 
     public override void OnFrameworkInitializationCompleted()

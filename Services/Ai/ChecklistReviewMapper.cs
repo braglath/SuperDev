@@ -65,11 +65,10 @@ public static class ChecklistReviewMapper
         if (string.IsNullOrWhiteSpace(templateName))
             return null;
 
-        const string prefix = "AI · ";
-        if (!templateName.StartsWith(prefix, StringComparison.Ordinal))
+        if (!templateName.StartsWith(AiChecklistMapper.TemplatePrefix, StringComparison.Ordinal))
             return null;
 
-        var parts = templateName[prefix.Length..].Split(" · ", StringSplitOptions.None);
+        var parts = templateName[AiChecklistMapper.TemplatePrefix.Length..].Split(" · ", StringSplitOptions.None);
         if (parts.Length < 2)
             return null;
 

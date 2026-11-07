@@ -184,8 +184,8 @@ public static class UpdateService
                     note = "No download is published for this computer.";
                 else if (!CanReplaceThisInstall)
                     note = IsDevelopmentBuild(Environment.ProcessPath)
-                        ? "This development build can't install updates."
-                        : "This copy can't install updates.";
+                        ? "This development build can't replace itself. Download the release to install it."
+                        : "This copy can't replace itself. Download the release to install it.";
                 else
                     canInstall = true;
             }
@@ -222,8 +222,8 @@ public static class UpdateService
         IProgress<string>? progress,
         CancellationToken cancellationToken = default)
     {
-        if (!update.CanInstall || string.IsNullOrWhiteSpace(update.DownloadUrl) || update.Kind == UpdatePackageKind.None)
-            return PreparedUpdate.Failed("This copy can't install updates.");
+        if (string.IsNullOrWhiteSpace(update.DownloadUrl) || update.Kind == UpdatePackageKind.None)
+            return PreparedUpdate.Failed("No download is published for this computer.");
 
         var work = Path.Combine(Path.GetTempPath(), "Super Dev Update", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(work);
@@ -234,6 +234,14 @@ public static class UpdateService
                 : Path.GetFileName(update.AssetName);
             var packagePath = Path.Combine(work, fileName);
             await DownloadAsync(update.DownloadUrl, packagePath, progress, cancellationToken);
+            if (!update.CanInstall)
+            {
+                progress?.Report("Downloaded.");
+                return PreparedUpdate.Ready(
+                    () => OpenDownloaded(packagePath),
+                    () => DeleteQuiet(work));
+            }
+
             progress?.Report("Preparing the update…");
 
             return update.Kind switch
@@ -407,6 +415,11 @@ public static class UpdateService
                 Process.Start(new ProcessStartInfo(msixPath) { UseShellExecute = true });
             },
             () => DeleteQuiet(work));
+    }
+
+    private static void OpenDownloaded(string path)
+    {
+        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
     }
 
     private static void StartDetachedMac(string script, string pid, string bundle, string work)

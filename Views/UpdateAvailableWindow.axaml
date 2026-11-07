@@ -1,0 +1,94 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SuperDev.Views.UpdateAvailableWindow"
+        Width="480"
+        MinHeight="220"
+        SizeToContent="Height"
+        CanResize="False"
+        Title="Super Dev"
+        Background="{DynamicResource AppBackgroundBrush}"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Inter, Segoe UI, sans-serif"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style Selector="TextBlock.dialog-title">
+            <Setter Property="FontSize" Value="{DynamicResource Font20}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="TextBlock.dialog-message">
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+        </Style>
+        <Style Selector="Button.dialog-button">
+            <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+            <Setter Property="MinWidth" Value="100"/>
+            <Setter Property="Padding" Value="20,8"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+        <Style Selector="Button.secondary">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBodyBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="Button.secondary:pointerover">
+            <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+        </Style>
+        <Style Selector="Button:disabled">
+            <Setter Property="Opacity" Value="0.55"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="28" RowDefinitions="Auto,Auto,Auto">
+        <StackPanel Spacing="8">
+            <TextBlock x:Name="TitleText"
+                       Classes="dialog-title"
+                       Text="A new version is available"/>
+            <TextBlock x:Name="MessageText"
+                       Classes="dialog-message"/>
+        </StackPanel>
+
+        <ProgressBar x:Name="DownloadProgress"
+                     Grid.Row="1"
+                     Height="8"
+                     Margin="0,18,0,0"
+                     Minimum="0"
+                     Maximum="100"
+                     IsVisible="False"
+                     Foreground="{DynamicResource AccentBrush}"
+                     Background="{DynamicResource BorderSubtleBrush}"/>
+
+        <StackPanel Grid.Row="2"
+                    Margin="0,22,0,0"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10">
+            <Button x:Name="SecondaryButton"
+                    Classes="dialog-button secondary"
+                    Content="Later"
+                    Click="SecondaryButton_Click"/>
+            <Button x:Name="PrimaryButton"
+                    Classes="dialog-button primary"
+                    Content="Download"
+                    Click="PrimaryButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

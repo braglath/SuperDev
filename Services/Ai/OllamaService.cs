@@ -71,7 +71,7 @@ public sealed class OllamaService : ILocalAIService, IDisposable
               }
             }
           },
-          "required": ["title", "sections"]
+          "required": ["title", "summary", "sections"]
         }
         """);
 
@@ -368,7 +368,19 @@ public sealed class OllamaService : ILocalAIService, IDisposable
             ChecklistSchema,
             numPredict: 4096,
             cancellationToken,
-            content => AiGenerationResult.FromChecklist(_validator.ReadChecklist(content), _model));
+            content =>
+            {
+                var inspection = _validator.ReadChecklist(content);
+                if (inspection.IsValid && inspection.Checklist is not null)
+                {
+                    inspection.Checklist.Summary = ChecklistSummary.ForChecklist(
+                        inspection.Checklist.Summary,
+                        request.Description,
+                        inspection.Checklist);
+                }
+
+                return AiGenerationResult.FromChecklist(inspection, _model);
+            });
     }
 
     public Task<AiGenerationResult> GenerateSectionAsync(

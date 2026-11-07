@@ -11,7 +11,11 @@ using SuperDev.Services;
 
 namespace SuperDev.Views;
 
-public sealed class ProjectEditorWindow : Window
+/// <summary>
+/// The project name, icon, and color form. Hosted on the create/edit page
+/// and, if needed, inside <see cref="ProjectEditorWindow"/>.
+/// </summary>
+public sealed class ProjectEditorForm : UserControl
 {
     private readonly TextBox _name;
     private readonly TextBox _description;
@@ -23,22 +27,15 @@ public sealed class ProjectEditorWindow : Window
     private readonly List<Button> _iconButtons = [];
     private readonly List<Button> _colorButtons = [];
 
-    private ProjectEditorWindow(Project? existing)
+    public ProjectEditorForm(Project? existing)
     {
-        Title = existing is null ? "Create project" : "Edit project";
-        Width = 520;
-        Height = 680;
-        MinWidth = 440;
-        MinHeight = 560;
-        CanResize = true;
-        WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = AppearanceService.Brush(AppearanceService.AppBackgroundBrush);
         _icon = ProjectAppearance.Icon(existing?.Icon);
         _color = ProjectAppearance.Color(existing?.Color);
 
         _name = Field(existing?.Name, "Project name");
         _description = Field(existing?.Description, "What this project is for");
         _description.AcceptsReturn = true;
+        _description.MinHeight = 96;
         _description.Height = 96;
         _description.TextWrapping = TextWrapping.Wrap;
         _description.VerticalContentAlignment = VerticalAlignment.Top;
@@ -53,15 +50,9 @@ public sealed class ProjectEditorWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
-        var save = PrimaryButton(existing is null ? "Create project" : "Save");
-        save.Click += (_, _) => Save();
-        var cancel = QuietButton("Cancel");
-        cancel.Click += (_, _) => Close(null);
-
-        var root = new StackPanel
+        Content = new StackPanel
         {
-            Spacing = 14,
-            Margin = new Thickness(24, 22, 24, 24),
+            Spacing = 8,
             Children =
             {
                 Label("Name"),
@@ -76,31 +67,12 @@ public sealed class ProjectEditorWindow : Window
                 IconRow(),
                 Label("Color"),
                 ColorRow(),
-                _error,
-                new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 8,
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    Children = { cancel, save }
-                }
+                _error
             }
         };
-
-        Content = new ScrollViewer
-        {
-            Content = root,
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
-        };
     }
 
-    public static Task<ProjectDraft?> PickAsync(Window owner, Project? existing)
-    {
-        var window = new ProjectEditorWindow(existing);
-        return window.ShowDialog<ProjectDraft?>(owner);
-    }
-
-    private void Save()
+    public ProjectDraft? ReadDraft()
     {
         var name = _name.Text?.Trim() ?? string.Empty;
         if (name.Length == 0)
@@ -108,16 +80,17 @@ public sealed class ProjectEditorWindow : Window
             _error.Text = "Enter a project name.";
             _error.IsVisible = true;
             _name.Focus();
-            return;
+            return null;
         }
 
-        Close(new ProjectDraft(
+        _error.IsVisible = false;
+        return new ProjectDraft(
             name,
             _description.Text?.Trim() ?? string.Empty,
             _platform.Text?.Trim() ?? string.Empty,
             _framework.Text?.Trim() ?? string.Empty,
             _icon,
-            _color));
+            _color);
     }
 
     private WrapPanel IconRow()
@@ -225,11 +198,27 @@ public sealed class ProjectEditorWindow : Window
             BorderBrush = AppearanceService.Brush(AppearanceService.BorderBrush),
             BorderThickness = new Thickness(1)
         };
+}
 
-    private static Button PrimaryButton(string text) =>
-        new()
+public sealed class ProjectEditorWindow : Window
+{
+    private readonly ProjectEditorForm _form;
+
+    private ProjectEditorWindow(Project? existing)
+    {
+        Title = existing is null ? "Create project" : "Edit project";
+        Width = 520;
+        Height = 680;
+        MinWidth = 440;
+        MinHeight = 560;
+        CanResize = true;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        Background = AppearanceService.Brush(AppearanceService.AppBackgroundBrush);
+        _form = new ProjectEditorForm(existing);
+
+        var save = new Button
         {
-            Content = text,
+            Content = existing is null ? "Create project" : "Save",
             Height = 40,
             MinWidth = 120,
             Padding = new Thickness(16, 0),
@@ -241,11 +230,15 @@ public sealed class ProjectEditorWindow : Window
             VerticalContentAlignment = VerticalAlignment.Center,
             Cursor = new Cursor(StandardCursorType.Hand)
         };
-
-    private static Button QuietButton(string text) =>
-        new()
+        save.Click += (_, _) =>
         {
-            Content = text,
+            var draft = _form.ReadDraft();
+            if (draft is not null)
+                Close(draft);
+        };
+        var cancel = new Button
+        {
+            Content = "Cancel",
             Height = 40,
             MinWidth = 96,
             Padding = new Thickness(16, 0),
@@ -259,6 +252,36 @@ public sealed class ProjectEditorWindow : Window
             VerticalContentAlignment = VerticalAlignment.Center,
             Cursor = new Cursor(StandardCursorType.Hand)
         };
+        cancel.Click += (_, _) => Close(null);
+
+        var root = new StackPanel
+        {
+            Spacing = 16,
+            Margin = new Thickness(24, 22, 24, 24),
+            Children =
+            {
+                _form,
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 8,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Children = { cancel, save }
+                }
+            }
+        };
+        Content = new ScrollViewer
+        {
+            Content = root,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+        };
+    }
+
+    public static Task<ProjectDraft?> PickAsync(Window owner, Project? existing)
+    {
+        var window = new ProjectEditorWindow(existing);
+        return window.ShowDialog<ProjectDraft?>(owner);
+    }
 }
 
 public sealed record TasklistChoice(string Title, string Detail, Guid DocumentId, string? Path, bool Browse);

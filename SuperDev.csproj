@@ -36,6 +36,7 @@
     </PackageReference>
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.10" />
   </ItemGroup>
 
   <Target Name="CompileMacNotifier" BeforeTargets="CoreCompile" Condition="$([MSBuild]::IsOSPlatform('OSX')) and ('$(RuntimeIdentifier)' == '' or $(RuntimeIdentifier.StartsWith('osx-')))" Inputs="Platform/notify.m" Outputs="$(OutputPath)libSuperDevNotify.dylib">

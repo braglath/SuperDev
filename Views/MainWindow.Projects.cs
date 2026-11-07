@@ -30,8 +30,15 @@ public partial class MainWindow
     private bool StripNeedsGroups() =>
         _projectTabs.Count > 0 || _tabs.Any(tab => tab.OpenedFromProjectId is not null);
 
-    private void CreateProject_Click(object? sender, RoutedEventArgs e) =>
-        _ = CreateProjectAsync();
+    private Guid? _editingProjectId;
+    private HomeSurface _editorReturn = HomeSurface.Dashboard;
+    private bool _editorReturnToProject;
+
+    private void CreateProject_Click(object? sender, RoutedEventArgs e)
+    {
+        NewTabButton.Flyout?.Hide();
+        ShowProjectEditor(null);
+    }
 
     private async Task IndexKnownChecklistsAsync()
     {
@@ -44,6 +51,7 @@ public partial class MainWindow
             {
                 var document = await _fileService.LoadAsync(entry.Path);
                 _projects.Note(document, entry.Path);
+                TrackObserved(document, entry.Path);
             }
             catch (ChecklistFileException)
             {
@@ -53,24 +61,147 @@ public partial class MainWindow
         RefreshProjectSurfaces();
     }
 
-    private async Task CreateProjectAsync()
+    private void ShowProjectEditor(Project? existing)
     {
-        var draft = await ProjectEditorWindow.PickAsync(this, null);
+        _editingProjectId = existing?.Id;
+        _editorReturnToProject = existing is not null && !HomePanel.IsVisible;
+        _editorReturn = HomePanel.IsVisible ? CurrentHomeSurface() : HomeSurface.Dashboard;
+        if (_editorReturn == HomeSurface.CreateProject)
+            _editorReturn = HomeSurface.Dashboard;
+
+        var creating = existing is null;
+        ProjectEditorTitle.Text = creating ? "Create project" : "Edit project";
+        ProjectEditorHint.Text = creating
+            ? "Organize multiple tasklists under one project."
+            : "Update the name, icon, and details for this project.";
+        SaveProjectButton.Content = creating ? "Create Project" : "Save";
+        OpenProjectButton.IsVisible = creating;
+        ProjectEditorHost.Content = new ProjectEditorForm(existing);
+        ShowHomeScreen();
+        ShowHomeSurface(HomeSurface.CreateProject);
+    }
+
+    private async void OpenProjectButton_Click(object? sender, RoutedEventArgs e)
+    {
+        var projects = _projects.Projects
+            .OrderByDescending(project => project.UpdatedAt)
+            .ThenBy(project => project.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (projects.Count == 0)
+        {
+            await ShowMessage("No saved projects yet. Create a project first.");
+            return;
+        }
+
+        var choices = projects
+            .Select(project => new TasklistChoice(
+                project.Name,
+                DescribeSavedProject(project),
+                project.Id,
+                null,
+                false))
+            .ToList();
+        var choice = await TasklistPickerWindow.PickAsync(this, "Open project", choices, allowBrowse: false);
+        if (choice is null || choice.Browse)
+            return;
+
+        var project = _projects.Find(choice.DocumentId);
+        if (project is null)
+        {
+            await ShowMessage("That project could not be found.");
+            return;
+        }
+
+        _editingProjectId = null;
+        _editorReturnToProject = false;
+        ProjectEditorHost.Content = null;
+        OpenProject(project);
+    }
+
+    private string DescribeSavedProject(Project project)
+    {
+        var parts = new List<string>();
+        if (project.Status == ProjectStatus.Archived)
+            parts.Add("Archived");
+
+        var stack = DescribePlatform(project);
+        if (stack.Length > 0)
+            parts.Add(stack);
+
+        var count = _projects.ForProject(project.Id).Count;
+        parts.Add(count == 1 ? "1 tasklist" : $"{count} tasklists");
+        return string.Join(" · ", parts);
+    }
+
+    private void CloseProjectEditor_Click(object? sender, RoutedEventArgs e) =>
+        CloseProjectEditor();
+
+    private void CloseProjectEditor()
+    {
+        var id = _editingProjectId;
+        var back = _editorReturn;
+        var returnToProject = _editorReturnToProject;
+        _editingProjectId = null;
+        _editorReturnToProject = false;
+        ProjectEditorHost.Content = null;
+
+        if (returnToProject && id is Guid projectId)
+        {
+            var project = _projects.Find(projectId);
+            if (project is not null)
+            {
+                OpenProject(project);
+                return;
+            }
+        }
+
+        ShowHomeScreen();
+        if (back is HomeSurface.Projects or HomeSurface.Files or HomeSurface.Create)
+            ShowHomeSurface(back);
+    }
+
+    private void SaveProjectEditor_Click(object? sender, RoutedEventArgs e)
+    {
+        if (ProjectEditorHost.Content is not ProjectEditorForm form)
+            return;
+
+        var draft = form.ReadDraft();
         if (draft is null)
             return;
 
-        Project project;
-        try
+        if (_editingProjectId is not Guid id)
         {
-            project = _projects.Create(draft);
-        }
-        catch (ArgumentException)
-        {
+            try
+            {
+                var project = _projects.Create(draft);
+                _editingProjectId = null;
+                _editorReturnToProject = false;
+                ProjectEditorHost.Content = null;
+                OpenProject(project);
+            }
+            catch (ArgumentException)
+            {
+            }
+
             return;
         }
 
+        var updated = _projects.Update(id, draft);
+        if (updated is null)
+        {
+            CloseProjectEditor();
+            return;
+        }
+
+        var tab = _projectTabs.FirstOrDefault(item => item.Project.Id == id);
+        if (tab is not null)
+        {
+            tab.Project = updated;
+            UpdateProjectHeader(tab);
+        }
+
         RefreshProjectOverview();
-        OpenProject(project);
+        CloseProjectEditor();
     }
 
     private void OpenProject(Project project)
@@ -101,23 +232,6 @@ public partial class MainWindow
         RefreshProjectOverview();
         if (_activeProjectTab?.Project.Id == projectId)
             ShowProject(_activeProjectTab);
-    }
-
-    private async Task EditProjectAsync(ProjectTab tab)
-    {
-        var draft = await ProjectEditorWindow.PickAsync(this, tab.Project);
-        if (draft is null)
-            return;
-
-        var updated = _projects.Update(tab.Project.Id, draft);
-        if (updated is null)
-            return;
-
-        tab.Project = updated;
-        UpdateProjectHeader(tab);
-        if (_activeProjectTab == tab)
-            ShowProject(tab);
-        RefreshProjectOverview();
     }
 
     private void ArchiveProject(ProjectTab tab)
@@ -468,7 +582,7 @@ public partial class MainWindow
         document.ProjectId = projectId;
         document.UpdatedOn = DateTime.UtcNow;
         await _fileService.SaveAsync(path, document, replaceDifferentDocument: false);
-        RememberChecklist(path, document);
+        RememberChecklist(path, document, trackActivity: true);
         RefreshProjectSurfaces();
     }
 
@@ -531,7 +645,7 @@ public partial class MainWindow
             document.ProjectId = null;
             document.UpdatedOn = DateTime.UtcNow;
             await _fileService.SaveAsync(record.Path, document, replaceDifferentDocument: false);
-            RememberChecklist(record.Path, document);
+            RememberChecklist(record.Path, document, trackActivity: true);
         }
 
         RefreshProjectSurfaces();
@@ -573,13 +687,15 @@ public partial class MainWindow
 
     private static string DescribePlatform(Project project)
     {
-        if (!string.IsNullOrWhiteSpace(project.Platform) && !string.IsNullOrWhiteSpace(project.Framework))
-            return $"{project.Platform} · {project.Framework}";
-        if (!string.IsNullOrWhiteSpace(project.Framework))
-            return project.Framework;
-        if (!string.IsNullOrWhiteSpace(project.Platform))
-            return project.Platform;
-        return "Project";
+        var framework = project.Framework?.Trim() ?? string.Empty;
+        var platform = project.Platform?.Trim() ?? string.Empty;
+        if (framework.Length > 0 && platform.Length > 0)
+            return $"{framework} · {platform}";
+        if (framework.Length > 0)
+            return framework;
+        if (platform.Length > 0)
+            return platform;
+        return string.Empty;
     }
 
     private async Task OpenProjectTasklistAsync(Guid projectId, Guid documentId)
@@ -624,96 +740,169 @@ public partial class MainWindow
     private void RefreshProjectOverview()
     {
         var projects = _projects.Projects.OrderByDescending(project => project.UpdatedAt).ToList();
-        var snapshots = Snapshots(null);
-        var report = ProjectProgress.Measure(
-            snapshots.Where(item => !item.Missing).Select(item => item.Progress));
-        ProjectStatProjects.Text = projects.Count.ToString();
-        ProjectStatTasklists.Text = snapshots.Count.ToString();
-        ProjectStatInProgress.Text = report.InProgress.ToString();
-        ProjectStatCompleted.Text = report.Completed.ToString();
-        ProjectEmptyText.IsVisible = projects.Count == 0;
-        ProjectCards.Children.Clear();
+        var any = projects.Count > 0;
+        ProjectEmptyText.IsVisible = !any;
+        ProjectCards.IsVisible = any;
+        FillProjectCards(ProjectCards, projects.Take(4));
+        if (AllProjectsPanel.IsVisible)
+        {
+            AllProjectsEmpty.IsVisible = !any;
+            AllProjectCards.IsVisible = any;
+            FillProjectCards(AllProjectCards, projects);
+        }
+    }
 
-        foreach (var project in projects.Take(4))
+    private void FillProjectCards(Grid host, IEnumerable<Project> projects)
+    {
+        host.Children.Clear();
+        host.ColumnDefinitions.Clear();
+        host.RowDefinitions.Clear();
+        var cards = projects.Select(project =>
         {
             var mine = Snapshots(project.Id);
             var progress = ProjectProgress.Measure(
                 mine.Where(item => !item.Missing).Select(item => item.Progress));
             progress = progress with { TasklistCount = mine.Count };
-            ProjectCards.Children.Add(ProjectCard(project, progress));
+            return ProjectCard(project, progress);
+        }).ToList();
+
+        if (cards.Count == 0)
+            return;
+
+        var columns = cards.Count == 1 ? 1 : 2;
+        for (var column = 0; column < columns; column++)
+            host.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+
+        var rows = (cards.Count + columns - 1) / columns;
+        for (var row = 0; row < rows; row++)
+            host.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        for (var index = 0; index < cards.Count; index++)
+        {
+            Grid.SetColumn(cards[index], index % columns);
+            Grid.SetRow(cards[index], index / columns);
+            host.Children.Add(cards[index]);
         }
     }
 
     private Control ProjectCard(Project project, ProjectProgressReport report)
     {
         var color = ProjectChrome.Brush(project.Color);
+        var archived = project.Status == ProjectStatus.Archived;
         var title = new TextBlock
         {
             Text = project.Name,
-            FontSize = AppearanceService.Font(16),
+            FontSize = AppearanceService.Font(15),
             FontWeight = FontWeight.SemiBold,
             Foreground = AppearanceService.Brush(AppearanceService.TextPrimaryBrush),
             TextTrimming = TextTrimming.CharacterEllipsis
         };
-        var open = _projectTabs.Any(tab => tab.Project.Id == project.Id);
-        var metaText = project.Status == ProjectStatus.Archived
-            ? "Archived"
-            : DescribePlatform(project);
-        if (open)
-            metaText += " · Open";
-        var meta = new TextBlock
+        var heading = new StackPanel
         {
-            Text = metaText,
-            FontSize = AppearanceService.Font(12),
-            Foreground = AppearanceService.Brush(AppearanceService.TextMutedBrush),
-            TextTrimming = TextTrimming.CharacterEllipsis
+            Spacing = 2,
+            VerticalAlignment = VerticalAlignment.Center
         };
+        heading.Children.Add(title);
+        var stack = DescribePlatform(project);
+        if (stack.Length > 0)
+        {
+            heading.Children.Add(new TextBlock
+            {
+                Text = stack,
+                FontSize = AppearanceService.Font(12),
+                Foreground = AppearanceService.Brush(AppearanceService.TextMutedBrush),
+                TextTrimming = TextTrimming.CharacterEllipsis
+            });
+        }
+
+        var mark = new Border
+        {
+            Width = 40,
+            Height = 40,
+            CornerRadius = new CornerRadius(12),
+            Background = color,
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = ProjectChrome.Icon(project.Icon, Brushes.White, 18)
+        };
+        var badge = new Border
+        {
+            Background = AppearanceService.Brush(archived
+                ? AppearanceService.CardBrush
+                : AppearanceService.SuccessSubtleBrush),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(8, 3),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                Children =
+                {
+                    new Avalonia.Controls.Shapes.Ellipse
+                    {
+                        Width = 6,
+                        Height = 6,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Fill = AppearanceService.Brush(archived
+                            ? AppearanceService.TextFaintBrush
+                            : AppearanceService.SuccessBrush)
+                    },
+                    new TextBlock
+                    {
+                        Text = archived ? "Archived" : "Active",
+                        FontSize = AppearanceService.Font(12),
+                        FontWeight = FontWeight.SemiBold,
+                        Foreground = AppearanceService.Brush(archived
+                            ? AppearanceService.TextMutedBrush
+                            : AppearanceService.SuccessTextBrush),
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                }
+            }
+        };
+        var reserve = new Border { Width = 18 };
+        var top = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto"),
+            ColumnSpacing = 12
+        };
+        Grid.SetColumn(heading, 1);
+        Grid.SetColumn(badge, 2);
+        Grid.SetColumn(reserve, 3);
+        top.Children.Add(mark);
+        top.Children.Add(heading);
+        top.Children.Add(badge);
+        top.Children.Add(reserve);
+
         var counts = new TextBlock
         {
             Text = report.TasklistCount == 1
                 ? "1 tasklist"
                 : $"{report.TasklistCount} tasklists",
             FontSize = AppearanceService.Font(12),
-            Foreground = AppearanceService.Brush(AppearanceService.TextBodyBrush)
+            Foreground = AppearanceService.Brush(AppearanceService.TextMutedBrush),
+            VerticalAlignment = VerticalAlignment.Center
         };
         var percent = new TextBlock
         {
             Text = report.PercentLabel,
-            FontSize = AppearanceService.Font(12),
+            FontSize = AppearanceService.Font(13),
             FontWeight = FontWeight.SemiBold,
             Foreground = AppearanceService.Brush(AppearanceService.TextPrimaryBrush),
-            HorizontalAlignment = HorizontalAlignment.Right
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center
         };
-        var numbers = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        var numbers = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            Margin = new Thickness(0, 12, 0, 6)
+        };
         numbers.Children.Add(counts);
         Grid.SetColumn(percent, 1);
         numbers.Children.Add(percent);
 
-        var mark = new Border
-        {
-            Width = 36,
-            Height = 36,
-            CornerRadius = new CornerRadius(10),
-            Background = color,
-            Child = ProjectChrome.Icon(project.Icon, Brushes.White, 16)
-        };
-        var heading = new StackPanel
-        {
-            Spacing = 2,
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { title, meta }
-        };
-        Grid.SetColumn(heading, 1);
-        var top = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
-            ColumnSpacing = 10,
-            Children = { mark, heading }
-        };
-
         var body = new StackPanel
         {
-            Spacing = 8,
             Children =
             {
                 top,
@@ -723,7 +912,8 @@ public partial class MainWindow
                     Minimum = 0,
                     Maximum = 100,
                     Value = report.Percent,
-                    Height = 7,
+                    Height = 6,
+                    CornerRadius = new CornerRadius(3),
                     Foreground = color,
                     Background = AppearanceService.Brush(AppearanceService.BorderSubtleBrush)
                 }
@@ -750,7 +940,98 @@ public partial class MainWindow
             if (current is not null)
                 OpenProject(current);
         };
+
+        var menu = ProjectMenuButton(project);
+        var host = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Children = { button, menu }
+        };
+        return host;
+    }
+
+    private Button ProjectMenuButton(Project project)
+    {
+        var dots = new StackPanel
+        {
+            Orientation = Orientation.Vertical,
+            Spacing = 3,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        for (var i = 0; i < 3; i++)
+        {
+            dots.Children.Add(new Avalonia.Controls.Shapes.Ellipse
+            {
+                Classes = { "glyph" },
+                Width = 3.5,
+                Height = 3.5
+            });
+        }
+
+        var id = project.Id;
+        var edit = new MenuItem { Header = "Edit" };
+        edit.Click += (_, _) => EditFromCard(id);
+        var archive = new MenuItem
+        {
+            Header = project.Status == ProjectStatus.Archived ? "Restore" : "Archive"
+        };
+        archive.Click += (_, _) => ArchiveFromCard(id);
+        var delete = new MenuItem { Header = "Delete" };
+        delete.Click += (_, _) => DeleteFromCard(id);
+
+        var button = new Button
+        {
+            Classes = { "card-menu" },
+            Content = dots,
+            Flyout = new MenuFlyout
+            {
+                Items = { edit, archive, delete }
+            }
+        };
+        ToolTip.SetTip(button, "Project actions");
         return button;
+    }
+
+    private void EditFromCard(Guid id)
+    {
+        var project = _projects.Find(id);
+        if (project is not null)
+            ShowProjectEditor(project);
+    }
+
+    private void ArchiveFromCard(Guid id)
+    {
+        var project = _projects.Find(id);
+        if (project is null)
+            return;
+
+        var tab = _projectTabs.FirstOrDefault(item => item.Project.Id == id);
+        if (tab is not null)
+        {
+            tab.Project = project;
+            ArchiveProject(tab);
+            return;
+        }
+
+        var next = project.Status == ProjectStatus.Archived
+            ? ProjectStatus.Active
+            : ProjectStatus.Archived;
+        var updated = _projects.SetStatus(id, next);
+        if (updated is null)
+            return;
+
+        RefreshProjectOverview();
+        ShowToast(next == ProjectStatus.Archived
+            ? $"Archived \"{updated.Name}\"."
+            : $"Restored \"{updated.Name}\".");
+    }
+
+    private void DeleteFromCard(Guid id)
+    {
+        var project = _projects.Find(id);
+        if (project is not null)
+            _ = DeleteProjectAsync(project);
     }
 
     private void ShowProject(ProjectTab tab)
@@ -1160,7 +1441,7 @@ public partial class MainWindow
             (_, e) => e.Handled = true,
             RoutingStrategies.Bubble,
             handledEventsToo: true);
-        detail.EditRequested += (_, _) => _ = EditProjectAsync(tab);
+        detail.EditRequested += (_, _) => ShowProjectEditor(tab.Project);
         detail.ArchiveRequested += (_, _) => ArchiveProject(tab);
         detail.DeleteRequested += (_, _) => _ = RunFileOperation(() => DeleteProjectAsync(tab.Project));
         detail.AddRequested += (_, _) => _ = RunFileOperation(() => AddTasklistAsync(tab.Project));
@@ -1222,6 +1503,8 @@ public partial class MainWindow
 
     private void ActivateProject(ProjectTab tab)
     {
+        _returnToHistory = false;
+        HideHistory();
         _activeProjectTab = tab;
         _activeTab = null;
         ClearChecklistSelection();
@@ -1244,6 +1527,7 @@ public partial class MainWindow
         SetChecklistActionsEnabled(false);
         UpdateManualSaveVisibility();
         SyncProjectIndicators();
+        SyncHomeTab();
     }
 
     private void SyncProjectIndicators()
@@ -1421,7 +1705,7 @@ public partial class MainWindow
         if (projectWasActive || childWasActive)
             ApplyFocus(focus);
         else
-            TabBar.IsVisible = HasOpenTabs();
+            TabBar.IsVisible = true;
 
         SyncProjectIndicators();
         RefreshRecentList();
@@ -1497,7 +1781,7 @@ public partial class MainWindow
             TabsPanel.Children.Add(tab.HeaderContainer);
         }
 
-        TabBar.IsVisible = HasOpenTabs();
+        TabBar.IsVisible = true;
         UpdatePinVisibility();
     }
 
@@ -1575,14 +1859,7 @@ public partial class MainWindow
 
         _activeTab = null;
         _activeProjectTab = null;
-        ClearChecklistSelection();
-        ClearProjectSelection();
-        WorkspaceContent.Content = null;
-        WorkspaceContent.IsVisible = false;
-        HomePanel.IsVisible = true;
-        TabBar.IsVisible = HasOpenTabs();
-        SetChecklistActionsEnabled(false);
-        SyncProjectIndicators();
+        ShowHomeScreen();
     }
 
     private TabFocus CurrentFocus()

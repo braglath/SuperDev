@@ -1388,8 +1388,8 @@
         </Button>
 
         <Button x:Name="FilterToggleButton"
-                Classes="icon toolbar selected"
-                ToolTip.Tip="Hide filters"
+                Classes="icon toolbar"
+                ToolTip.Tip="Show filters"
                 Click="FilterToggle_Click">
             <Viewbox Width="16" Height="16">
                 <Path Stroke="{Binding $parent[Button].Foreground}"
@@ -1434,10 +1434,11 @@
             <Grid>
             <Grid x:Name="ChecklistBody"
                   RowDefinitions="Auto,*"
-                  RowSpacing="14">
+                  RowSpacing="0">
 
                 <Grid x:Name="FiltersPanel"
                       Grid.Row="0"
+                      IsVisible="False"
                       ColumnDefinitions="*,130,150,150,Auto,Auto"
                       ColumnSpacing="8">
 

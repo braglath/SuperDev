@@ -148,6 +148,11 @@ public partial class GenerateChecklistWindow : Window
                 return;
             }
 
+            var request = BuildRequest();
+            result.Checklist.Summary = ChecklistSummary.ForChecklist(
+                result.Checklist.Summary,
+                request.Description,
+                result.Checklist);
             ShowPreview(result.Checklist, result.Notice, result.NoticeIsAdjustment);
             ShowGenerationMessage("Review the checklist, then create it.");
         });
@@ -240,11 +245,16 @@ public partial class GenerateChecklistWindow : Window
         }
 
         var task = request.Description?.Trim();
+        var summary = ChecklistSummary.ForChecklist(
+            inspection.Checklist.Summary,
+            task,
+            inspection.Checklist);
         Close(new AiChecklistDraft
         {
             Title = inspection.Checklist.Title.Trim(),
             WorkType = AiChecklistMapper.ToWorkType(work.Value),
             TemplateName = AiChecklistMapper.TemplateName(request),
+            Description = string.IsNullOrEmpty(summary) ? null : summary,
             Items = items,
             TaskDescription = string.IsNullOrEmpty(task) ? null : task,
             AiPlatform = AiCatalog.PlatformLabel(request.Platform),

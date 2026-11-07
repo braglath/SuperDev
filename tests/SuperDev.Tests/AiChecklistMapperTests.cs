@@ -50,6 +50,9 @@ public class AiChecklistMapperTests
         Assert.Equal(WorkType.Bug, AiChecklistMapper.ToWorkType(AiWorkKind.BugFix));
         Assert.Equal(WorkType.Custom, AiChecklistMapper.ToWorkType(AiWorkKind.SecurityReview));
         Assert.Equal("AI · .NET MAUI · Bug Fix", AiChecklistMapper.TemplateName(request));
+        Assert.Equal(".NET MAUI · Bug Fix", AiChecklistMapper.VisibleTemplateName(AiChecklistMapper.TemplateName(request)));
+        Assert.Equal("Bug Fix", AiChecklistMapper.VisibleTemplateName("Bug Fix"));
+        Assert.Equal(string.Empty, AiChecklistMapper.VisibleTemplateName("  AI ·  "));
         Assert.Equal("Investigation", items[0].Category);
         Assert.Equal(ChecklistPriority.Critical, items[0].Priority);
         Assert.Equal("Reproduce the issue consistently on the target device.", items[0].Notes);

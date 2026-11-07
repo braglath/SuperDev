@@ -19,12 +19,13 @@ public enum ShortcutScope
 }
 
 /// <summary>
-/// Fixed shortcut catalog. The settings page and the key handler both read this list.
-/// Menu gestures keep the Control modifier; on macOS the native menu shows that as Command.
+/// Fixed shortcut catalog. The settings page, the key handler, and the menu shortcuts read this list.
+/// Menu gestures use the platform modifier: Control on Windows, Command on macOS.
 /// </summary>
 public static class AppShortcuts
 {
     public const string NewChecklist = "new-checklist";
+    public const string CreateProject = "create-project";
     public const string OpenChecklist = "open-checklist";
     public const string Save = "save";
     public const string SaveAs = "save-as";
@@ -46,6 +47,7 @@ public static class AppShortcuts
     public static IReadOnlyList<AppShortcut> All { get; } =
     [
         Command(NewChecklist, "New checklist", ShortcutGroup.Application, ShortcutScope.Window, Key.N, shift: false, "Ctrl+N", "Command+N"),
+        Command(CreateProject, "Create project", ShortcutGroup.Application, ShortcutScope.Window, Key.P, shift: false, "Ctrl+P", "Command+P"),
         Command(OpenChecklist, "Open checklist", ShortcutGroup.Application, ShortcutScope.Window, Key.O, shift: false, "Ctrl+O", "Command+O"),
         Command(Save, "Save checklist", ShortcutGroup.Application, ShortcutScope.Window, Key.S, shift: false, "Ctrl+S", "Command+S"),
         Command(Settings, "Settings", ShortcutGroup.Application, ShortcutScope.Window, Key.OemComma, shift: false, "Ctrl+,", "Command+,"),
@@ -65,6 +67,15 @@ public static class AppShortcuts
 
     public static AppShortcut? Match(KeyEventArgs e, ShortcutScope scope)
     {
+        // Comma is only ever Settings. On macOS the same press can be reported as OemComma
+        // or as a different key whose symbol is still ",", and that must not fall through
+        // to New, Close, or another shortcut.
+        if (IsComma(e))
+        {
+            var settings = All.First(item => item.Id == Settings);
+            return settings.Scope == scope && settings.Matches(e) ? settings : null;
+        }
+
         foreach (var shortcut in All)
         {
             if (shortcut.Scope == scope && shortcut.Matches(e))
@@ -73,6 +84,9 @@ public static class AppShortcuts
 
         return null;
     }
+
+    public static bool IsComma(KeyEventArgs e) =>
+        e.Key == Key.OemComma || e.KeySymbol == ",";
 
     public static bool IsClosePopup(KeyEventArgs e) =>
         All.First(item => item.Id == ClosePopup).Matches(e);
@@ -149,12 +163,22 @@ public sealed class AppShortcut(
     public KeyModifiers CurrentModifiers =>
         OperatingSystem.IsMacOS() ? MacModifiers : WindowsModifiers;
 
-    public KeyGesture MenuGesture => new(Key, WindowsModifiers);
+    public KeyGesture MenuGesture => new(Key, CurrentModifiers);
 
     public bool Matches(KeyEventArgs e)
     {
-        if (AppShortcuts.Normalize(e.KeyModifiers) != CurrentModifiers)
+        var modifiers = AppShortcuts.Normalize(e.KeyModifiers);
+        if (Id == AppShortcuts.Settings && OperatingSystem.IsMacOS())
+        {
+            // Command+, is the shortcut. Control+, is what the menu used to advertise,
+            // and either press should stay on Settings instead of moving to Home.
+            if (modifiers != KeyModifiers.Meta && modifiers != KeyModifiers.Control)
+                return false;
+        }
+        else if (modifiers != CurrentModifiers)
+        {
             return false;
+        }
 
         if (e.Key == Key)
             return true;

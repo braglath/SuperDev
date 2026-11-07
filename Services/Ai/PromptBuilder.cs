@@ -21,6 +21,7 @@ public sealed class PromptBuilder
         type is Investigation, Implementation, Verification, or Documentation.
         priority is Critical, Required, Conditional, or Review.
         title is a short action. description and acceptanceCriteria are one short sentence each.
+        summary describes this checklist: its sections, its checks, and what each check covers. It is shown under the checklist title. Do not copy the task text into the summary.
         Do not put the acceptance sentence inside description.
         testReports, logs, codeReferences, apiResponses, and pullRequestLinks are optional evidence.
         Copy them only when the task text already includes that evidence. Use an empty string otherwise.
@@ -41,6 +42,7 @@ public sealed class PromptBuilder
             Do not add a screen, provider, or platform the task does not mention.
             Use Investigation to reproduce or find the cause, Implementation for the code change, and Verification for tests.
             Return title, summary, and sections.
+            The summary must describe those checks. Do not repeat the task text.
             """;
         return new Prompt(SystemPrompt, user);
     }

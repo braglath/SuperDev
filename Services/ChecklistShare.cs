@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SuperDev.Models;
+using SuperDev.Services.Ai;
 
 namespace SuperDev.Services;
 
@@ -221,8 +222,9 @@ public static class ChecklistShare
 
     private static string WorkflowName(ChecklistDocument document)
     {
-        if (!string.IsNullOrWhiteSpace(document.TemplateName))
-            return document.TemplateName.Trim();
+        var named = AiChecklistMapper.VisibleTemplateName(document.TemplateName);
+        if (named.Length > 0)
+            return named;
 
         return document.WorkType switch
         {

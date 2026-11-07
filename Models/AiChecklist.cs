@@ -261,6 +261,11 @@ public sealed class AiChecklistDraft
 
     public required string TemplateName { get; init; }
 
+    /// <summary>
+    /// Summary written by local AI. Shown under the tasklist title.
+    /// </summary>
+    public string? Description { get; init; }
+
     public required List<ChecklistItem> Items { get; init; }
 
     public string? TaskDescription { get; init; }

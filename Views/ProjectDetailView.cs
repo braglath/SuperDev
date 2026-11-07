@@ -41,16 +41,19 @@ public sealed class ProjectDetailView : UserControl
         _root = new StackPanel
         {
             Spacing = 18,
-            Margin = new Thickness(32, 28, 32, 40),
-            MaxWidth = 880,
-            HorizontalAlignment = HorizontalAlignment.Stretch
+            Classes = { "page-column" }
+        };
+        var frame = new Grid
+        {
+            Classes = { "page-frame" },
+            Children = { _root }
         };
         _tasklists = new StackPanel { Spacing = 10 };
         _scroll = new ScrollViewer
         {
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            Content = _root
+            Content = frame
         };
         Content = _scroll;
         PointerMoved += OnTasklistPointerMoved;

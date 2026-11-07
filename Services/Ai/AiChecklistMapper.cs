@@ -16,10 +16,32 @@ public static class AiChecklistMapper
         _ => WorkType.Custom
     };
 
+    public const string TemplatePrefix = "AI · ";
+
     public static string TemplateName(AiChecklistRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return "AI · " + AiCatalog.FrameworkLabel(request.Framework) + " · " + AiCatalog.WorkLabel(request.WorkKind);
+        return TemplatePrefix + AiCatalog.FrameworkLabel(request.Framework) + " · " + AiCatalog.WorkLabel(request.WorkKind);
+    }
+
+    /// <summary>
+    /// Workflow line shown under a tasklist title. The stored name keeps the AI prefix
+    /// so older files can still be recognized. The page does not show that prefix.
+    /// </summary>
+    public static string VisibleTemplateName(string? templateName)
+    {
+        if (string.IsNullOrWhiteSpace(templateName))
+            return string.Empty;
+
+        var name = templateName.Trim();
+        const string marker = "AI ·";
+        if (name.Equals("AI", StringComparison.Ordinal) || name.Equals(marker, StringComparison.Ordinal))
+            return string.Empty;
+
+        if (name.StartsWith(TemplatePrefix, StringComparison.Ordinal))
+            name = name[TemplatePrefix.Length..].Trim();
+
+        return name;
     }
 
     public static List<ChecklistItem> ToItems(GeneratedChecklist checklist)

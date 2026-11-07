@@ -27,13 +27,13 @@
         <SolidColorBrush x:Key="TextSubtleBrush" Color="#64748B"/>
         <SolidColorBrush x:Key="TextFaintBrush" Color="#94A3B8"/>
         <SolidColorBrush x:Key="TextOnAccentBrush" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="AccentBrush" Color="#2563EB"/>
-        <SolidColorBrush x:Key="AccentHoverBrush" Color="#1D4ED8"/>
-        <SolidColorBrush x:Key="AccentPressedBrush" Color="#1E40AF"/>
-        <SolidColorBrush x:Key="AccentTextBrush" Color="#1D4ED8"/>
-        <SolidColorBrush x:Key="AccentTextHoverBrush" Color="#1E3A8A"/>
-        <SolidColorBrush x:Key="AccentSubtleBrush" Color="#DBEAFE"/>
-        <SolidColorBrush x:Key="AccentSubtleHoverBrush" Color="#BFDBFE"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#7C3AED"/>
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#6D28D9"/>
+        <SolidColorBrush x:Key="AccentPressedBrush" Color="#5B21B6"/>
+        <SolidColorBrush x:Key="AccentTextBrush" Color="#6D28D9"/>
+        <SolidColorBrush x:Key="AccentTextHoverBrush" Color="#5B21B6"/>
+        <SolidColorBrush x:Key="AccentSubtleBrush" Color="#F3EAFE"/>
+        <SolidColorBrush x:Key="AccentSubtleHoverBrush" Color="#E9D5FF"/>
         <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
         <SolidColorBrush x:Key="DangerHoverBrush" Color="#B91C1C"/>
         <SolidColorBrush x:Key="DangerTextBrush" Color="#B91C1C"/>
@@ -42,6 +42,9 @@
         <SolidColorBrush x:Key="DangerSurfaceSoftBrush" Color="#FEE2E2"/>
         <SolidColorBrush x:Key="WarningTextBrush" Color="#B45309"/>
         <SolidColorBrush x:Key="WarningSurfaceBrush" Color="#FEF3C7"/>
+        <SolidColorBrush x:Key="SuccessBrush" Color="#16A34A"/>
+        <SolidColorBrush x:Key="SuccessHoverBrush" Color="#15803D"/>
+        <SolidColorBrush x:Key="SuccessSubtleBrush" Color="#E8F7EE"/>
         <SolidColorBrush x:Key="SuccessTextBrush" Color="#15803D"/>
         <SolidColorBrush x:Key="SuccessBorderBrush" Color="#86EFAC"/>
         <SolidColorBrush x:Key="InfoTextBrush" Color="#0369A1"/>
@@ -72,6 +75,12 @@
         <Thickness x:Key="PageMargin">32</Thickness>
         <Thickness x:Key="PagePadding">24,28,24,40</Thickness>
         <Thickness x:Key="CardPadding">12</Thickness>
+        <Thickness x:Key="HomePadding">28,8,28,32</Thickness>
+        <x:Double x:Key="Space8">8</x:Double>
+        <x:Double x:Key="Space12">12</x:Double>
+        <x:Double x:Key="Space16">16</x:Double>
+        <x:Double x:Key="Space24">24</x:Double>
+        <x:Double x:Key="Space32">32</x:Double>
         <SolidColorBrush x:Key="CalendarViewForeground" Color="#0F172A"/>
         <SolidColorBrush x:Key="CalendarViewBackground" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="CalendarViewBorderBrush" Color="#FFFFFF"/>
@@ -79,10 +88,10 @@
         <SolidColorBrush x:Key="CalendarViewCalendarItemRevealBackground" Color="Transparent"/>
         <SolidColorBrush x:Key="CalendarViewCalendarItemRevealBorderBrush" Color="Transparent"/>
         <SolidColorBrush x:Key="CalendarViewHoverBorderBrush" Color="#CBD5E1"/>
-        <SolidColorBrush x:Key="CalendarViewPressedBorderBrush" Color="#1D4ED8"/>
-        <SolidColorBrush x:Key="CalendarViewSelectedBorderBrush" Color="#2563EB"/>
-        <SolidColorBrush x:Key="CalendarViewSelectedHoverBorderBrush" Color="#1D4ED8"/>
-        <SolidColorBrush x:Key="CalendarViewSelectedPressedBorderBrush" Color="#1E40AF"/>
+        <SolidColorBrush x:Key="CalendarViewPressedBorderBrush" Color="#6D28D9"/>
+        <SolidColorBrush x:Key="CalendarViewSelectedBorderBrush" Color="#7C3AED"/>
+        <SolidColorBrush x:Key="CalendarViewSelectedHoverBorderBrush" Color="#6D28D9"/>
+        <SolidColorBrush x:Key="CalendarViewSelectedPressedBorderBrush" Color="#5B21B6"/>
         <SolidColorBrush x:Key="CalendarViewTodayForeground" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="CalendarViewOutOfScopeBackground" Color="Transparent"/>
         <SolidColorBrush x:Key="CalendarViewOutOfScopeForeground" Color="#94A3B8"/>
@@ -92,7 +101,7 @@
         <SolidColorBrush x:Key="CalendarViewNavigationButtonBorderBrush" Color="Transparent"/>
         <SolidColorBrush x:Key="CalendarViewNavigationButtonBorderBrushPointerOver" Color="#E2E8F0"/>
         <SolidColorBrush x:Key="CalendarViewNavigationButtonForegroundPointerOver" Color="#0F172A"/>
-        <SolidColorBrush x:Key="CalendarViewNavigationButtonForegroundPressed" Color="#1E3A8A"/>
+        <SolidColorBrush x:Key="CalendarViewNavigationButtonForegroundPressed" Color="#5B21B6"/>
         <x:Double x:Key="CalendarFontSize">13</x:Double>
         <x:Double x:Key="CalendarDayButtonFontSize">13</x:Double>
     </Application.Resources>
@@ -228,6 +237,106 @@
 
         <Style Selector="TextBox">
             <Setter Property="(controls:TextBoxClearButton.Show)" Value="True"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style Selector="TextBox:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextFaintBrush}"/>
+        </Style>
+
+        <Style Selector="TextBox:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <Style Selector="TextBox:disabled">
+            <Setter Property="Opacity" Value="0.6"/>
+        </Style>
+
+        <Style Selector="ComboBox">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="MinHeight" Value="{DynamicResource ControlHeightSm}"/>
+        </Style>
+
+        <Style Selector="ComboBox:pointerover">
+            <Setter Property="BorderBrush" Value="{DynamicResource TextFaintBrush}"/>
+        </Style>
+
+        <Style Selector="ComboBox:focus">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <Style Selector="ComboBox:disabled">
+            <Setter Property="Opacity" Value="0.6"/>
+        </Style>
+
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style Selector="Button:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+        </Style>
+
+        <Style Selector="CheckBox:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+
+        <Style Selector="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+        </Style>
+
+        <Style Selector="RadioButton:disabled">
+            <Setter Property="Opacity" Value="0.5"/>
+        </Style>
+
+        <Style Selector="ProgressBar">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource BorderSubtleBrush}"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="MinHeight" Value="6"/>
+        </Style>
+
+        <Style Selector="ContextMenu">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+
+        <Style Selector="MenuFlyoutPresenter">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="4"/>
+        </Style>
+
+        <!-- Shared page frame. The tasklist view keeps its own margin. -->
+        <Style Selector="Grid.page-frame">
+            <Setter Property="Margin" Value="{DynamicResource HomePadding}"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+        <Style Selector="StackPanel.page-column">
+            <Setter Property="MaxWidth" Value="1040"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
         </Style>
     </Application.Styles>
 </Application>

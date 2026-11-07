@@ -53,7 +53,7 @@ public partial class ChecklistView : UserControl
    private readonly ObservableCollection<ChecklistItem> _checklist;
    private readonly ObservableCollection<ChecklistItem> _visible = new();
    private bool _viewReady;
-   private bool _filtersVisible = true;
+   private bool _filtersVisible;
    private bool _syncingCheck;
    private bool _editOpen;
    private bool _linksOpen;
@@ -285,8 +285,9 @@ public partial class ChecklistView : UserControl
 
    private string FormatTemplateLine(WorkType workType, string? reminder)
    {
-      var template = !string.IsNullOrWhiteSpace(_templateName)
-          ? _templateName
+      var named = AiChecklistMapper.VisibleTemplateName(_templateName);
+      var template = named.Length > 0
+          ? named
           : workType switch
           {
              WorkType.Bug => "Bug Fix",

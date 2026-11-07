@@ -74,12 +74,28 @@ public class OllamaServiceTests
 
         Assert.True(result.Succeeded);
         Assert.Equal("MAUI Android Bug Fix", result.Checklist!.Title);
+        Assert.Equal("Diagnose the crash.", result.Checklist.Summary);
         Assert.NotNull(body);
         Assert.Contains("\"model\":\"qwen3.5:0.8b\"", body, StringComparison.Ordinal);
         Assert.Contains("\"temperature\":0.2", body, StringComparison.Ordinal);
         Assert.Contains("\"think\":false", body, StringComparison.Ordinal);
         Assert.Contains("Crash when rotating", body, StringComparison.Ordinal);
         Assert.DoesNotContain("http://", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task A_summary_that_copies_the_task_is_replaced_with_the_checks()
+    {
+        using var service = Create(Chat("""
+            {"message":{"content":"{\"title\":\"Rotation crash\",\"summary\":\"Crash when rotating\",\"sections\":[{\"name\":\"Investigation\",\"items\":[{\"title\":\"Reproduce the issue\",\"description\":\"Reproduce it on a device.\",\"type\":\"Investigation\",\"priority\":\"Required\"}]}]}"}}
+            """));
+
+        var result = await service.GenerateChecklistAsync(SampleRequest());
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(
+            "Investigation: Reproduce the issue — Reproduce it on a device.",
+            result.Checklist!.Summary);
     }
 
     [Fact]

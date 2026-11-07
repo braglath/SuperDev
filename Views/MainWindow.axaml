@@ -15,6 +15,8 @@
                 <NativeMenu>
                     <NativeMenuItem Header="New Checklist"
                                     Click="NewChecklistMenu_Click"/>
+                    <NativeMenuItem Header="Create Project"
+                                    Click="CreateProjectMenu_Click"/>
                     <NativeMenuItem Header="Open…"
                                     Click="OpenMenu_Click"/>
                     <NativeMenuItemSeparator/>
@@ -174,27 +176,61 @@
 </Style>
 
 <Style Selector="Button.project-card">
-    <Setter Property="MinHeight" Value="138"/>
-    <Setter Property="MinWidth" Value="340"/>
-    <Setter Property="MaxWidth" Value="354"/>
-    <Setter Property="Margin" Value="0,0,12,12"/>
-    <Setter Property="Padding" Value="14,12"/>
+    <Setter Property="MinHeight" Value="0"/>
+    <Setter Property="MinWidth" Value="0"/>
+    <Setter Property="MaxWidth" Value="2000"/>
+    <Setter Property="Margin" Value="0"/>
+    <Setter Property="Padding" Value="16,14"/>
     <Setter Property="HorizontalAlignment" Value="Stretch"/>
     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-    <Setter Property="VerticalContentAlignment" Value="Stretch"/>
-    <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
     <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
-    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="CornerRadius" Value="14"/>
+    <Setter Property="Cursor" Value="Hand"/>
 </Style>
 
 <Style Selector="Button.project-card:pointerover">
-    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
     <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.project-card:pressed">
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
 </Style>
 
 <Style Selector="Button.project-card.archived">
     <Setter Property="Opacity" Value="0.72"/>
+</Style>
+
+<Style Selector="Button.card-menu">
+    <Setter Property="Width" Value="28"/>
+    <Setter Property="Height" Value="28"/>
+    <Setter Property="MinWidth" Value="28"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Margin" Value="0,10,10,0"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="HorizontalAlignment" Value="Right"/>
+    <Setter Property="VerticalAlignment" Value="Top"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="ZIndex" Value="2"/>
+</Style>
+
+<Style Selector="Button.card-menu:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.card-menu Ellipse.glyph">
+    <Setter Property="Fill" Value="{DynamicResource TextSecondaryBrush}"/>
+</Style>
+
+<Style Selector="Button.card-menu:pointerover Ellipse.glyph">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}"/>
 </Style>
 
 <Style Selector="Button.project-create">
@@ -213,6 +249,319 @@
 
 <Style Selector="Button.project-create:pointerover">
     <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.project-create:pressed">
+    <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}"/>
+</Style>
+
+<Style Selector="Button.project-create:disabled">
+    <Setter Property="Opacity" Value="0.5"/>
+</Style>
+
+<Style Selector="Button.home-tab">
+    <Setter Property="Width" Value="{DynamicResource ControlHeight}"/>
+    <Setter Property="Height" Value="{DynamicResource ControlHeight}"/>
+    <Setter Property="MinWidth" Value="0"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="9"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.home-tab:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.home-tab.selected">
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+</Style>
+
+<Style Selector="Button.home-tab Path">
+    <Setter Property="Stroke" Value="{DynamicResource TextSecondaryBrush}"/>
+</Style>
+
+<Style Selector="Button.home-tab.selected Path">
+    <Setter Property="Stroke" Value="{DynamicResource AccentTextBrush}"/>
+</Style>
+
+<Style Selector="Button.home-tab TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+</Style>
+
+<Style Selector="Button.home-tab.selected TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+</Style>
+
+<Style Selector="Button.icon-quiet">
+    <Setter Property="Width" Value="36"/>
+    <Setter Property="Height" Value="36"/>
+    <Setter Property="MinWidth" Value="36"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.icon-quiet:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+</Style>
+
+<Style Selector="Button.icon-quiet:pressed">
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.icon-quiet Path.glyph">
+    <Setter Property="Fill" Value="{DynamicResource TextSecondaryBrush}"/>
+</Style>
+
+<Style Selector="Button.icon-quiet:pointerover Path.glyph">
+    <Setter Property="Fill" Value="{DynamicResource TextPrimaryBrush}"/>
+</Style>
+
+<Style Selector="Button.label-quiet">
+    <Setter Property="Height" Value="36"/>
+    <Setter Property="MinWidth" Value="0"/>
+    <Setter Property="Padding" Value="10,0"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.label-quiet:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+</Style>
+
+<Style Selector="Button.label-quiet:pressed">
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.label-quiet TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Button.label-quiet:pointerover TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+</Style>
+
+<Style Selector="Button.label-quiet Path">
+    <Setter Property="Stroke" Value="{DynamicResource TextSecondaryBrush}"/>
+</Style>
+
+<Style Selector="Button.label-quiet:pointerover Path">
+    <Setter Property="Stroke" Value="{DynamicResource TextPrimaryBrush}"/>
+</Style>
+
+<Style Selector="Button.section-link">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Padding" Value="8,4"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Button.section-link:pointerover">
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.section-link:pressed">
+    <Setter Property="Opacity" Value="0.8"/>
+</Style>
+
+<Style Selector="TextBlock.page-title">
+    <Setter Property="FontSize" Value="{DynamicResource Font28}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+</Style>
+
+<Style Selector="TextBlock.section-title">
+    <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="TextBlock.section-empty">
+    <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+</Style>
+
+<Style Selector="TextBlock.section-hint">
+    <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+</Style>
+
+<Style Selector="Button.action-card">
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Padding" Value="18,16"/>
+    <Setter Property="MinHeight" Value="118"/>
+    <Setter Property="CornerRadius" Value="16"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.action-card.project">
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentSubtleHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.action-card.project:pointerover">
+    <Setter Property="Background" Value="{DynamicResource AccentSubtleHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.action-card.tasklist">
+    <Setter Property="Background" Value="{DynamicResource SuccessSubtleBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorderBrush}"/>
+</Style>
+
+<Style Selector="Button.action-card.tasklist:pointerover">
+    <Setter Property="Background" Value="{DynamicResource SuccessBorderBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource SuccessHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.action-card:pressed">
+    <Setter Property="Opacity" Value="0.92"/>
+</Style>
+
+<Style Selector="Button.action-card:focus-visible">
+    <Setter Property="BorderThickness" Value="2"/>
+</Style>
+
+<Style Selector="Button.action-card.project:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+</Style>
+
+<Style Selector="Button.action-card.tasklist:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}"/>
+</Style>
+
+<Style Selector="Border.action-icon">
+    <Setter Property="Width" Value="48"/>
+    <Setter Property="Height" Value="48"/>
+    <Setter Property="CornerRadius" Value="14"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="HorizontalAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Border.action-icon > Viewbox, Border.action-go > Viewbox">
+    <Setter Property="Width" Value="22"/>
+    <Setter Property="Height" Value="22"/>
+    <Setter Property="Stretch" Value="Uniform"/>
+    <Setter Property="HorizontalAlignment" Value="Center"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Border.action-icon.project">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+</Style>
+
+<Style Selector="Border.action-icon.tasklist">
+    <Setter Property="Background" Value="{DynamicResource SuccessBrush}"/>
+</Style>
+
+<Style Selector="Border.action-go">
+    <Setter Property="Width" Value="34"/>
+    <Setter Property="Height" Value="34"/>
+    <Setter Property="CornerRadius" Value="17"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="HorizontalAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Border.action-go > Viewbox">
+    <Setter Property="Width" Value="14"/>
+    <Setter Property="Height" Value="14"/>
+</Style>
+
+<Style Selector="Border.action-go.project">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+</Style>
+
+<Style Selector="Border.action-go.tasklist">
+    <Setter Property="Background" Value="{DynamicResource SuccessBrush}"/>
+</Style>
+
+<Style Selector="Border.action-icon Path, Border.action-go Path">
+    <Setter Property="Stroke" Value="{DynamicResource TextOnAccentBrush}"/>
+    <Setter Property="Fill" Value="Transparent"/>
+</Style>
+
+<Style Selector="TextBlock.action-title">
+    <Setter Property="FontSize" Value="{DynamicResource Font16}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+</Style>
+
+<Style Selector="TextBlock.action-copy">
+    <Setter Property="FontSize" Value="{DynamicResource Font13}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+</Style>
+
+<Style Selector="Border.action-chip">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="Padding" Value="8,3"/>
+    <Setter Property="HorizontalAlignment" Value="Left"/>
+    <Setter Property="Margin" Value="0,6,0,0"/>
+</Style>
+
+<Style Selector="Border.action-chip.project TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
+</Style>
+
+<Style Selector="Border.action-chip.tasklist TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource SuccessTextBrush}"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
+</Style>
+
+<Style Selector="Button.recent-file">
+    <Setter Property="MinHeight" Value="64"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="Padding" Value="12,10"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.recent-file:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.recent-file:pressed">
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
 </Style>
 
 <!-- The tab scroller reserves a row for its bar so it does not cover the tabs.
@@ -369,6 +718,27 @@
 
 <Style Selector="Button.settings-back:disabled">
     <Setter Property="Opacity" Value="0.5"/>
+</Style>
+
+<Style Selector="Button.back-arrow">
+    <Setter Property="Width" Value="36"/>
+    <Setter Property="Height" Value="36"/>
+    <Setter Property="MinWidth" Value="36"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.back-arrow:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+</Style>
+
+<Style Selector="Button.back-arrow Path">
+    <Setter Property="Stroke" Value="{DynamicResource TextSecondaryBrush}"/>
 </Style>
 
 <Style Selector="Button.settings-primary">
@@ -565,6 +935,52 @@
     <Setter Property="VerticalAlignment" Value="Center"/>
 </Style>
 
+<Style Selector="FlyoutPresenter.create-menu">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSoftBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="6"/>
+    <Setter Property="CornerRadius" Value="12"/>
+</Style>
+
+<Style Selector="Button.create-menu-item">
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Padding" Value="8"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.create-menu-item:pointerover">
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+</Style>
+
+<Style Selector="Button.create-menu-item:pressed">
+    <Setter Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+</Style>
+
+<Style Selector="TextBlock.create-menu-title">
+    <Setter Property="FontSize" Value="{DynamicResource Font14}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+</Style>
+
+<Style Selector="TextBlock.create-menu-copy">
+    <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+</Style>
+
+<Style Selector="TextBlock.create-menu-shortcut">
+    <Setter Property="FontSize" Value="{DynamicResource Font12}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="Margin" Value="12,0,0,0"/>
+</Style>
+
         <!-- ========================================================= -->
         <!-- WORK TITLE INPUT                                           -->
         <!-- ========================================================= -->
@@ -613,7 +1029,7 @@
 
         <Style Selector="Button.template">
             <Setter Property="Width" Value="148"/>
-            <Setter Property="Height" Value="84"/>
+            <Setter Property="Height" Value="118"/>
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
@@ -680,6 +1096,17 @@
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="MaxWidth" Value="120"/>
             <Setter Property="MaxHeight" Value="36"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="TextBlock.template-description">
+            <Setter Property="FontSize" Value="{DynamicResource Font11}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="MaxWidth" Value="124"/>
+            <Setter Property="MaxLines" Value="3"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
@@ -1016,6 +1443,7 @@
                   Margin="16,0,0,0">
                 <MenuItem Header="File">
                     <MenuItem Header="New Checklist"/>
+                    <MenuItem Header="Create Project"/>
                     <MenuItem Header="Open…"/>
                     <Separator/>
                     <MenuItem x:Name="WindowSaveMenuItem"
@@ -1068,15 +1496,29 @@
         Background="{DynamicResource AppBackgroundBrush}"
         Padding="12,8"
         BorderBrush="{DynamicResource BorderSoftBrush}"
-        BorderThickness="0,0,0,1"
-        IsVisible="False">
+        BorderThickness="0,0,0,1">
 
-    <Grid ColumnDefinitions="*,Auto"
-          ColumnSpacing="12">
+    <Grid ColumnDefinitions="Auto,*,Auto"
+          ColumnSpacing="8">
+
+        <Button x:Name="HomeTabButton"
+                Classes="home-tab selected"
+                Click="HomeTab_Click"
+                ToolTip.Tip="Home">
+            <Path Width="16"
+                  Height="16"
+                  Stretch="Uniform"
+                  StrokeThickness="1.6"
+                  StrokeLineCap="Round"
+                  StrokeJoin="Round"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Data="M2,7.5 L8,2.5 L14,7.5 V13.5 H10.2 V9.2 H5.8 V13.5 H2 Z"/>
+        </Button>
 
         <ScrollViewer x:Name="TabsScrollViewer"
                       Classes="tabs"
-                      Grid.Column="0"
+                      Grid.Column="1"
                       ClipToBounds="True"
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Disabled"
@@ -1088,10 +1530,73 @@
         </ScrollViewer>
 
         <Button x:Name="NewTabButton"
-                Grid.Column="1"
-                Classes="new-tab"
-                ToolTip.Tip="New checklist"
-                Click="NewTab_Click">
+                Grid.Column="2"
+                Classes="new-tab">
+            <Button.Flyout>
+                <Flyout Placement="BottomEdgeAlignedRight"
+                        FlyoutPresenterClasses="create-menu">
+                    <StackPanel Width="292" Spacing="4">
+                        <Button Classes="create-menu-item"
+                                Click="CreateProject_Click">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <Border Classes="action-icon project"
+                                        Width="40"
+                                        Height="40"
+                                        CornerRadius="12">
+                                    <Viewbox>
+                                        <Canvas Width="24" Height="24">
+                                            <Path Width="24" Height="24" Stretch="None"
+                                                  StrokeThickness="1.7"
+                                                  StrokeLineCap="Round"
+                                                  StrokeJoin="Round"
+                                                  Data="M3.5,9 H9.2 L10.8,7 H20.5 V18.5 H3.5 Z M12,11.6 V15.6 M10,13.6 H14"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="create-menu-title" Text="Create Project"/>
+                                        <TextBlock x:Name="CreateProjectShortcut"
+                                                   Grid.Column="1"
+                                                   Classes="create-menu-shortcut"/>
+                                    </Grid>
+                                    <TextBlock Classes="create-menu-copy"
+                                               Text="Organize multiple tasklists under one project."/>
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+                        <Button Classes="create-menu-item"
+                                Click="CreateTasklist_Click">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <Border Classes="action-icon tasklist"
+                                        Width="40"
+                                        Height="40"
+                                        CornerRadius="12">
+                                    <Viewbox>
+                                        <Canvas Width="24" Height="24">
+                                            <Path Width="24" Height="24" Stretch="None"
+                                                  StrokeThickness="1.7"
+                                                  StrokeLineCap="Round"
+                                                  StrokeJoin="Round"
+                                                  Data="M8,6.5 H19 M8,12 H19 M8,17.5 H19 M5,6.5 H5.8 M5,12 H5.8 M5,17.5 H5.8"/>
+                                        </Canvas>
+                                    </Viewbox>
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="create-menu-title" Text="Create Tasklist"/>
+                                        <TextBlock x:Name="CreateTasklistShortcut"
+                                                   Grid.Column="1"
+                                                   Classes="create-menu-shortcut"/>
+                                    </Grid>
+                                    <TextBlock Classes="create-menu-copy"
+                                               Text="Create an independent checklist for a single task."/>
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Flyout>
+            </Button.Flyout>
             <Grid Width="14" Height="14">
                 <Rectangle Width="14"
                            Height="2"
@@ -1114,238 +1619,404 @@
                     Grid.Row="2"
                     IsVisible="False"/>
 
-    <!-- Your existing template-selection screen -->
+    <ContentControl x:Name="HistoryHost"
+                    Grid.Row="2"
+                    IsVisible="False"/>
+
+    <!-- Home -->
     <ScrollViewer x:Name="HomePanel"
                   Grid.Row="2"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*"
-          Margin="24,12,24,12">
+        <Grid x:Name="HomeLayout"
+              Classes="page-frame"
+              SizeChanged="HomeLayout_SizeChanged">
 
-        <!-- ========================================================= -->
-        <!-- PROJECT OVERVIEW                                            -->
-        <!-- ========================================================= -->
+            <StackPanel x:Name="HomeDashboard"
+                        Classes="page-column"
+                        Spacing="32">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="Get started" Classes="page-title"/>
+                        <TextBlock Text="Create a new project or a tasklist to get things done."
+                                   FontSize="{DynamicResource Font14}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                Spacing="4"
+                                VerticalAlignment="Top">
+                        <Button Classes="label-quiet"
+                                Click="HomeHistory_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Path Width="18"
+                                      Height="18"
+                                      Stretch="Uniform"
+                                      StrokeThickness="1.6"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round"
+                                      Fill="Transparent"
+                                      VerticalAlignment="Center"
+                                      Data="M9,1.8 A7.2,7.2 0 1 0 9,16.2 A7.2,7.2 0 1 0 9,1.8 M9,5 V9.1 L11.8,10.8"/>
+                                <TextBlock Text="History"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="icon-quiet"
+                                ToolTip.Tip="Settings"
+                                Click="HomeSettings_Click">
+                        <Path Classes="glyph"
+                              Width="18"
+                              Height="18"
+                              Stretch="Uniform"
+                              Data="M19.14,12.94c0.04-0.31,0.06-0.63,0.06-0.94c0-0.31-0.02-0.63-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.37,4.8,11.69,4.8,12s0.02,0.63,0.06,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
 
-        <StackPanel x:Name="ProjectSection"
-                    Grid.Row="0"
-                    Width="720"
-                    HorizontalAlignment="Center"
-                    Spacing="12"
-                    Margin="0,0,0,36">
+                <Grid x:Name="ActionRow"
+                      ColumnDefinitions="*,*"
+                      RowDefinitions="Auto,Auto"
+                      ColumnSpacing="16"
+                      RowSpacing="16">
+                    <Button x:Name="CreateProjectButton"
+                            Grid.Column="0"
+                            Grid.Row="0"
+                            Classes="action-card project"
+                            Click="CreateProject_Click">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                            <Border Classes="action-icon project">
+                                <Viewbox>
+                                    <Canvas Width="24" Height="24">
+                                        <Path Width="24" Height="24" Stretch="None"
+                                              StrokeThickness="1.7"
+                                              StrokeLineCap="Round"
+                                              StrokeJoin="Round"
+                                              Data="M3.5,9 H9.2 L10.8,7 H20.5 V18.5 H3.5 Z M12,11.6 V15.6 M10,13.6 H14"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                <TextBlock Classes="action-title" Text="Create Project"/>
+                                <TextBlock Classes="action-copy" Text="Organize multiple tasklists under one project."/>
+                                <Border Classes="action-chip project">
+                                    <TextBlock Text="Project → Tasklists → Checks"/>
+                                </Border>
+                            </StackPanel>
+                            <Border Grid.Column="2" Classes="action-go project">
+                                <Viewbox>
+                                    <Canvas Width="16" Height="16">
+                                        <Path Width="16" Height="16" Stretch="None"
+                                              StrokeThickness="1.8"
+                                              StrokeLineCap="Round"
+                                              StrokeJoin="Round"
+                                              Data="M4.5,3.2 L11,8 L4.5,12.8"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                        </Grid>
+                    </Button>
+                    <Button x:Name="CreateTasklistButton"
+                            Grid.Column="1"
+                            Grid.Row="0"
+                            Classes="action-card tasklist"
+                            Click="CreateTasklist_Click">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                            <Border Classes="action-icon tasklist">
+                                <Viewbox>
+                                    <Canvas Width="24" Height="24">
+                                        <Path Width="24" Height="24" Stretch="None"
+                                              StrokeThickness="1.7"
+                                              StrokeLineCap="Round"
+                                              StrokeJoin="Round"
+                                              Data="M8,6.5 H19 M8,12 H19 M8,17.5 H19 M5,6.5 H5.8 M5,12 H5.8 M5,17.5 H5.8"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                <TextBlock Classes="action-title" Text="Create Tasklist"/>
+                                <TextBlock Classes="action-copy" Text="Create an independent checklist for a single task."/>
+                                <Border Classes="action-chip tasklist">
+                                    <TextBlock Text="Standalone checklist"/>
+                                </Border>
+                            </StackPanel>
+                            <Border Grid.Column="2" Classes="action-go tasklist">
+                                <Viewbox>
+                                    <Canvas Width="16" Height="16">
+                                        <Path Width="16" Height="16" Stretch="None"
+                                              StrokeThickness="1.8"
+                                              StrokeLineCap="Round"
+                                              StrokeJoin="Round"
+                                              Data="M4.5,3.2 L11,8 L4.5,12.8"/>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+                        </Grid>
+                    </Button>
+                </Grid>
 
-            <Grid ColumnDefinitions="*,Auto">
-                <StackPanel Spacing="2" VerticalAlignment="Center">
-                    <TextBlock Text="Project overview"
+                <StackPanel x:Name="ProjectSection" Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Path Width="16" Height="16" Stretch="Uniform"
+                                  Stroke="{DynamicResource TextMutedBrush}"
+                                  StrokeThickness="1.6"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Fill="Transparent"
+                                  VerticalAlignment="Center"
+                                  Data="M2,6 H6.2 L7.6,4.2 H14 V13 H2 Z"/>
+                            <TextBlock Classes="section-title" Text="Your Projects"/>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Classes="section-link"
+                                Content="View All Projects →"
+                                Click="ViewAllProjects_Click"/>
+                    </Grid>
+                    <StackPanel x:Name="ProjectEmptyText" IsVisible="False" Spacing="4">
+                        <TextBlock Classes="section-empty" Text="No projects yet"/>
+                        <TextBlock Classes="section-hint" Text="Create a project to organize your tasklists."/>
+                        <Button x:Name="HomeEmptyCreateProjectButton"
+                                Content="Create Project"
+                                Classes="project-create"
+                                HorizontalAlignment="Left"
+                                Margin="0,8,0,0"
+                                Click="CreateProject_Click"/>
+                    </StackPanel>
+                    <Grid x:Name="ProjectCards" ColumnSpacing="12" RowSpacing="12"/>
+                </StackPanel>
+
+                <StackPanel x:Name="RecentSection" Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Path Width="16" Height="16" Stretch="Uniform"
+                                  Stroke="{DynamicResource TextMutedBrush}"
+                                  StrokeThickness="1.6"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Fill="Transparent"
+                                  VerticalAlignment="Center"
+                                  Data="M3,2.5 H9 L12,5.5 V13.5 H3 Z M9,2.5 V5.5 H12"/>
+                            <TextBlock Classes="section-title" Text="Recent Files"/>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Classes="section-link"
+                                Content="View All Files →"
+                                Click="ViewAllFiles_Click"/>
+                    </Grid>
+                    <StackPanel x:Name="RecentEmpty" IsVisible="False" Spacing="4">
+                        <TextBlock Classes="section-empty" Text="No recent files"/>
+                        <TextBlock Classes="section-hint" Text="Your recently opened tasklists will appear here."/>
+                    </StackPanel>
+                    <StackPanel x:Name="RecentItems" Spacing="8"/>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel x:Name="CreateChecklistPanel"
+                        Classes="page-column"
+                        IsVisible="False"
+                        Spacing="0">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="Create tasklist" Classes="page-title"/>
+                        <TextBlock Text="Choose a workflow, open a checklist, or generate one with local AI."
+                                   Classes="section-hint"/>
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Classes="back-arrow"
+                            ToolTip.Tip="Back"
+                            VerticalAlignment="Center"
+                            Click="HomeTab_Click">
+                        <Viewbox Width="16" Height="16">
+                            <Canvas Width="16" Height="16">
+                                <Path Width="16"
+                                      Height="16"
+                                      Stretch="None"
+                                      Fill="Transparent"
+                                      StrokeThickness="1.8"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round"
+                                      Data="M11.5,3.2 L5,8 L11.5,12.8"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+                </Grid>
+                <StackPanel Spacing="8" Margin="0,32,0,0">
+                    <TextBlock Text="Work title"
                                FontSize="{DynamicResource Font14}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextBodyBrush}"/>
-                    <TextBlock Text="Projects group the checklists you already have"
-                               FontSize="{DynamicResource Font13}"
-                               Foreground="{DynamicResource TextSubtleBrush}"/>
+                    <TextBox x:Name="WorkTitleTextBox"
+                             Classes="work-title"
+                             PlaceholderText="What are you working on?"/>
                 </StackPanel>
-                <Button x:Name="CreateProjectButton"
-                        Grid.Column="1"
-                        Classes="project-create"
-                        Content="Create Project"
-                        ToolTip.Tip="Create a project"
-                        Click="CreateProject_Click"/>
-            </Grid>
-
-            <Grid ColumnDefinitions="*,*,*,*">
-                <Border Grid.Column="0" Margin="0,0,8,0" Padding="12,10" CornerRadius="10"
-                        Background="{DynamicResource SurfaceInsetBrush}"
-                        BorderBrush="{DynamicResource BorderSoftBrush}"
-                        BorderThickness="1">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="Projects"
-                                   FontSize="{DynamicResource Font12}"
-                                   Foreground="{DynamicResource TextMutedBrush}"/>
-                        <TextBlock x:Name="ProjectStatProjects"
-                                   Text="0"
-                                   FontSize="{DynamicResource Font20}"
-                                   FontWeight="SemiBold"/>
+                <StackPanel Spacing="16" Margin="0,32,0,0">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Choose a workflow"
+                                   FontSize="{DynamicResource Font14}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBodyBrush}"/>
+                        <TextBlock Text="Select the workflow that best matches your work"
+                                   FontSize="{DynamicResource Font13}"
+                                   Foreground="{DynamicResource TextSubtleBrush}"/>
                     </StackPanel>
-                </Border>
-                <Border Grid.Column="1" Margin="0,0,8,0" Padding="12,10" CornerRadius="10"
-                        Background="{DynamicResource SurfaceInsetBrush}"
-                        BorderBrush="{DynamicResource BorderSoftBrush}"
-                        BorderThickness="1">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="Tasklists"
-                                   FontSize="{DynamicResource Font12}"
-                                   Foreground="{DynamicResource TextMutedBrush}"/>
-                        <TextBlock x:Name="ProjectStatTasklists"
-                                   Text="0"
-                                   FontSize="{DynamicResource Font20}"
-                                   FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Border>
-                <Border Grid.Column="2" Margin="0,0,8,0" Padding="12,10" CornerRadius="10"
-                        Background="{DynamicResource SurfaceInsetBrush}"
-                        BorderBrush="{DynamicResource BorderSoftBrush}"
-                        BorderThickness="1">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="In progress"
-                                   FontSize="{DynamicResource Font12}"
-                                   Foreground="{DynamicResource TextMutedBrush}"/>
-                        <TextBlock x:Name="ProjectStatInProgress"
-                                   Text="0"
-                                   FontSize="{DynamicResource Font20}"
-                                   FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Border>
-                <Border Grid.Column="3" Padding="12,10" CornerRadius="10"
-                        Background="{DynamicResource SurfaceInsetBrush}"
-                        BorderBrush="{DynamicResource BorderSoftBrush}"
-                        BorderThickness="1">
-                    <StackPanel Spacing="2">
-                        <TextBlock Text="Completed"
-                                   FontSize="{DynamicResource Font12}"
-                                   Foreground="{DynamicResource TextMutedBrush}"/>
-                        <TextBlock x:Name="ProjectStatCompleted"
-                                   Text="0"
-                                   FontSize="{DynamicResource Font20}"
-                                   FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <TextBlock x:Name="ProjectEmptyText"
-                       Text="No projects yet."
-                       FontSize="{DynamicResource Font13}"
-                       Foreground="{DynamicResource TextMutedBrush}"
-                       IsVisible="False"/>
-
-            <WrapPanel x:Name="ProjectCards"
-                       Orientation="Horizontal"/>
-
-        </StackPanel>
-
-
-        <!-- ========================================================= -->
-        <!-- RECENT CHECKLISTS                                           -->
-        <!-- ========================================================= -->
-
-        <StackPanel x:Name="RecentSection"
-                    Grid.Row="1"
-                    Width="720"
-                    HorizontalAlignment="Center"
-                    Spacing="8"
-                    Margin="0,0,0,36"
-                    IsVisible="False">
-
-            <TextBlock Text="Recent checklists"
-                       FontSize="{DynamicResource Font14}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextBodyBrush}"/>
-
-            <Grid x:Name="RecentItems"
-                  ColumnDefinitions="*,*"
-                  RowDefinitions="Auto,Auto"
-                  ColumnSpacing="12"
-                  RowSpacing="8"/>
-
-        </StackPanel>
-
-
-        <!-- ========================================================= -->
-        <!-- WORK TITLE                                                  -->
-        <!-- ========================================================= -->
-
-        <StackPanel Grid.Row="2"
-                    Width="720"
-                    HorizontalAlignment="Center"
-                    Spacing="8"
-                    Margin="0,0,0,36">
-
-            <TextBlock Text="Work title"
-                       FontSize="{DynamicResource Font14}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextBodyBrush}"/>
-
-            <TextBox x:Name="WorkTitleTextBox"
-                     Classes="work-title"
-                     Watermark="What are you working on?"
-                     WatermarkForeground="{DynamicResource TextSubtleBrush}"/>
-
-        </StackPanel>
-
-
-        <!-- ========================================================= -->
-        <!-- TEMPLATE LABEL                                              -->
-        <!-- ========================================================= -->
-
-        <StackPanel Grid.Row="3"
-                    Width="720"
-                    HorizontalAlignment="Center"
-                    Spacing="4"
-                    Margin="0,0,0,12">
-
-            <TextBlock Text="Choose a workflow"
-                       FontSize="{DynamicResource Font14}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextBodyBrush}"/>
-
-            <TextBlock Text="Select the workflow that best matches your work"
-                       FontSize="{DynamicResource Font13}"
-                       Foreground="{DynamicResource TextSubtleBrush}"/>
-
-        </StackPanel>
-
-
-        <!-- ========================================================= -->
-        <!-- TEMPLATES + CREATE                                          -->
-        <!-- ========================================================= -->
-
-        <StackPanel Grid.Row="4"
-                    HorizontalAlignment="Center"
-                    Spacing="12">
-
-            <!-- TEMPLATE CARDS -->
-
-            <WrapPanel x:Name="TemplateList"
-                       HorizontalAlignment="Center"
-                       Orientation="Horizontal"/>
-
-
-            <!-- CREATE -->
-
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        Spacing="12">
-
-                <Button x:Name="OpenChecklistButton"
-                        Classes="create open"
-                        Content="Open Checklist"
-                        Click="Open_Click"/>
-
-                <Button x:Name="GenerateWithAiButton"
-                        Classes="create open"
-                        ToolTip.Tip="Create a checklist with a local Ollama model"
-                        Click="GenerateWithAi_Click">
-                    <controls:AiLabel Text="Generate" IconSize="22"/>
-                </Button>
-
-                <Button x:Name="CreateButton"
-                        Classes="create"
-                        Content="Create Checklist"
-                        Click="Create_Click"/>
-
+                    <WrapPanel x:Name="TemplateList"
+                               HorizontalAlignment="Center"
+                               Orientation="Horizontal"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="12"
+                            Margin="0,48,0,0">
+                    <Button x:Name="OpenChecklistButton"
+                            Classes="create open"
+                            Content="Open Checklist"
+                            Click="Open_Click"/>
+                    <Button x:Name="GenerateWithAiButton"
+                            Classes="create open"
+                            ToolTip.Tip="Create a checklist with a local Ollama model"
+                            Click="GenerateWithAi_Click">
+                        <controls:AiLabel Text="Generate" IconSize="22"/>
+                    </Button>
+                    <Button x:Name="CreateButton"
+                            Classes="create"
+                            Content="Create Checklist"
+                            Click="Create_Click"/>
+                </StackPanel>
             </StackPanel>
 
-        </StackPanel>
+            <StackPanel x:Name="CreateProjectPanel"
+                        Classes="page-column"
+                        IsVisible="False"
+                        Spacing="0">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4" VerticalAlignment="Center">
+                        <TextBlock x:Name="ProjectEditorTitle" Text="Create project" Classes="page-title"/>
+                        <TextBlock x:Name="ProjectEditorHint"
+                                   Text="Organize multiple tasklists under one project."
+                                   Classes="section-hint"/>
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Classes="back-arrow"
+                            ToolTip.Tip="Back"
+                            VerticalAlignment="Center"
+                            Click="CloseProjectEditor_Click">
+                        <Viewbox Width="16" Height="16">
+                            <Canvas Width="16" Height="16">
+                                <Path Width="16"
+                                      Height="16"
+                                      Stretch="None"
+                                      Fill="Transparent"
+                                      StrokeThickness="1.8"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round"
+                                      Data="M11.5,3.2 L5,8 L11.5,12.8"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+                </Grid>
+                <ContentControl x:Name="ProjectEditorHost" Margin="0,32,0,0"/>
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="12"
+                            Margin="0,48,0,0">
+                    <Button x:Name="OpenProjectButton"
+                            Classes="create open"
+                            Content="Open Project"
+                            Click="OpenProjectButton_Click"/>
+                    <Button Classes="create open"
+                            Content="Cancel"
+                            Click="CloseProjectEditor_Click"/>
+                    <Button x:Name="SaveProjectButton"
+                            Classes="create"
+                            Content="Create Project"
+                            Click="SaveProjectEditor_Click"/>
+                </StackPanel>
+            </StackPanel>
 
-    </Grid>
+            <StackPanel x:Name="AllProjectsPanel"
+                        Classes="page-column"
+                        IsVisible="False"
+                        Spacing="16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="Your Projects" Classes="page-title" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Classes="back-arrow"
+                            ToolTip.Tip="Back"
+                            VerticalAlignment="Center"
+                            Click="HomeTab_Click">
+                        <Viewbox Width="16" Height="16">
+                            <Canvas Width="16" Height="16">
+                                <Path Width="16"
+                                      Height="16"
+                                      Stretch="None"
+                                      Fill="Transparent"
+                                      StrokeThickness="1.8"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round"
+                                      Data="M11.5,3.2 L5,8 L11.5,12.8"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+                </Grid>
+                <StackPanel x:Name="AllProjectsEmpty" IsVisible="False" Spacing="4">
+                    <TextBlock Classes="section-empty" Text="No projects yet"/>
+                    <TextBlock Classes="section-hint" Text="Create a project to organize your tasklists."/>
+                    <Button x:Name="AllProjectsEmptyCreateProjectButton"
+                            Content="Create Project"
+                            Classes="project-create"
+                            HorizontalAlignment="Left"
+                            Margin="0,8,0,0"
+                            Click="CreateProject_Click"/>
+                </StackPanel>
+                <Grid x:Name="AllProjectCards" ColumnSpacing="12" RowSpacing="12"/>
+            </StackPanel>
+
+            <StackPanel x:Name="AllFilesPanel"
+                        Classes="page-column"
+                        IsVisible="False"
+                        Spacing="16">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="Files" Classes="page-title"/>
+                        <TextBlock Text="Checklists you have opened or saved." Classes="section-hint"/>
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Classes="back-arrow"
+                            ToolTip.Tip="Back"
+                            VerticalAlignment="Center"
+                            Click="HomeTab_Click">
+                        <Viewbox Width="16" Height="16">
+                            <Canvas Width="16" Height="16">
+                                <Path Width="16"
+                                      Height="16"
+                                      Stretch="None"
+                                      Fill="Transparent"
+                                      StrokeThickness="1.8"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round"
+                                      Data="M11.5,3.2 L5,8 L11.5,12.8"/>
+                            </Canvas>
+                        </Viewbox>
+                    </Button>
+                </Grid>
+                <StackPanel x:Name="AllFilesEmpty" IsVisible="False" Spacing="4">
+                    <TextBlock Classes="section-empty" Text="No recent files"/>
+                    <TextBlock Classes="section-hint" Text="Your recently opened tasklists will appear here."/>
+                </StackPanel>
+                <StackPanel x:Name="AllFileItems" Spacing="8"/>
+            </StackPanel>
+        </Grid>
     </ScrollViewer>
 
     <ScrollViewer x:Name="RemindersPanel"
                   Grid.Row="2"
                   IsVisible="False"
+                  Background="{DynamicResource AppBackgroundBrush}"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-        <StackPanel MaxWidth="760"
-                    Margin="24,28,24,40"
-                    HorizontalAlignment="Stretch"
+        <Grid Classes="page-frame">
+        <StackPanel Classes="page-column"
                     Spacing="14">
             <Grid ColumnDefinitions="*,Auto"
                   ColumnSpacing="16">
@@ -1386,16 +2057,17 @@
                        IsVisible="False"/>
             <StackPanel x:Name="ReminderRows" Spacing="8"/>
         </StackPanel>
+        </Grid>
     </ScrollViewer>
 
     <ScrollViewer x:Name="SettingsPanel"
                   Grid.Row="2"
                   IsVisible="False"
+                  Background="{DynamicResource AppBackgroundBrush}"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-        <StackPanel MaxWidth="760"
-                    Margin="{DynamicResource PagePadding}"
-                    HorizontalAlignment="Center"
+        <Grid Classes="page-frame">
+        <StackPanel Classes="page-column"
                     Spacing="16">
             <Grid ColumnDefinitions="Auto,*,Auto"
                   ColumnSpacing="14">
@@ -1423,10 +2095,23 @@
                                Foreground="{DynamicResource TextMutedBrush}"/>
                 </StackPanel>
                 <Button Grid.Column="2"
-                        Content="Back"
-                        Classes="settings-back"
+                        Classes="back-arrow"
+                        ToolTip.Tip="Back"
                         VerticalAlignment="Center"
-                        Click="CloseSettings_Click"/>
+                        Click="CloseSettings_Click">
+                    <Viewbox Width="16" Height="16">
+                        <Canvas Width="16" Height="16">
+                            <Path Width="16"
+                                  Height="16"
+                                  Stretch="None"
+                                  Fill="Transparent"
+                                  StrokeThickness="1.8"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Data="M11.5,3.2 L5,8 L11.5,12.8"/>
+                        </Canvas>
+                    </Viewbox>
+                </Button>
             </Grid>
 
             <TextBlock Classes="settings-section" Text="Appearance"/>
@@ -1640,7 +2325,7 @@
                                 Classes="settings-back"
                                 Click="CheckForUpdates_Click"/>
                         <Button x:Name="InstallUpdateButton"
-                                Content="Install update"
+                                Content="Download"
                                 Classes="settings-primary"
                                 IsVisible="False"
                                 Click="InstallUpdate_Click"/>
@@ -1670,16 +2355,17 @@
                 </StackPanel>
             </Border>
         </StackPanel>
+        </Grid>
     </ScrollViewer>
 
     <ScrollViewer x:Name="ShortcutsPanel"
                   Grid.Row="2"
                   IsVisible="False"
+                  Background="{DynamicResource AppBackgroundBrush}"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-        <StackPanel MaxWidth="720"
-                    Margin="{DynamicResource PagePadding}"
-                    HorizontalAlignment="Center"
+        <Grid Classes="page-frame">
+        <StackPanel Classes="page-column"
                     Spacing="18">
             <Grid ColumnDefinitions="*,Auto"
                   ColumnSpacing="16">
@@ -1688,10 +2374,23 @@
                            FontWeight="Bold"
                            VerticalAlignment="Center"/>
                 <Button Grid.Column="1"
-                        Content="Back"
-                        Classes="settings-back"
+                        Classes="back-arrow"
+                        ToolTip.Tip="Back"
                         VerticalAlignment="Center"
-                        Click="CloseSettings_Click"/>
+                        Click="CloseSettings_Click">
+                    <Viewbox Width="16" Height="16">
+                        <Canvas Width="16" Height="16">
+                            <Path Width="16"
+                                  Height="16"
+                                  Stretch="None"
+                                  Fill="Transparent"
+                                  StrokeThickness="1.8"
+                                  StrokeLineCap="Round"
+                                  StrokeJoin="Round"
+                                  Data="M11.5,3.2 L5,8 L11.5,12.8"/>
+                        </Canvas>
+                    </Viewbox>
+                </Button>
             </Grid>
             <TextBlock Text="Shortcuts depend on the focused control. Space and F2 stay with a text field while you are typing. Esc closes the open popup, and other shortcuts do not run while a dialog is open. Highlighted keys are the ones used on this computer."
                        FontSize="{DynamicResource Font13}"
@@ -1700,6 +2399,7 @@
             <StackPanel x:Name="ShortcutSections"
                         Spacing="18"/>
         </StackPanel>
+        </Grid>
     </ScrollViewer>
 
     <Border x:Name="ToastHost"

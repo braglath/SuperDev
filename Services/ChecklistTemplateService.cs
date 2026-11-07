@@ -31,6 +31,21 @@ public sealed class ChecklistTemplateService
 
     public IReadOnlyList<ChecklistTemplate> Templates => _templates;
 
+    /// <summary>
+    /// Fixed summary for a built-in template. Custom templates have none.
+    /// </summary>
+    public static string? PredefinedDescription(string? id) => id switch
+    {
+        "bug" => "Find the cause, fix it, and confirm the bug is gone.",
+        "feature" => "Build the requested behavior and verify it works.",
+        "development" => "Implement the change, test it, and prepare the review.",
+        "testing" => "Cover the main flow, edge cases, and regressions.",
+        "pullrequest" => "Review the diff, confirm the checks, and merge.",
+        "daily" => "Track the work you plan to finish today.",
+        "blank" => "Start from an empty checklist.",
+        _ => null
+    };
+
     public ChecklistTemplate? Find(string? id) =>
         string.IsNullOrWhiteSpace(id)
             ? null

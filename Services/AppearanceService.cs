@@ -48,7 +48,7 @@ public enum AppFontSize
 public sealed class AppearanceSettings
 {
     public AppTheme Theme { get; set; } = AppTheme.Light;
-    public AppAccent Accent { get; set; } = AppAccent.Blue;
+    public AppAccent Accent { get; set; } = AppAccent.Purple;
     public AppDensity Density { get; set; } = AppDensity.Comfortable;
     public AppFontSize FontSize { get; set; } = AppFontSize.Medium;
 }
@@ -85,6 +85,9 @@ public static class AppearanceService
     public const string DangerSurfaceSoftBrush = "DangerSurfaceSoftBrush";
     public const string WarningTextBrush = "WarningTextBrush";
     public const string WarningSurfaceBrush = "WarningSurfaceBrush";
+    public const string SuccessBrush = "SuccessBrush";
+    public const string SuccessHoverBrush = "SuccessHoverBrush";
+    public const string SuccessSubtleBrush = "SuccessSubtleBrush";
     public const string SuccessTextBrush = "SuccessTextBrush";
     public const string SuccessBorderBrush = "SuccessBorderBrush";
     public const string InfoTextBrush = "InfoTextBrush";
@@ -251,6 +254,9 @@ public static class AppearanceService
         Set(DangerSurfaceSoftBrush, dark ? "#3F1D24" : "#FEE2E2");
         Set(WarningTextBrush, dark ? "#FBBF24" : "#B45309");
         Set(WarningSurfaceBrush, dark ? "#3A2F12" : "#FEF3C7");
+        Set(SuccessBrush, dark ? "#22C55E" : "#16A34A");
+        Set(SuccessHoverBrush, dark ? "#4ADE80" : "#15803D");
+        Set(SuccessSubtleBrush, dark ? "#14301F" : "#E8F7EE");
         Set(SuccessTextBrush, dark ? "#4ADE80" : "#15803D");
         Set(SuccessBorderBrush, dark ? "#166534" : "#86EFAC");
         Set(InfoTextBrush, dark ? "#38BDF8" : "#0369A1");
@@ -277,6 +283,26 @@ public static class AppearanceService
             Set(AccentTextHoverBrush, "#1E3A8A");
             Set(AccentSubtleBrush, "#DBEAFE");
             Set(AccentSubtleHoverBrush, "#BFDBFE");
+        }
+        else if (dark && Settings.Accent == AppAccent.Purple)
+        {
+            Set(AccentBrush, "#7C3AED");
+            Set(AccentHoverBrush, "#8B5CF6");
+            Set(AccentPressedBrush, "#6D28D9");
+            Set(AccentTextBrush, "#C4B5FD");
+            Set(AccentTextHoverBrush, "#DDD6FE");
+            Set(AccentSubtleBrush, "#3B2468");
+            Set(AccentSubtleHoverBrush, "#4C1D95");
+        }
+        else if (!dark && Settings.Accent == AppAccent.Purple)
+        {
+            Set(AccentBrush, "#7C3AED");
+            Set(AccentHoverBrush, "#6D28D9");
+            Set(AccentPressedBrush, "#5B21B6");
+            Set(AccentTextBrush, "#6D28D9");
+            Set(AccentTextHoverBrush, "#5B21B6");
+            Set(AccentSubtleBrush, "#F3EAFE");
+            Set(AccentSubtleHoverBrush, "#E9D5FF");
         }
         else
         {
@@ -355,6 +381,12 @@ public static class AppearanceService
         SetThickness("PageMargin", compact ? new Thickness(20) : new Thickness(32));
         SetThickness("PagePadding", compact ? new Thickness(16, 18, 16, 24) : new Thickness(24, 28, 24, 40));
         SetThickness("CardPadding", compact ? new Thickness(8) : new Thickness(12));
+        SetThickness("HomePadding", compact ? new Thickness(16, 8, 16, 24) : new Thickness(28, 8, 28, 32));
+        SetDouble("Space8", compact ? 6 : 8);
+        SetDouble("Space12", compact ? 8 : 12);
+        SetDouble("Space16", compact ? 12 : 16);
+        SetDouble("Space24", compact ? 16 : 24);
+        SetDouble("Space32", compact ? 20 : 32);
     }
 
     private static void ApplyIcon()
