@@ -166,33 +166,8 @@
         <Grid Classes="page-frame">
         <StackPanel Classes="page-column"
                     Spacing="20">
-            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                <Border Width="40"
-                        Height="40"
-                        CornerRadius="12"
-                        Background="{DynamicResource AccentSubtleBrush}"
-                        VerticalAlignment="Center">
-                    <Path Width="18"
-                          Height="18"
-                          Stretch="Uniform"
-                          Stroke="{DynamicResource AccentTextBrush}"
-                          StrokeThickness="1.7"
-                          StrokeLineCap="Round"
-                          StrokeJoin="Round"
-                          Fill="Transparent"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center"
-                          Data="M9,1.8 A7.2,7.2 0 1 0 9,16.2 A7.2,7.2 0 1 0 9,1.8 M9,5 V9.1 L11.8,10.8"/>
-                </Border>
-                <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                    <TextBlock Text="History" Classes="page-title"/>
-                    <TextBlock Text="Track your checklist activity and engineering progress."
-                               FontSize="{DynamicResource Font14}"
-                               Foreground="{DynamicResource TextMutedBrush}"
-                               TextWrapping="Wrap"/>
-                </StackPanel>
-                <Button Grid.Column="2"
-                        Classes="back-arrow"
+            <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="16">
+                <Button Classes="back-arrow"
                         ToolTip.Tip="Back to Home"
                         VerticalAlignment="Center"
                         Click="Back_Click">
@@ -209,6 +184,31 @@
                         </Canvas>
                     </Viewbox>
                 </Button>
+                <Border Grid.Column="1"
+                        Width="40"
+                        Height="40"
+                        CornerRadius="12"
+                        Background="{DynamicResource AccentSubtleBrush}"
+                        VerticalAlignment="Center">
+                    <Path Width="18"
+                          Height="18"
+                          Stretch="Uniform"
+                          Stroke="{DynamicResource AccentTextBrush}"
+                          StrokeThickness="1.7"
+                          StrokeLineCap="Round"
+                          StrokeJoin="Round"
+                          Fill="Transparent"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Data="M9,1.8 A7.2,7.2 0 1 0 9,16.2 A7.2,7.2 0 1 0 9,1.8 M9,5 V9.1 L11.8,10.8"/>
+                </Border>
+                <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center">
+                    <TextBlock Text="History" Classes="page-title"/>
+                    <TextBlock Text="Track your checklist activity and engineering progress."
+                               FontSize="{DynamicResource Font14}"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
             </Grid>
 
             <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="12" RowDefinitions="Auto,Auto">

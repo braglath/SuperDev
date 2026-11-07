@@ -741,6 +741,82 @@
     <Setter Property="Stroke" Value="{DynamicResource TextSecondaryBrush}"/>
 </Style>
 
+<Style Selector="Border.editor-field">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="MinHeight" Value="50"/>
+</Style>
+
+<Style Selector="Border.editor-field:focus-within">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+</Style>
+
+<Style Selector="Button.project-action">
+    <Setter Property="Height" Value="48"/>
+    <Setter Property="MinWidth" Value="0"/>
+    <Setter Property="Padding" Value="16,0"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font15}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Cursor" Value="Hand"/>
+</Style>
+
+<Style Selector="Button.project-action /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Button.project-action:pointerover">
+    <Setter Property="Background" Value="{DynamicResource SurfaceInsetBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource TextFaintBrush}"/>
+</Style>
+
+<Style Selector="Button.project-action:pressed">
+    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+</Style>
+
+<Style Selector="Button.project-action TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    <Setter Property="FontSize" Value="{DynamicResource Font15}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+</Style>
+
+<Style Selector="Button.project-action Path">
+    <Setter Property="Stroke" Value="{DynamicResource TextPrimaryBrush}"/>
+</Style>
+
+<Style Selector="Button.project-action.save">
+    <Setter Property="Background" Value="#22C55E"/>
+    <Setter Property="Foreground" Value="White"/>
+    <Setter Property="BorderThickness" Value="0"/>
+</Style>
+
+<Style Selector="Button.project-action.save:pointerover">
+    <Setter Property="Background" Value="#16A34A"/>
+</Style>
+
+<Style Selector="Button.project-action.save:pressed">
+    <Setter Property="Background" Value="#15803D"/>
+</Style>
+
+<Style Selector="Button.project-action.save TextBlock">
+    <Setter Property="Foreground" Value="White"/>
+</Style>
+
+<Style Selector="Button.project-action.save Path">
+    <Setter Property="Stroke" Value="White"/>
+</Style>
+
 <Style Selector="Button.settings-primary">
     <Setter Property="Height" Value="{DynamicResource ControlHeightSm}"/>
     <Setter Property="MinWidth" Value="88"/>
@@ -1816,14 +1892,8 @@
                         Classes="page-column"
                         IsVisible="False"
                         Spacing="0">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                    <StackPanel Spacing="4" VerticalAlignment="Center">
-                        <TextBlock Text="Create tasklist" Classes="page-title"/>
-                        <TextBlock Text="Choose a workflow, open a checklist, or generate one with local AI."
-                                   Classes="section-hint"/>
-                    </StackPanel>
-                    <Button Grid.Column="1"
-                            Classes="back-arrow"
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+                    <Button Classes="back-arrow"
                             ToolTip.Tip="Back"
                             VerticalAlignment="Center"
                             Click="HomeTab_Click">
@@ -1840,64 +1910,120 @@
                             </Canvas>
                         </Viewbox>
                     </Button>
+                    <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="Create Tasklist" Classes="page-title"/>
+                        <TextBlock Text="Choose a workflow, open a checklist, or generate one with local AI."
+                                   Classes="section-hint"/>
+                    </StackPanel>
                 </Grid>
                 <StackPanel Spacing="8" Margin="0,32,0,0">
                     <TextBlock Text="Work title"
                                FontSize="{DynamicResource Font14}"
                                FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextBodyBrush}"/>
-                    <TextBox x:Name="WorkTitleTextBox"
-                             Classes="work-title"
-                             PlaceholderText="What are you working on?"/>
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <Border Classes="editor-field">
+                        <Grid ColumnDefinitions="40,*" MinHeight="48">
+                            <Viewbox Width="16"
+                                     Height="16"
+                                     Margin="14,0,0,0"
+                                     HorizontalAlignment="Left"
+                                     VerticalAlignment="Center"
+                                     IsHitTestVisible="False">
+                                <Path Width="16"
+                                      Height="16"
+                                      Stretch="Uniform"
+                                      Fill="Transparent"
+                                      Stroke="{DynamicResource TextMutedBrush}"
+                                      StrokeThickness="1.6"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round"
+                                      Data="M3,3.4 H13 M3,8 H13 M3,12.6 H13 M1.2,3.4 H1.8 M1.2,8 H1.8 M1.2,12.6 H1.8"/>
+                            </Viewbox>
+                            <TextBox x:Name="WorkTitleTextBox"
+                                     Grid.Column="1"
+                                     PlaceholderText="What are you working on?"
+                                     controls:TextBoxClearButton.Show="False"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     FontSize="{DynamicResource Font14}"
+                                     Padding="4,12,12,12"
+                                     MinHeight="48"
+                                     VerticalContentAlignment="Center"/>
+                        </Grid>
+                    </Border>
                 </StackPanel>
                 <StackPanel Spacing="16" Margin="0,32,0,0">
                     <StackPanel Spacing="4">
                         <TextBlock Text="Choose a workflow"
                                    FontSize="{DynamicResource Font14}"
                                    FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextBodyBrush}"/>
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
                         <TextBlock Text="Select the workflow that best matches your work"
-                                   FontSize="{DynamicResource Font13}"
-                                   Foreground="{DynamicResource TextSubtleBrush}"/>
+                                   Classes="section-hint"/>
                     </StackPanel>
                     <WrapPanel x:Name="TemplateList"
                                HorizontalAlignment="Center"
                                Orientation="Horizontal"/>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            Spacing="12"
-                            Margin="0,48,0,0">
+                <Grid Margin="0,48,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
                     <Button x:Name="OpenChecklistButton"
-                            Classes="create open"
-                            Content="Open Checklist"
-                            Click="Open_Click"/>
+                            Classes="project-action"
+                            Margin="0,0,12,0"
+                            Click="Open_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Viewbox Width="16" Height="16">
+                                <Path Width="16"
+                                      Height="16"
+                                      Stretch="Uniform"
+                                      Fill="Transparent"
+                                      StrokeThickness="1.6"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round"
+                                      Data="M3,2.2 H9 L12.2,5.4 V13.8 H3 Z M9,2.2 V5.4 H12.2"/>
+                            </Viewbox>
+                            <TextBlock Text="Open Checklist"/>
+                        </StackPanel>
+                    </Button>
                     <Button x:Name="GenerateWithAiButton"
-                            Classes="create open"
+                            Grid.Column="1"
+                            Classes="project-action"
+                            Margin="0,0,12,0"
                             ToolTip.Tip="Create a checklist with a local Ollama model"
                             Click="GenerateWithAi_Click">
-                        <controls:AiLabel Text="Generate" IconSize="22"/>
+                        <controls:AiLabel Text="Generate" IconSize="16"/>
                     </Button>
                     <Button x:Name="CreateButton"
-                            Classes="create"
-                            Content="Create Checklist"
-                            Click="Create_Click"/>
-                </StackPanel>
+                            Grid.Column="2"
+                            Classes="project-action save"
+                            Click="Create_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Viewbox Width="16" Height="16">
+                                <Path Width="16"
+                                      Height="16"
+                                      Stretch="Uniform"
+                                      Fill="Transparent"
+                                      StrokeThickness="1.8"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round"
+                                      Data="M3.2,8.4 L6.4,11.6 L12.8,4.4"/>
+                            </Viewbox>
+                            <TextBlock Text="Create Checklist"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
             </StackPanel>
 
             <StackPanel x:Name="CreateProjectPanel"
                         Classes="page-column"
                         IsVisible="False"
                         Spacing="0">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                    <StackPanel Spacing="4" VerticalAlignment="Center">
-                        <TextBlock x:Name="ProjectEditorTitle" Text="Create project" Classes="page-title"/>
-                        <TextBlock x:Name="ProjectEditorHint"
-                                   Text="Organize multiple tasklists under one project."
-                                   Classes="section-hint"/>
-                    </StackPanel>
-                    <Button Grid.Column="1"
-                            Classes="back-arrow"
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+                    <Button Classes="back-arrow"
                             ToolTip.Tip="Back"
                             VerticalAlignment="Center"
                             Click="CloseProjectEditor_Click">
@@ -1914,34 +2040,84 @@
                             </Canvas>
                         </Viewbox>
                     </Button>
+                    <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                        <TextBlock x:Name="ProjectEditorTitle"
+                                   Text="Create Project"
+                                   Classes="page-title"/>
+                        <TextBlock x:Name="ProjectEditorHint"
+                                   Text="Organize multiple tasklists under one project."
+                                   Classes="section-hint"/>
+                    </StackPanel>
                 </Grid>
                 <ContentControl x:Name="ProjectEditorHost" Margin="0,32,0,0"/>
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            Spacing="12"
-                            Margin="0,48,0,0">
-                    <Button x:Name="OpenProjectButton"
-                            Classes="create open"
-                            Content="Open Project"
-                            Click="OpenProjectButton_Click"/>
-                    <Button Classes="create open"
-                            Content="Cancel"
-                            Click="CloseProjectEditor_Click"/>
-                    <Button x:Name="SaveProjectButton"
-                            Classes="create"
-                            Content="Create Project"
-                            Click="SaveProjectEditor_Click"/>
-                </StackPanel>
+                <Grid x:Name="ProjectEditorActions" Margin="0,48,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="OpenProjectButton"
+                                    Classes="project-action"
+                                    Margin="0,0,12,0"
+                                    Click="OpenProjectButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Viewbox Width="16" Height="16">
+                                        <Path Width="16"
+                                              Height="16"
+                                              Stretch="Uniform"
+                                              Fill="Transparent"
+                                              StrokeThickness="1.6"
+                                              StrokeLineCap="Round"
+                                              StrokeJoin="Round"
+                                              Data="M2,5 H6.2 L7.6,3.2 H14 V12.8 H2 Z"/>
+                                    </Viewbox>
+                                    <TextBlock Text="Open Project"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="1"
+                                    Classes="project-action"
+                                    Margin="0,0,12,0"
+                                    Click="CloseProjectEditor_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Viewbox Width="14" Height="14">
+                                        <Path Width="14"
+                                              Height="14"
+                                              Stretch="Uniform"
+                                              Fill="Transparent"
+                                              StrokeThickness="1.7"
+                                              StrokeLineCap="Round"
+                                              Data="M3.2,3.2 L10.8,10.8 M10.8,3.2 L3.2,10.8"/>
+                                    </Viewbox>
+                                    <TextBlock Text="Cancel"/>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="SaveProjectButton"
+                                    Grid.Column="2"
+                                    Classes="project-action save"
+                                    Click="SaveProjectEditor_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Viewbox Width="16" Height="16">
+                                        <Path Width="16"
+                                              Height="16"
+                                              Stretch="Uniform"
+                                              Fill="Transparent"
+                                              StrokeThickness="1.8"
+                                              StrokeLineCap="Round"
+                                              StrokeJoin="Round"
+                                              Data="M3.2,8.4 L6.4,11.6 L12.8,4.4"/>
+                                    </Viewbox>
+                                    <TextBlock x:Name="SaveProjectLabel" Text="Create Project"/>
+                                </StackPanel>
+                            </Button>
+                </Grid>
             </StackPanel>
 
             <StackPanel x:Name="AllProjectsPanel"
                         Classes="page-column"
                         IsVisible="False"
                         Spacing="16">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="Your Projects" Classes="page-title" VerticalAlignment="Center"/>
-                    <Button Grid.Column="1"
-                            Classes="back-arrow"
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+                    <Button Classes="back-arrow"
                             ToolTip.Tip="Back"
                             VerticalAlignment="Center"
                             Click="HomeTab_Click">
@@ -1958,6 +2134,10 @@
                             </Canvas>
                         </Viewbox>
                     </Button>
+                    <TextBlock Grid.Column="1"
+                               Text="Your Projects"
+                               Classes="page-title"
+                               VerticalAlignment="Center"/>
                 </Grid>
                 <StackPanel x:Name="AllProjectsEmpty" IsVisible="False" Spacing="4">
                     <TextBlock Classes="section-empty" Text="No projects yet"/>
@@ -1976,13 +2156,8 @@
                         Classes="page-column"
                         IsVisible="False"
                         Spacing="16">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                    <StackPanel Spacing="4" VerticalAlignment="Center">
-                        <TextBlock Text="Files" Classes="page-title"/>
-                        <TextBlock Text="Checklists you have opened or saved." Classes="section-hint"/>
-                    </StackPanel>
-                    <Button Grid.Column="1"
-                            Classes="back-arrow"
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+                    <Button Classes="back-arrow"
                             ToolTip.Tip="Back"
                             VerticalAlignment="Center"
                             Click="HomeTab_Click">
@@ -1999,6 +2174,10 @@
                             </Canvas>
                         </Viewbox>
                     </Button>
+                    <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="Files" Classes="page-title"/>
+                        <TextBlock Text="Checklists you have opened or saved." Classes="section-hint"/>
+                    </StackPanel>
                 </Grid>
                 <StackPanel x:Name="AllFilesEmpty" IsVisible="False" Spacing="4">
                     <TextBlock Classes="section-empty" Text="No recent files"/>
@@ -2069,33 +2248,9 @@
         <Grid Classes="page-frame">
         <StackPanel Classes="page-column"
                     Spacing="16">
-            <Grid ColumnDefinitions="Auto,*,Auto"
-                  ColumnSpacing="14">
-                <Border Grid.Column="0"
-                        Width="48"
-                        Height="48"
-                        CornerRadius="14"
-                        Background="{DynamicResource AccentBrush}">
-                    <Path Width="24"
-                          Height="24"
-                          Stretch="Uniform"
-                          Fill="White"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center"
-                          Data="M19.14,12.94c0.04-0.31,0.06-0.63,0.06-0.94c0-0.31-0.02-0.63-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.37,4.8,11.69,4.8,12s0.02,0.63,0.06,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
-                </Border>
-                <StackPanel Grid.Column="1"
-                            Spacing="2"
-                            VerticalAlignment="Center">
-                    <TextBlock Text="Settings"
-                               FontSize="{DynamicResource Font28}"
-                               FontWeight="Bold"/>
-                    <TextBlock Text="Appearance and updates"
-                               FontSize="{DynamicResource Font14}"
-                               Foreground="{DynamicResource TextMutedBrush}"/>
-                </StackPanel>
-                <Button Grid.Column="2"
-                        Classes="back-arrow"
+            <Grid ColumnDefinitions="Auto,Auto,*"
+                  ColumnSpacing="16">
+                <Button Classes="back-arrow"
                         ToolTip.Tip="Back"
                         VerticalAlignment="Center"
                         Click="CloseSettings_Click">
@@ -2112,6 +2267,29 @@
                         </Canvas>
                     </Viewbox>
                 </Button>
+                <Border Grid.Column="1"
+                        Width="48"
+                        Height="48"
+                        CornerRadius="14"
+                        Background="{DynamicResource AccentBrush}">
+                    <Path Width="24"
+                          Height="24"
+                          Stretch="Uniform"
+                          Fill="White"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Data="M19.14,12.94c0.04-0.31,0.06-0.63,0.06-0.94c0-0.31-0.02-0.63-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.37,4.8,11.69,4.8,12s0.02,0.63,0.06,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                </Border>
+                <StackPanel Grid.Column="2"
+                            Spacing="2"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Settings"
+                               FontSize="{DynamicResource Font28}"
+                               FontWeight="Bold"/>
+                    <TextBlock Text="Appearance and updates"
+                               FontSize="{DynamicResource Font14}"
+                               Foreground="{DynamicResource TextMutedBrush}"/>
+                </StackPanel>
             </Grid>
 
             <TextBlock Classes="settings-section" Text="Appearance"/>
@@ -2367,14 +2545,9 @@
         <Grid Classes="page-frame">
         <StackPanel Classes="page-column"
                     Spacing="18">
-            <Grid ColumnDefinitions="*,Auto"
+            <Grid ColumnDefinitions="Auto,*"
                   ColumnSpacing="16">
-                <TextBlock Text="Keyboard shortcuts"
-                           FontSize="{DynamicResource Font28}"
-                           FontWeight="Bold"
-                           VerticalAlignment="Center"/>
-                <Button Grid.Column="1"
-                        Classes="back-arrow"
+                <Button Classes="back-arrow"
                         ToolTip.Tip="Back"
                         VerticalAlignment="Center"
                         Click="CloseSettings_Click">
@@ -2391,6 +2564,11 @@
                         </Canvas>
                     </Viewbox>
                 </Button>
+                <TextBlock Grid.Column="1"
+                           Text="Keyboard shortcuts"
+                           FontSize="{DynamicResource Font28}"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"/>
             </Grid>
             <TextBlock Text="Shortcuts depend on the focused control. Space and F2 stay with a text field while you are typing. Esc closes the open popup, and other shortcuts do not run while a dialog is open. Highlighted keys are the ones used on this computer."
                        FontSize="{DynamicResource Font13}"

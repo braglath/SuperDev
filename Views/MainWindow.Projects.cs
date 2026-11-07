@@ -70,12 +70,15 @@ public partial class MainWindow
             _editorReturn = HomeSurface.Dashboard;
 
         var creating = existing is null;
-        ProjectEditorTitle.Text = creating ? "Create project" : "Edit project";
+        ProjectEditorTitle.Text = creating ? "Create Project" : "Edit Project";
         ProjectEditorHint.Text = creating
             ? "Organize multiple tasklists under one project."
             : "Update the name, icon, and details for this project.";
-        SaveProjectButton.Content = creating ? "Create Project" : "Save";
+        SaveProjectLabel.Text = creating ? "Create Project" : "Save";
         OpenProjectButton.IsVisible = creating;
+        ProjectEditorActions.ColumnDefinitions[0].Width = creating
+            ? new GridLength(1, GridUnitType.Star)
+            : new GridLength(0);
         ProjectEditorHost.Content = new ProjectEditorForm(existing);
         ShowHomeScreen();
         ShowHomeSurface(HomeSurface.CreateProject);

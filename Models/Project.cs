@@ -77,34 +77,43 @@ public static class ProjectAppearance
 {
     public const string DefaultIcon = "Folder";
 
-    public const string DefaultColor = "#3B82F6";
+    public const string DefaultColor = "#8B5CF6";
 
     public static readonly string[] Icons =
     [
         "Folder",
         "Code",
-        "Bug",
+        "Laptop",
+        "Layers",
         "Rocket",
+        "Box",
+        "Star"
+    ];
+
+    /// <summary>Icons saved before the picker matched the create-project design.</summary>
+    public static readonly string[] LegacyIcons =
+    [
+        "Bug",
         "Shield",
         "Book",
-        "Spark",
-        "Box"
+        "Spark"
     ];
 
     public static readonly string[] Colors =
     [
-        "#3B82F6",
         "#8B5CF6",
+        "#3B82F6",
         "#14B8A6",
+        "#22C55E",
         "#F59E0B",
         "#EF4444",
         "#EC4899",
-        "#22C55E",
         "#64748B"
     ];
 
     public static string Icon(string? value) =>
         Array.Exists(Icons, icon => string.Equals(icon, value, StringComparison.Ordinal))
+        || Array.Exists(LegacyIcons, icon => string.Equals(icon, value, StringComparison.Ordinal))
             ? value!
             : DefaultIcon;
 
